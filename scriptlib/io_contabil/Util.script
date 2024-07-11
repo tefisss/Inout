@@ -1,0 +1,2514 @@
+/**
+ * Converte uma string no formato dd/MM/yy para ddMMyy.
+ */
+private String toDDMMYY(String dts) throws Exception {
+    if (dts == null || dts.equals("")) {
+       return "";
+    }   
+    Date dt = DateUtil.stringToDate(dts, "dd/MM/yy");
+    return DateUtil.dateToString(dt, "ddMMyy");
+}
+
+/**
+ * Verifica se uma linha do arquivo possui pelo menos dois caracteres
+ */
+private boolean isValidLine(String line, int minChars) {
+	if (line.length() < minChars) {
+        return false;
+    }
+    return true;
+}
+public String preparaDoublePrecisao(String i){
+	return (i.length() - (i.lastIndexOf(".") + 1)) < 2 ? i += "0" : i;
+}
+/**
+ * Envia EMAIL
+ */
+public void enviaEmail(String subject,
+                       String sendTo,
+                       String sendToName, 
+                       String mensagem,
+                       String filename,
+                       InoutLogger logger) throws Exception {
+
+    EmailStruct emailStruct = new EmailStruct();
+    emailStruct.setSmtpServer("mail.ottimizza.com.br");
+    emailStruct.setSmtpPort("26");
+    emailStruct.setSmtpUser("suporte@ottimizza.com.br");
+    emailStruct.setSmtpPassword("suporte@123");
+    emailStruct.setSubject(subject);   
+    emailStruct.setMessage(mensagem);
+    emailStruct.setFrom("suporte@ottimizza.com.br");
+    emailStruct.setSendTo(sendTo);
+    emailStruct.setName(sendToName);
+    if (filename != null) {
+        emailStruct.addAttachedFilename(filename);
+    }
+    emailStruct.setMessageType(InoutConstants.MESSAGE_TYPE_HTML);
+    logger.logDebug(">> EmailStruct:\n" + emailStruct.toJSONObject());
+    SendEmail se = new SendEmail(null);
+    se.send(emailStruct);
+    logger.logDebug(">> Email Enviado!!");
+}
+
+
+public static String toDisplayCase(String s) {
+
+    final String ACTIONABLE_DELIMITERS = " '-/"; // these cause the character following
+                                                 // to be capitalized
+
+    StringBuilder sb = new StringBuilder();
+    boolean capNext = true;
+
+    for (char c : s.toCharArray()) {
+        c = (capNext)
+                ? Character.toUpperCase(c)
+                : Character.toLowerCase(c);
+        sb.append(c);
+        capNext = (ACTIONABLE_DELIMITERS.indexOf((int) c) >= 0); // explicit cast not needed
+    }
+    return sb.toString();
+}
+
+/**
+ * Recebe um objeto do tipo Date e incrementa o dia do mes em 'x' dias e retorna um objeto do tipo Date
+ *
+ * @param date        Data para incrementar em 'x' dias.
+ * @param days        O numero de dias para incrementar a data.
+ * @return            Date com os dias incrementados.
+ */
+public static Date addDaysToDate(Date date, int days) {
+    Calendar calendar = GregorianCalendar.getInstance();
+
+    if (date == null) {
+        calendar = GregorianCalendar.getInstance();
+    } else {
+        calendar.setTime(date);
+    }
+
+    calendar.add(GregorianCalendar.DAY_OF_YEAR, days);
+
+    date = calendar.getTime();
+
+    return date;
+}
+
+/**
+ * Recebe um objeto do tipo Date e decrementa o dia do mes em 'x' dias e retorna um objeto do tipo Date
+ *
+ * @param date        Data para incrementar em 'x' dias.
+ * @param days        O numero de dias para decrementar a data.
+ * @return            Date com os dias decrementados.
+ */
+public static Date subDaysToDate(Date date, int days) {
+    Calendar calendar = GregorianCalendar.getInstance();
+
+    if (date == null) {
+        calendar = GregorianCalendar.getInstance();
+    } else {
+        calendar.setTime(date);
+    }
+
+    calendar.add(GregorianCalendar.DAY_OF_YEAR, -days);
+
+    date = calendar.getTime();
+
+    return date;
+}
+
+/**
+ * Funcao para retornar o proximo dia do mes. Recebe uma data em String no padrao Ottimizza ('dd/MM/yyyy') e a quantidade
+ * de dias para incrementar e retorna o proximo dia do mes passado no padrao Ottimizza, 
+ * caso 'isWorkingDay' for verdadeiro retorna apenas o proximo dia util.
+ *
+ * @param strDate       Data formatada no padrao Ottimizza ('dd/MM/yyyy') para calculo.
+ * @param countDays     Quantidade de dias para incrementar a data passada.
+ * @param isWorkingDay  boolean para retornar apenas o proximo dia util.
+ *
+ * @return              String data formatada no padrao Ottimizza com o proximo dia do mes passado por parametro.
+ */
+public static String getNextDay(String strDate, int countDays, boolean isWorkingDay) throws Exception {
+    Calendar calendar = GregorianCalendar.getInstance();
+    Date date = null;
+
+    date = strDate.equals("") ? calendar.getTime() : DateUtil.stringToDate(strDate, "dd/MM/yyyy");
+    
+    if (!isWorkingDay) {
+        return DateUtil.dateToString(addDaysToDate(date, countDays), "dd/MM/yyyy");
+    }
+
+    if (isHoliday(date) || isWeekend(date)) {
+        while (isHoliday(date) || isWeekend(date)) {
+            date = addDaysToDate(date, 1);
+        }
+        countDays -= 1;
+    }
+
+    for (int i = 0; i < countDays; i++) {
+        date = addDaysToDate(date, 1);
+
+        while (isHoliday(date) || isWeekend(date)) {
+            date = addDaysToDate(date, 1);
+        }
+    }
+
+    return DateUtil.dateToString(date, "dd/MM/yyyy");
+}
+
+/**
+ * Funcao para retornar o ultimo dia util anterior a data em questao. Recebe uma data em String no padrao Ottimizza ('dd/MM/yyyy') e a quantidade
+ * de dias para incrementar e retorna o proximo dia do mes passado no padrao Ottimizza, 
+ * caso 'isWorkingDay' for verdadeiro retorna apenas o proximo dia util.
+ *
+ * @param strDate       Data formatada no padrao Ottimizza ('dd/MM/yyyy') para calculo.
+ * @param countDays     Quantidade de dias para incrementar a data passada.
+ * @param isWorkingDay  boolean para retornar apenas os dias util.
+ *
+ * @return              String data formatada no padrao Ottimizza com o proximo dia do mes passado por parametro.
+ */
+public static String getPreviousDay(String strDate, int countDays, boolean isWorkingDay) throws Exception {
+    Calendar calendar = GregorianCalendar.getInstance();
+    Date date = null;
+
+    date = strDate.equals("") ? calendar.getTime() : DateUtil.stringToDate(strDate, "dd/MM/yyyy");
+    if (!isWorkingDay) {
+        return DateUtil.dateToString(addDaysToDate(date, countDays), "dd/MM/yyyy");
+    }
+
+    // if (isHoliday(date) || isWeekend(date)) {
+        // while (isHoliday(date) || isWeekend(date)) {
+            // date = addDaysToDate(date, -1);
+        // }
+        // countDays -= 1;
+    // }
+
+    for (int i = 0; i < countDays; i++) {
+        date = addDaysToDate(date, -1);
+        while (isHoliday(date) || isWeekend(date)) {
+            date = addDaysToDate(date, -1);
+        }
+    }
+    return DateUtil.dateToString(date, "dd/MM/yyyy");
+}
+
+/**
+ * Funcao para retornar o ultimo dia do mes. Recebe uma data em String no padrao Ottimizza ('dd/MM/yyyy') e
+ * retorna o ultimo dia do mes passado no padrao Ottimizza,
+ * caso 'isWorkingDay' for verdadeiro retorna apenas o ultimo dia util.
+ *
+ * @param strDate       Data formatada no padrao Ottimizza ('dd/MM/yyyy') para calculo.
+ * @param isWorkingDay  boolean para retornar apenas o ultimo dia util.
+ *
+ * @return              String data formatada no padrao Ottimizza com o ultimo dia do mes passado por parametro.
+ */
+public static String getLastDayOfMonth(String strDate) throws Exception {
+	return getLastDayOfMonth(strDate, false);
+}
+public static String getLastDayOfMonth(String strDate, boolean isWorkingDay) throws Exception {
+    Calendar cal = GregorianCalendar.getInstance();
+    Date date = null;
+
+    date = strDate.equals("") ? cal.getTime() : DateUtil.stringToDate(strDate, "dd/MM/yyyy");
+
+    cal.setTime(date);
+
+    cal.set(cal.get(Calendar.YEAR),
+            cal.get(Calendar.MONTH),
+            cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    );
+
+    date = cal.getTime();
+
+    if ((isHoliday(date) || isWeekend(date)) && isWorkingDay) {
+        while (isHoliday(date) || isWeekend(date)) {
+            date = addDaysToDate(date, -1);
+        }
+    }
+
+    cal.setTime(date);
+
+    return DateUtil.dateToString(cal.getTime(), "dd/MM/yyyy");
+}
+
+/**
+ * Funcao para verificar se uma data passada e Feriado baseada em uma lista de feriados pre-cadastrados 
+ * e retorna uma booleana caso verdadeiro.
+ * 
+ * @param date        Objeto do tipo 'Date' para comparacao.
+ *
+ * @return            Verdadeiro se e somente se data recebida for Feriado.
+ */
+public static boolean isHoliday(Date date) {    
+    List holidays = Arrays.asList( new String[] {
+        "01/01", "21/04", "01/05", "07/09", "12/10", "02/11", "15/11", "25/12"
+    });
+    
+    Calendar calendar = GregorianCalendar.getInstance();
+
+    if (date == null) {
+        calendar = GregorianCalendar.getInstance();
+    } else {
+        calendar.setTime(date);
+    }
+
+    date = calendar.getTime();
+
+    return holidays.contains(DateUtil.dateToString(date, "dd/MM"));
+}
+
+/**
+ * Funcao para verificar se uma data passada e Fim de Semana e retorna uma booleana
+ * caso verdadeiro.
+ *
+ * @param date        Objeto do tipo 'Date' para comparacao.
+ *
+ * @return            Verdadeiro se e somente se data recebida for Fim de Semana.
+ */
+public static boolean isWeekend(Date date) {
+    Calendar calendar = GregorianCalendar.getInstance();
+
+    if (date == null) {
+        calendar = GregorianCalendar.getInstance();
+    } else {
+        calendar.setTime(date);
+    }
+
+    date = calendar.getTime();
+
+    return (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+            || calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY);
+}
+
+/**
+ * Funcao para transformar data de um numero inteiro (n. de dias a partir de uma determinada data, padrao 1900) 
+ * para o padrao Ottimizza ('dd/MM/yyyy').
+ *    e.g. 42828 (dias) a partir do ano 1900 = '03/04/2017'.
+ * 
+ * @param fromYear    Ano para comparacao de dias (se 0, recebe 1900).
+ * @param days        Numero de dias para incrementar o ano.
+ * @return            Data calculada formatada no padrao Ottimizza ('dd/MM/yyyy');
+ */
+public static String dateFromDaysSinceYear(int fromYear, int days) {    
+    if (fromYear == 0) fromYear = 1900;
+    
+    Calendar calendar = GregorianCalendar.getInstance();
+    calendar.set(fromYear, 0, 0);
+    calendar.add(Calendar.DAY_OF_YEAR, (days-1));
+
+    return DateUtil.dateToString(calendar.getTime(), "dd/MM/yyyy");
+}
+
+/**
+ * Funcao para buscar primeira data de uma linha, recebe um formato especificado de data e 
+ * procura na linha dada e converte para o padrao Ottimizza ('dd/MM/yyyy').
+ *
+ * @param line        String Linha para buscar data no formato dado.
+ * @param dateFormat  String Formato da Data a ser buscada e.g.: 'dd/MM/yy', 'dd/MM/yyyy'.
+ * @param convert     Boolean converter data para o padrao Ottimizza antes de retorna-la.
+ * 
+ * @return            Data encontradae e formatada no padrao Ottimizza caso 'convert' for verdadeiro.
+ */
+public static String getFirstDateFromLine(String line, String dateFormat, boolean convert) {
+    String date = "";
+
+    String separator = dateFormat.replaceAll("[a-zA-Z]", "");
+    // Chars restantes devem ser 2
+    if (separator.length() != 2) {
+        return "Example given isn't valid!";
+    }
+
+    // Replace chars iguais '--' > '-'  ou '//' > '/'
+    separator = separator.replaceAll("(.)\\1{1,}", "$1");
+
+    String[] dateFields = dateFormat.split(separator);
+    int dLength = dateFields[0].length();
+    int mLength = dateFields[1].length();
+    int yLength = dateFields[2].length();
+
+    boolean found = false;
+    
+    for (int i = 0; i < line.length(); i++) {
+        if (Character.toString(line.charAt(i)).equals(separator) && Character.toString(line.charAt(i + mLength + 1)).equals(separator)) {
+            date = line.substring((i - dLength), (i + 1) + (mLength + yLength + 1));
+            if (date.length() == date.replaceAll("[a-zA-Z]", "").length()) {
+                found = true;
+            }
+        }
+        if (found) break;
+    }
+
+    if (convert) {
+        try {
+            Date dt = DateUtil.stringToDate(date, dateFormat);
+            date = DateUtil.dateToString(dt, "dd/MM/yyyy");
+        } catch (Exception dateException) {
+            
+        }
+    }
+    
+    return date;
+}
+
+/**
+ * Funcao para buscar ultima data de uma linha, recebe um formato especificado de data e 
+ * procura na linha dada e converte para o padrao Ottimizza ('dd/MM/yyyy').
+ *
+ * @param line        String Linha para buscar data no formato dado.
+ * @param dateFormat  String Formato da Data a ser buscada e.g.: 'dd/MM/yy', 'dd/MM/yyyy'
+ * @param convert     Boolean converter data para o padrao Ottimizza antes de retorna-la
+ * 
+ * @return            Data encontrada e formatada no padrao Ottimizza caso 'convert' for verdadeiro.
+ */
+ public static String getLastDateFromLine(String line, String dateFormat, boolean convert) {
+    String date = "";
+
+    // remove todos os digitos
+    String separator = dateFormat.replaceAll("[a-zA-Z]", "");
+
+    // Chars restantes devem ser 2
+    if (separator.length() != 2) {
+        return "Example given isn't valid!";
+    }
+
+    // remove chars repetidos '--' > '-'  ou '//' > '/'
+    separator = separator.replaceAll("(.)\\1{1,}", "$1");
+
+    String[] dateFields = dateFormat.split(separator);
+    int dLength = dateFields[0].length();
+    int mLength = dateFields[1].length();
+    int yLength = dateFields[2].length();
+
+    boolean found = false;
+    
+    for (int i = line.length() - 1; i > 0; i--) {
+        if (Character.toString(line.charAt(i)).equals(separator) && Character.toString(line.charAt(i - mLength - 1)).equals(separator)) {
+            date = line.substring((i - mLength - dLength - 1), i + (yLength + 1)).trim();
+            
+            if (date.length() == date.replaceAll("[a-zA-Z]", "").length()) {
+                found = true;
+            }
+            
+        }
+        if (found) break;
+    }
+    if (convert) {
+        try {
+            Date dt = DateUtil.stringToDate(date, dateFormat);
+            date = DateUtil.dateToString(dt, "dd/MM/yyyy");
+        } catch (Exception dateException) {
+            
+        }
+    }
+    return date;
+}
+
+/**
+ * Funcao para gerar os Digitos Verificadores do CNPJ, recebe um CNPJ (c/s formatacao) 
+ * com 10 a 12 digitos caso menor que 12 preenche com 0 (zeros) a esquerda e retorna um CNPJ 
+ * formatado com os digitos verficadores.
+ * 
+ * @param cnpj        String cnpj para gerar Digitos Verificadores.
+ * @param format      boolean formatar cnpj para a mascara '##.###.###/####-##'.
+ * 
+ * @return            CNPJ dado com os digitos calculados formatado a mascara caso 'format' for verdadeiro.
+ */
+private String gerarDigitosCNPJ(String cnpj, boolean format) {
+    // Remover todos os nao-digitos
+    String cnpjRaw = cnpj.replaceAll("[^0-9]", "");
+
+    if (cnpjRaw.length() < 12) {
+        switch (cnpjRaw.length()) {
+            case 11:
+                cnpjRaw = StringUtil.leftPad(String.valueOf(cnpjRaw),12,"0");
+                break;
+            case 10:
+                cnpjRaw = StringUtil.leftPad(String.valueOf(cnpjRaw),12,"0");
+                break;
+            default:
+                return "INVALIDO";
+        }
+    } 
+    
+    int sum = 0;
+    int index = 5;
+    try {
+        for (int i = index; i < 7; i++) {
+            if (index == 7) break;
+            
+            for (int j = 0; j < (index + 7); j++) {
+                sum += Integer.parseInt(String.valueOf(cnpjRaw.charAt(j))) * i;
+                i = (i == 2) ? 9 : (i - 1);
+            }
+            cnpjRaw += (sum % 11 < 2) ? 0 : (11 - (sum % 11));
+            
+            i = index;
+            index++;
+            sum = 0;
+        }
+    } catch (Exception generateException) {
+        logger.logDebug(String.format("Error generating DV's for CNPJ: '%s'!", cnpj));
+        return "INVALIDO";
+    }
+    if (format) {
+        String cnpjOut = "##.###.###/####-##";
+        try {
+            for (int i = 0; i < cnpjRaw.length(); i++) {
+                cnpjOut = cnpjOut.replaceFirst("#", String.valueOf(cnpjRaw.charAt(i)));
+            }
+            cnpjRaw = cnpjOut;
+        } catch (Exception formatException) {
+            logger.logDebug(String.format("Error formatting CNPJ '%s'!", cnpj));
+            return cnpjRaw;
+        }
+    }
+
+    
+    return cnpjRaw;
+}
+
+/* testar20200626 */
+public double getDoubleTXT2020(String parametro1, String line) {
+
+	JSONObject objColuna = new JSONObject();
+	return getDoubleTXT2020(parametro1, line, objColuna);
+
+}
+
+public double getDoubleTXT2020(String parametro1, String line, JSONObject objColuna) {
+
+    double response		= 0;
+	String valorString	= "";
+	if (parametro1.contains("LER TUDO")) {
+		valorString = line;
+	} else {
+		int colInicio		= getColunaInicial(parametro1, objColuna);
+		int colFinal		= getColunaFinal(parametro1, objColuna);
+		try {
+			if (colInicio < colFinal && colInicio >= 0) {
+				if (line.length() >  colFinal) valorString = line.substring(colInicio, colFinal).trim();
+				if (line.length() <= colFinal) valorString = line.substring(colInicio).trim();
+			}
+		} catch (Exception xx) {response = 0;}
+	}
+	
+	if (valorString.length() >= 3) {
+		if (valorString.charAt(valorString.length()-3) == '.' || valorString.charAt(valorString.length()-3) == ',') {	// ex 1,222.33 / 1222,33
+			try {
+				valorString = String.format("%s,%s",cutString(valorString,0,valorString.length()-3).replaceAll("[^0-9]", ""),
+													cutString(valorString,valorString.length()-2));
+				response = DecimalUtil.toDecimal(valorString); 
+			} catch (Exception xx) { response = 0; }
+			
+		} else { //ex 1235 ou 1234,5
+			if (valorString.charAt(valorString.length()-2) == '.' || valorString.charAt(valorString.length()-2) == ',') {	// 1,222.3 / 1222,3){
+				try {
+					valorString = String.format("%s.%s",valorString.substring(0,valorString.length()-2).replaceAll("[^0-9]", ""),
+														valorString.substring(valorString.length()-1));
+				}catch (Exception xx) {  }
+				
+			} else { //1,1 ou 1.1
+				if (valorString.contains(",")) valorString = valorString.replaceAll("\\.","");
+				if (!valorString.contains(","))valorString = valorString.replaceAll("\\.",",");
+			}
+			try { response = DecimalUtil.toDecimal(valorString); }
+			catch (Exception xx) { response = 0; }
+		}
+	} else {	//ex 42
+		valorString = valorString.replaceAll("\\.",",");
+		try { response = DecimalUtil.toDecimal(valorString); }
+		catch (Exception xx) { response = 0; }
+	}
+	return response;
+}
+
+public String getDateTXT(String parametro1, String line, JSONObject objColuna) {
+
+    int colInicio = getColunaInicial(parametro1.toUpperCase(), objColuna);
+    int colFinal  = getColunaFinal(parametro1.toUpperCase(), objColuna);
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() > colFinal) {
+            String dataMovimento      = line.substring(colInicio, colFinal);
+            try {
+                if (dataMovimento.length() == 8 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+                if (dataMovimento.length() == 10 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yyyy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+            }
+            catch (Exception xx) { return ""; }
+        }else if (colInicio < colFinal && colInicio >= 0 && line.length() <= colFinal) {
+            String dataMovimento      = line.substring(colInicio);
+            try {
+                if (dataMovimento.length() == 8 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+                if (dataMovimento.length() == 10 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yyyy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+            }
+            catch (Exception xx) { return ""; }
+        }
+        else return "";
+    }
+    catch (Exception xx) {return "";}
+    return "";
+
+}
+public String getDateTXT(String parametro1, String line) {
+
+	JSONObject objColuna = new JSONObject();
+	return getDateTXT(parametro1, line, objColuna);
+
+}
+
+public double getDoubleTXT(String parametro1, String line, JSONObject objColuna) {
+
+    int colInicio = getColunaInicial(parametro1, objColuna);
+    int colFinal  = getColunaFinal(parametro1, objColuna);
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() > colFinal) {
+            String valorString = line.substring(colInicio, colFinal);
+			if (valorString.contains(",")) valorString = valorString.replaceAll("\\.","");
+            try {
+                double valorDocumento = DecimalUtil.toDecimal(valorString);
+                return valorDocumento;
+            }
+        	catch (Exception xx) { return 0; }
+        }
+        if (colInicio < colFinal && colInicio >= 0 && line.length() <= colFinal) {
+            String valorString = line.substring(colInicio);
+			if (valorString.contains(",")) valorString = valorString.replaceAll("\\.","");
+            try {
+                double valorDocumento = DecimalUtil.toDecimal(valorString);
+                return valorDocumento;
+            }
+        	catch (Exception xx) { return 0; }
+        }
+        
+        return 0;
+    }
+    catch (Exception xx) {return 0;}
+
+}
+public double getDoubleTXT(String parametro1, String line) {
+
+	JSONObject objColuna = new JSONObject();
+	return getDoubleTXT(parametro1, line, objColuna);
+
+}
+
+public String getStringTXT(String parametro1, String line, JSONObject objColuna) {
+
+
+    int colInicio = getColunaInicial(parametro1, objColuna);
+    int colFinal  = getColunaFinal(parametro1, objColuna);
+
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() > colFinal) {
+            String valorString      = line.substring(colInicio, colFinal);
+            return valorString;
+        }
+        if (colInicio < colFinal && colInicio >= 0 && line.length() <= colFinal) {
+            String valorString      = line.substring(colInicio);
+            return valorString;
+        }
+        return "";
+    }
+    catch (Exception xx) {return "";}
+
+}
+public String getStringTXT(String parametro1, String line) {
+
+	JSONObject objColuna = new JSONObject();
+	return getStringTXT(parametro1, line, objColuna);
+
+}
+
+public int getColunaInicial(String parametro1, JSONObject objColuna) {
+
+    if ((parametro1.toUpperCase().startsWith("COLUNA(") || parametro1.toUpperCase().startsWith("COLUNA (")) && parametro1.endsWith(")")) {
+
+        String [] indiceCol = parametro1.toUpperCase().split(",");
+        if (indiceCol.length == 2) {
+			int linhaVariavel = Integer.parseInt(indiceCol[0].replaceAll("COLUNA","").replaceAll(" ","").replaceAll("\\(",""));            
+			return (linhaVariavel - 1);
+        }
+    }
+
+    return -1;
+
+}
+public int getColunaInicial(String parametro1) {
+
+	JSONObject objColuna = new JSONObject();
+	return getColunaInicial(parametro1, objColuna);	
+
+}
+
+public int getColunaFinal(String parametro1, JSONObject objColuna) {
+
+    if ((parametro1.toUpperCase().startsWith("COLUNA(") || parametro1.toUpperCase().startsWith("COLUNA (")) && parametro1.endsWith(")")) {
+
+        String [] indiceCol = parametro1.toUpperCase().split(",");
+        if (indiceCol.length == 2) {
+            int linhaVariavel  = Integer.parseInt(indiceCol[1].replaceAll("\\)","").replaceAll(" ",""));
+            return linhaVariavel;
+        }
+    }
+
+    return -1;
+
+}
+public int getColunaFinal(String parametro1) {
+
+	JSONObject objColuna = new JSONObject();
+	return getColunaFinal(parametro1, objColuna);
+
+}
+
+/*testDel txt 180418
+public String getDateTXT(String parametro1, String line, JSONObject objColuna) {
+
+    int colInicio = getColunaInicial(parametro1.toUpperCase(), objColuna);
+    int colFinal  = getColunaFinal(parametro1.toUpperCase(), objColuna);
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() >= colFinal) {
+            String dataMovimento      = line.substring(colInicio, colFinal);
+            try {
+                if (dataMovimento.length() == 8 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+                if (dataMovimento.length() == 10 ) {
+                    Date dtTeste  = DateUtil.stringToDate(dataMovimento, "dd/MM/yyyy");
+                    dataMovimento = DateUtil.dateToString(dtTeste, "dd/MM/yyyy");                                            
+                    return dataMovimento;
+                }
+            }
+            catch (Exception xx) { return ""; }
+        }
+        else return "";
+    }
+    catch (Exception xx) {return "";}
+
+    return "";
+
+}
+
+public double getDoubleTXT(String parametro1, String line, JSONObject objColuna) {
+
+    int colInicio = getColunaInicial(parametro1, objColuna);
+    int colFinal  = getColunaFinal(parametro1, objColuna);
+	
+	line = line.replaceAll("R", " ").replace("$", " ");
+
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() >= colFinal) {
+            String valorString      = line.substring(colInicio, colFinal).replaceAll("\\.","").trim();
+            try {
+                double valorDocumento = DecimalUtil.toDecimal(valorString);
+                return valorDocumento;
+            }
+        	catch (Exception xx) { return 0; }
+        }
+        
+        return 0;
+    }
+    catch (Exception xx) {return 0;}
+
+}
+
+public String getStringTXT(String parametro1, String line, JSONObject objColuna) {
+
+    int colInicio = getColunaInicial(parametro1, objColuna);
+    int colFinal  = getColunaFinal(parametro1, objColuna);
+
+    try {
+        if (colInicio < colFinal && colInicio >= 0 && line.length() >= colFinal) {
+            String valorString	= line.substring(colInicio, colFinal);
+            return valorString;
+        } else if(colInicio < colFinal && colInicio >= 0) {
+			String valorString	= line.substring(colInicio);
+            return valorString.trim();
+		}
+		
+        return "";
+    }
+    catch (Exception xx) {return "";}
+
+}
+
+public int getColunaInicial(String parametro1, JSONObject objColuna) {
+
+    if (parametro1.toUpperCase().startsWith("COLUNA(") && parametro1.endsWith(")")) {
+
+        String [] indiceCol = parametro1.toUpperCase().split(",");
+        if (indiceCol.length == 2) {
+
+			int linhaVariavel = Integer.parseInt(indiceCol[0].replaceAll("COLUNA","").replaceAll(" ","").replaceAll("\\(",""));            
+			return (linhaVariavel - 1);
+        }
+    }
+
+    return -1;
+
+}
+
+public int getColunaFinal(String parametro1, JSONObject objColuna) {
+
+    if (parametro1.toUpperCase().startsWith("COLUNA(") && parametro1.endsWith(")")) {
+
+        String [] indiceCol = parametro1.toUpperCase().split(",");
+        if (indiceCol.length == 2) {
+
+            int linhaVariavel  = Integer.parseInt(indiceCol[1].replaceAll("\\)","").replaceAll(" ",""));
+            return linhaVariavel;
+        }
+    }
+
+    return -1;
+
+}
+*/
+
+/*
+metodo case Sensitive
+
+nomeOrigem = cutString(nomeOrigem,"PAGAMENTO"," NF.");
+nomeOrigem = cutString(nomeOrigem,"PAGAMENTO");
+nomeOrigem = cutString(nomeOrigem,24,20);
+nomeOrigem = cutString(nomeOrigem,5," NF.");
+nomeOrigem = cutString(nomeOrigem,"PAGAMENTO",20);
+documento = cutString(nomeOrigem,10);
+*/
+ 
+public String cutString(String texto, String termoInicial, String termoFinal){
+	if(!texto.contains(termoInicial)) return texto;
+	texto = texto.trim();
+	
+	if(texto.contains(termoInicial) && !texto.endsWith(termoInicial))texto = texto.substring(texto.indexOf(termoInicial)+termoInicial.length()).trim();
+	if(texto.contains(termoFinal) && !texto.startsWith(termoFinal))texto = texto.substring(0,texto.indexOf(termoFinal)).trim();
+	
+	return trimChar(texto);
+
+}
+
+// Realizado ajustes quando string termina com termoIncial e termoInicial possui mais de uma ocorrencia.
+public String cutString(String texto, String termoInicial) {
+	if (!texto.contains(termoInicial)) { return texto; }
+	texto = texto.trim();
+	if (texto.contains(termoInicial)) {
+		boolean temDois = texto.lastIndexOf(termoInicial) > texto.indexOf(termoInicial);
+		if (temDois) {
+			texto = texto.substring(texto.indexOf(termoInicial) + termoInicial.length()).trim();
+		} else if (!texto.endsWith(termoInicial)) {
+			texto = texto.substring(texto.indexOf(termoInicial) + termoInicial.length()).trim();
+		}
+	}
+	return trimChar(texto, "NCFINAL");
+}
+
+public String cutString(String texto, int indiceInicial, int indiceFinal){
+	texto = texto.trim();
+	if(indiceInicial > indiceFinal) return texto;
+	if(indiceInicial >= 0 && indiceFinal >= 1){
+		if(texto.length() > indiceFinal)   texto = texto.substring(0,indiceFinal).trim();
+		if(texto.length() > indiceInicial) texto = texto.substring(indiceInicial).trim();
+	}
+	if(indiceInicial == 0) return trimChar(texto, "NCINICIO");
+	return trimChar(texto);
+	
+}
+
+public String cutString(String texto, int indiceInicial, String termoFinal){
+	texto = texto.trim();
+	
+	if(indiceInicial >= 0 && texto.length() > indiceInicial) texto = texto.substring(indiceInicial).trim();
+	if(texto.contains(termoFinal) && !texto.startsWith(termoFinal)) texto = texto.substring(0,texto.indexOf(termoFinal)).trim();
+	
+	if(indiceInicial == 0) return trimChar(texto, "NCINICIO");
+	return trimChar(texto);
+
+}
+
+public String cutString(String texto, String termoInicial, int indiceFinal){ 
+	if(!texto.contains(termoInicial)) return texto;
+	texto = texto.trim();
+	if(indiceFinal >= 1 && texto.length() > indiceFinal) texto = texto.substring(0,indiceFinal).trim();
+	if(texto.contains(termoInicial) && !texto.endsWith(termoInicial)) texto = texto.substring(texto.indexOf(termoInicial)+termoInicial.length()).trim();
+	
+	return trimChar(texto);
+}
+
+public String cutString(String texto, int indiceInicial){
+	texto = texto.trim();
+	if(indiceInicial >= 0 && texto.length() > indiceInicial) texto = texto.substring(indiceInicial).trim();
+
+	if(indiceInicial == 0) return trimChar(texto, "NCINICIO");
+	return trimChar(texto, "NCFINAL");
+}
+
+
+public String trimChar(String texto){
+	texto = texto.trim();
+	int lengthAnterior = 0;
+	for(int xyz = 0; xyz < 15; xyz++){
+		if(texto.length() > 1){
+				if(!Character.isDigit(texto.charAt(texto.length()-1)) && !Character.isLetter(texto.charAt(texto.length()-1)) && texto.charAt(texto.length()-1) != '.' && texto.charAt(texto.length()-1) != ')') {
+					texto = texto.substring(0,texto.length()-1).trim();
+				}
+			if(!Character.isDigit(texto.charAt(0)) && !Character.isLetter(texto.charAt(0))){
+				texto = texto.substring(1).trim();
+			}
+		}
+		if(texto.length() == 1){
+			if(!Character.isDigit(texto.charAt(0)) && !Character.isLetter(texto.charAt(0))) texto = "";
+			return texto;
+		}
+		
+		if(texto.length() == lengthAnterior) return texto.trim();
+		lengthAnterior = texto.length();
+	}
+	return texto.trim();
+}
+
+public String trimChar(String texto, String param){
+	texto = texto.trim();
+	int lengthAnterior = 0;
+	for(int xyz = 0; xyz < 15; xyz++){
+		if(texto.length() > 1 && !param.contains("NCFINAL")){
+			if(!Character.isDigit(texto.charAt(texto.length()-1)) && !Character.isLetter(texto.charAt(texto.length()-1)) && texto.charAt(texto.length()-1) != '.' && texto.charAt(texto.length()-1) != ')') {
+				texto = texto.substring(0,texto.length()-1).trim();
+			}
+			if(!Character.isDigit(texto.charAt(0)) && !Character.isLetter(texto.charAt(0)) && !param.contains("NCINICIO")){
+				texto = texto.substring(1).trim();
+			}
+		}
+		if(texto.length() == 1){
+			if(!Character.isDigit(texto.charAt(0)) && !Character.isLetter(texto.charAt(0))) texto = "";
+			return texto;
+		}
+		
+		if(texto.length() == lengthAnterior) return texto.trim();
+		lengthAnterior = texto.length();
+	}
+	return texto.trim();
+}
+
+
+
+/**
+ * Remocao de Notacao Cientifica do Excel e Padding com 0s ocultados.
+ *   e.g. 10082017 > 1.0082017E7
+ *
+ * @param documento | Variavel para remocao da notacao e pontuacao.
+ * @return          | String com notacao removida e sem pontuacao.
+ */
+public String removerNotacaoCientificaExcel(String documento) {
+    
+    int length = -1;
+    
+    // Remove letras e pontos, retorna 'documento' caso nao contenha apenas a notacao 'E'.
+    if (!documento.replaceAll("[0-9]+", "").replaceAll("\\.", "").equals("E")) return documento;
+    
+    // Tenta capturar o numero da notacao. e.g. E7 > 7
+    try { length = Integer.parseInt(documento.substring( documento.indexOf("E") + 1 ));
+    } catch (Exception e) { length = -1; }
+    
+    // Se < 0 retorna 'documento'
+    if (length < 0) return documento;
+    
+    // Remove pontuacao e notacao da variavel.
+    documento = documento.substring( 0, documento.indexOf("E") ).replaceAll("\\.", "");
+    
+    // Realiza o padding a direita com 0s.
+    if (documento.length() < length + 1) return StringUtil.rightPad(documento, length+1, "0");
+    
+    return documento;
+}
+
+private JSONObject getObjetoRoteiro(ttMovimentoPadrao ttMov, JSONObject objRoteiro, InoutLogger logger) throws Exception {
+
+	objRoteiro = new JSONObject();
+	
+	objRoteiro.put("lote", ttMov.lote);
+	objRoteiro.put("documento", ttMov.documento);
+	objRoteiro.put("codEmpresa", ttMov.codEmpresa);
+	objRoteiro.put("nomeEmpresa", ttMov.nomeEmpresa);
+	objRoteiro.put("dataMovimento", ttMov.dataMovimento);
+	objRoteiro.put("tipoMovimento", ttMov.tipoMovimento);
+	objRoteiro.put("tipoLancamento", ttMov.tipoLancamento);
+	objRoteiro.put("historico", ttMov.historico);
+	objRoteiro.put("contaJuros", ttMov.contaJuros);
+	objRoteiro.put("contaMulta", ttMov.contaMulta);
+	objRoteiro.put("contaDesconto", ttMov.contaDesconto);
+	objRoteiro.put("nomePortador", ttMov.nomePortador);
+	objRoteiro.put("centroCusto", ttMov.centroCusto);
+	objRoteiro.put("nomeOrigem", ttMov.nomeOrigem);
+	objRoteiro.put("cpfCnpj", ttMov.cpfCnpj);
+	objRoteiro.put("chave", ttMov.chave);
+	objRoteiro.put("classificacao", ttMov.classificacao);
+	objRoteiro.put("codFilial", ttMov.codFilial);
+	objRoteiro.put("complemento01", ttMov.complemento01);
+	objRoteiro.put("complemento02", ttMov.complemento02);
+	objRoteiro.put("complemento03", ttMov.complemento03);
+	objRoteiro.put("complemento04", ttMov.complemento04);
+	objRoteiro.put("complemento05", ttMov.complemento05);
+	objRoteiro.put("complemento06", ttMov.complemento06);
+	objRoteiro.put("complemento07", ttMov.complemento07);
+	objRoteiro.put("complemento08", ttMov.complemento08);
+	objRoteiro.put("complemento09", ttMov.complemento09);
+	objRoteiro.put("complemento10", ttMov.complemento10);
+	objRoteiro.put("nomeArquivo", ttMov.nomeArquivo);
+	objRoteiro.put("tipoPlanilha", ttMov.tipoPlanilha);
+	objRoteiro.put("chaveExtrato", ttMov.chaveExtrato);
+	objRoteiro.put("debitoCredito", ttMov.debitoCredito);
+	objRoteiro.put("historicoMulta", ttMov.historicoMulta);
+	objRoteiro.put("historicoJuros", ttMov.historicoJuros);
+	objRoteiro.put("historicoDesconto", ttMov.historicoDesconto);
+	objRoteiro.put("contaDebito", ttMov.contaDebito);
+	objRoteiro.put("contaCredito", ttMov.contaCredito);
+	objRoteiro.put("naturezaContabil", ttMov.naturezaContabil);
+	objRoteiro.put("contador", ttMov.contador);
+	objRoteiro.put("parcelaDoc", ttMov.parcelaDoc);
+	objRoteiro.put("abaPlanilha", ttMov.abaPlanilha);
+	objRoteiro.put("valorDocumento", ttMov.valorDocumento);
+	objRoteiro.put("valorDesconto", ttMov.valorDesconto);
+	objRoteiro.put("valorMulta", ttMov.valorMulta);
+	objRoteiro.put("valorJuros", ttMov.valorJuros);
+
+	return objRoteiro;
+}
+	
+		
+public MemoryFile setSeparadorVirgula(MemoryFile memFile, String linha, InoutLogger logger) throws Exception {
+
+    // "campoA",,"campoC"   ->   "campoA","","campoC",
+    linha = linha.replaceAll("\",,\"", "\",\"\",\"").trim(); 
+    
+    // "campoA","","campoC"   ->  "campoA,","campoC",
+    // Para realizar split dos campos por ->  ," (virgula + aspas) 
+    linha = linha.replaceAll("\",\"", ",\"").trim();
+    
+    // "campoA,","campoC",  -> campoA,","campoC",
+    // Remove aspas inicial.
+    linha = linha.replaceAll("^\"", "").trim();
+    
+    // campoA,","campoC",  -> "campoA,","campoC
+    // Remove aspas + virgula final.
+    linha = linha.replaceAll("\",$", "").trim(); 
+    
+    String[] campos = linha.split(",\"");
+    
+    memFile.setFieldSeparator(",");
+    
+    int lengthMemoryFile = memFile.getFieldsSize();
+    int lengthFields = campos.length;
+    
+    // Nao e possivel adicionar campos ao memory file, joga exceção caso não tenha o numero necessario de campos.
+    if (lengthFields > lengthMemoryFile) throw new Exception("Nao existem campos suficientes para conversao!");
+    
+    // Iteracao dos campos para recriacao do MemoryFile.
+    for (int i = 0; i < memFile.getFieldsSize(); i++) {
+        // limpa campos invalidos como o de valores quebrados pelo separador (virgula).
+        if (i > campos.length-1) memFile.setField(i, "");
+        else memFile.setField(i, campos[i]);
+    }
+    
+    return memFile;
+}    
+
+
+//pode ser usado NFD, NFC, NFKD, NFKC
+public static String stringNormalizer(String input, boolean b) {
+	if (b) {
+		return java.text.Normalizer.normalize(input, java.text.Normalizer.Form.NFD).replaceAll("[^\\p{ASCII}]", "");
+	} else {
+		CharSequence cs = new StringBuilder(input);
+		return java.text.Normalizer.normalize(cs, java.text.Normalizer.Form.NFKD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+	}
+}
+
+//encontra o indice (Java) de uma coluna passada por parametro
+private int getExcelColumnNumber(String column) {
+	column = column.toUpperCase().replaceAll("[^A-Z ]*", "").trim();
+	column = cutString(column, "COLUNA");
+	column = cutString(column, 0, 2);
+	
+	int result = 0;
+	for (int i = 0; i < column.length(); i++) {
+		result *= 26;
+		result += column.toUpperCase().charAt(i) - 'A' + 1;
+	}
+	return result -1;
+}
+
+//encontra a coluna (A, B, C...) de um indice (Java) passado por parametro
+private String getExcelColumnLetter(String strColumn) {
+	int column = 0;
+	try{column = Integer.parseInt(strColumn);}
+	catch(Exception ex){return "";}
+	
+	return getExcelColumnLetter(column);
+}
+private String getExcelColumnLetter(int column) {
+
+	String result = "";
+	int firstLetter = 0;
+	int col = column;
+	
+	if(column > 25){
+		firstLetter = (int) column / 26;
+		result = Character.toString((char) ((char) 64 + firstLetter));
+		col = (int) column -(firstLetter * 26);
+	}
+	result += Character.toString((char) ((char) (65 + col)));
+	
+	return result;
+}
+
+/*
+"#CONTEM(BANCO:)");							retorna conteudo da LINHA
+"#COLUNA B CONTEM(BANCO:)");				retorna conteudo da COLUNA B
+"#COLUNA B CONTEM(BANCO:) Ler COLUNA C");	retorna conteudo da COLUNA C
+"#COLUNA B CONTEM(BANCO:) COLUNA C");		retorna conteudo da COLUNA C
+"#COLUNA B CONTEM(BANCO:) C");				retorna conteudo da COLUNA C
+
+ COMO CHAMAR: (campo, indice do campo, linha, zerar ou  nao, CRM, MemoryFile, logger)
+ nomePortador	= getCampoString(nomePortador, inomePortador, line, true, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
+
+private String getCampoString(String campo, int icampo, String line, boolean zerar, String textoCRM, MemoryFile memFile, InoutLogger logger) throws Exception{
+	int ireferencia = -1;
+	String conteudo = "";
+	if(textoCRM.contains("(") && textoCRM.contains(")")) conteudo = textoCRM.substring(textoCRM.indexOf("(")+1,textoCRM.indexOf(")")).trim();
+	//String conteudo = cutString(textoCRM,"(",")");
+	
+	if(textoCRM.contains("#") && textoCRM.contains("CONTEM") && conteudo.length() > 0){
+		if(cutString(textoCRM,")").contains("COLUNA") || cutString(textoCRM,")").length() == 1){
+			icampo = getExcelColumnNumber(cutString(textoCRM,")"));
+			ireferencia = getExcelColumnNumber(textoCRM);
+			
+			if(ireferencia >=0 && memFile.getStringFieldRemoveEspCharsUpper(ireferencia).contains(conteudo)){
+				campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+			}
+		}else{
+			if(textoCRM.contains("COLUNA")){
+				try{icampo = getExcelColumnNumber(textoCRM);
+				}catch(Exception ee){}
+			}
+			if(icampo >=0 && memFile.getStringFieldRemoveEspCharsUpper(icampo).contains(conteudo)){
+				campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+			}else if(line.contains(conteudo)){
+				campo = line.replaceAll("\\|"," ").replaceAll(";"," ").replaceAll("\"","").replaceAll("  "," ").trim();
+			}
+		}
+	}else{
+		if(icampo >=0) {
+			if(zerar){
+				campo = "";
+				campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+			} else if(!memFile.getStringFieldRemoveEspCharsUpper(icampo).equals("")) campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+		}
+	}
+	return campo;
+}*/
+
+// 2.0
+private String getCampoString(String campo, int icampo, String line, boolean zerar, String textoCRM, MemoryFile memFile, InoutLogger logger) throws Exception{
+	
+	JSONObject roteiroCRM = new JSONObject();
+	return getCampoString(campo, icampo, line, zerar, textoCRM, memFile, roteiroCRM, logger);
+	
+}
+private String getCampoString(String campo, int icampo, String line, boolean zerar, String textoCRM, MemoryFile memFile, JSONObject roteiroCRM, InoutLogger logger) throws Exception{
+	if(!roteiroCRM.optString("tipoArquivo").toUpperCase().contains("ARQUIVO TEXTO")){
+		int ireferencia = -1;
+		String conteudo = "";
+		
+		if(textoCRM.contains("@")) zerar = false;
+		textoCRM = textoCRM.replaceAll("@","");
+
+		if(textoCRM.contains("(") && textoCRM.contains(")")) conteudo = textoCRM.substring(textoCRM.indexOf("(")+1,textoCRM.indexOf(")")).trim();
+		
+		//#contem("XPTO") coluna(10,20)
+
+		if(textoCRM.contains("#") && textoCRM.contains("CONTEM") && conteudo.length() > 0){
+			if(cutString(textoCRM,")").contains("COLUNA") || cutString(textoCRM,")").length() == 1){
+				icampo = getExcelColumnNumber(cutString(textoCRM,")"));
+				ireferencia = getExcelColumnNumber(textoCRM);
+				
+				if(ireferencia >=0 && memFile.getStringFieldRemoveEspCharsUpper(ireferencia).contains(conteudo)){
+					campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+				}
+			}else {
+				if(textoCRM.contains("COLUNA")) {
+					try{icampo = getExcelColumnNumber(textoCRM);
+					}catch(Exception ee){}
+				}
+				if(icampo >=0 && memFile.getStringFieldRemoveEspCharsUpper(icampo).contains(conteudo)){
+					campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+				}else if(line.contains(conteudo)){
+					campo = line.replaceAll("\\|"," ").replaceAll(";"," ").replaceAll("\"","").replaceAll("  "," ").trim();
+				}
+			}
+		}else{
+			if(icampo >=0) {
+				if(zerar){
+					campo = "";
+					campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+				} else if(!memFile.getStringFieldRemoveEspCharsUpper(icampo).equals("")) campo = memFile.getStringFieldRemoveEspCharsUpper(icampo).replaceAll("\"","");
+			}
+		}
+		//return campo;
+	}
+	
+	if(roteiroCRM.optString("tipoArquivo").toUpperCase().contains("ARQUIVO TEXTO")){
+		//#CONTEM (BANCO:)"									retorna conteudo da LINHA
+		//#COLUNA (0,33) CONTEM (BANCO:) COLUNA (50,55)"	retorna substring(50,55)
+		//#COLUNA (0,33) CONTEM (BANCO:)"					retorna substring(0,33)
+
+		String campoBusca = "";
+		String conteudo = "";
+		if(textoCRM.contains("#") && textoCRM.contains("CONTEM") && line.length() > 0){
+			if(textoCRM.contains("(") && textoCRM.contains(")")){
+				if(!textoCRM.contains("COLUNA")){
+					conteudo = textoCRM.substring(textoCRM.indexOf("(")+1,textoCRM.indexOf(")")).trim();
+					if(line.contains(conteudo)) campo = line.replaceAll("\\|"," ").replaceAll(";"," ").replaceAll("\"","").replaceAll("  "," ").trim();
+				}
+				if(textoCRM.contains("COLUNA")){
+					conteudo	= textoCRM.substring(textoCRM.indexOf("CONTEM")+6).trim();
+					conteudo	= conteudo.substring(conteudo.indexOf("(")+1,conteudo.indexOf(")")).trim();
+					campoBusca	= textoCRM.substring(0, textoCRM.indexOf("CONTEM")).replace("#","").trim();
+					int inicio	= getColunaInicial(campoBusca);
+					int fim		= getColunaFinal(campoBusca);
+					
+					if(textoCRM.lastIndexOf("COLUNA") > textoCRM.indexOf("COLUNA")){
+						campoBusca	= textoCRM.substring(textoCRM.lastIndexOf("COLUNA")).trim();
+						if(line.length() >= fim && line.substring(inicio, fim).contains(conteudo)) campo = getStringTXT(campoBusca.toUpperCase(), line);
+					}else{
+						if(line.length() >= fim && line.substring(inicio, fim).contains(conteudo)) campo = getStringTXT(campoBusca.toUpperCase(), line);
+					}
+				}
+			}
+		}else{
+			campo = getStringTXT(textoCRM.toUpperCase(), line);
+		}
+	}
+	campo = campo.replaceAll("[^\\p{ASCII}]", "");
+	
+	return campo;
+}
+
+
+public JSONObject buscaRoteiro(String roteiroSecundario, InoutLogger logger) {
+	
+	// String roteiroSecundario = "getRoteiroSecundario";
+	// roteiroCrm = buscaRoteiro(roteiroSecundario);
+	
+	JSONObject jsroteiro = new JSONObject();
+	
+	try {
+		Class<?> sc = this.getClass();
+		Object scInstance = sc.newInstance();
+		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
+		
+		for (int xx = 0; xx < methods.length; xx++) {
+			String methodName = methods[xx].getName();
+			
+			if (methodName.equals(roteiroSecundario)) {
+				try {
+					Object objInvoke = methods[xx].invoke(scInstance);
+					if (objInvoke instanceof JSONObject)  jsroteiro = (JSONObject) objInvoke;
+
+					break;
+				} catch (Exception ex) { 
+					logger.logDebug(ex.getMessage()); 
+				}
+			}
+		}
+	} catch (Exception ex) {
+		logger.logDebug(ex.getMessage());
+	}
+	return jsroteiro;
+}
+
+
+public void putStatus(String dirName, String nomeArquivo, JSONObject jDados, InoutLogger logger) {
+
+    //01--MEnsagem--PAGAR.status
+	dirName = cutString(dirName, 0, "/APagar");
+	dirName = cutString(dirName, 0, "/AReceber");
+	dirName = cutString(dirName, 0, "/DePara");
+	
+    String diretorio = dirName + "/DePara";
+	
+	logger.logInfo("Log: util.putstatus - diretorio " + diretorio + " | "  + nomeArquivo);
+    
+
+    File file2 = new File(diretorio);
+    File [] files = file2.listFiles();
+	
+	
+    try {
+        if (FileUtil.dirHasFiles(diretorio)) {
+            for (File fileStatus: files) {
+                if (fileStatus.isFile()){
+                    if(fileStatus.getName().contains("--") && fileStatus.getName().toLowerCase().endsWith(".status")) {
+						if (!nomeArquivo.equals("")) {
+							if ((nomeArquivo.contains("PAG") && fileStatus.getName().toUpperCase().contains("PAGAR")) || 
+								(nomeArquivo.contains("REC") && fileStatus.getName().toUpperCase().contains("RECEBER"))) {
+								if (!fileStatus.getName().toUpperCase().contains("LEUCONVERSORANTIGO")) {
+									FileUtil.deleteFile(fileStatus);
+								}
+							}
+						} else if (!fileStatus.getName().toUpperCase().contains("LEUCONVERSORANTIGO")) {
+							FileUtil.deleteFile(fileStatus);
+						}
+                    }
+                }
+            }
+        }
+		
+		if (!nomeArquivo.equals("")) {
+			String filenameRazao = diretorio+ "/" + nomeArquivo;            
+			FileWriter writerRazao = new FileWriter(filenameRazao);
+			
+			StringBuilder sb1 = new StringBuilder();
+			if (nomeArquivo.endsWith("err")) {
+				sb1.append("<div class=\"er-content\">").append("\r\n");
+				sb1.append("<div class=\"er-message\">").append("\r\n");				
+				sb1.append("<p>Esta planilha nao pode ser lida pela Ottimizza. Alguns motivos:</p>").append("\r\n");
+				sb1.append("</div>").append("\r\n");
+				sb1.append("<ul class=\"ul-tips\">").append("\r\n");
+				sb1.append("<li class=\"it-tip\">").append("\r\n");
+				sb1.append("<span>Verifique se a planilha esta protegida ou com links a outras planilhas</span>").append("\r\n");
+				sb1.append("</li>").append("\r\n");
+				sb1.append("<li class=\"it-tip\">").append("\r\n");
+				sb1.append("<span>Verifique se a planilha enviada possui formulas para valores, datas, etc.</span>").append("\r\n");
+				sb1.append("</li>").append("\r\n");
+				sb1.append("</ul>").append("\r\n");
+				sb1.append("<div class=\"er-obs\">").append("\r\n");
+				sb1.append("<h6>Caso nao encontra problema na planilha processada, entre em contato com o suporte da Ottimizza.</h6>").append("\r\n");
+				sb1.append("</div>").append("\r\n");
+				sb1.append("</div>").append("\r\n");
+			}
+			
+			writerRazao.writeNewFile(sb1.toString());
+		}
+    }
+    catch (Exception xx) {}
+	
+	
+}
+
+
+public String getCampoDate(String dataString){
+			
+	return getCampoDate(dataString, "");
+
+}
+public String getCampoDate(String dataString, String patternIn){
+
+	return getCampoDate(dataString, patternIn, "dd/MM/yyyy");
+	
+}
+public String getCampoDate(String dataString, String patternIn, String patternOut){
+	/**
+	 * captura em casos de data serial considerando situacoes com minutos 
+	 */
+	if(dataString.matches("^\\d{5}[.,].*") || dataString.length() == 5){
+		String dataStringSerial = dataString;
+		if(dataStringSerial.contains(",")) dataStringSerial = cutString(dataString, 0, ",");
+		if(dataStringSerial.contains(".")) dataStringSerial = cutString(dataString, 0, ".");
+		try {
+			Date dt = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
+			int datanum = Integer.parseInt(dataStringSerial);
+			Calendar calSerial = Calendar.getInstance();
+			calSerial.setTime(dt);
+			calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
+			dataStringSerial = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
+			return dataStringSerial;
+		}catch (Exception dt2) { }
+	}
+	
+	String dataStringOriginal = dataString;
+	
+	String texto = "";
+	
+	//usado pra encontrar OUTUBRO / OUT / OCTOBER / OCT   ex: 10/OUTUBRO/2018
+	if(patternIn.contains("dd/MMM/yy") && dataString.lastIndexOf("/") > dataString.indexOf("/")){
+		dataString = dataString.substring(0,dataString.indexOf("/")+1) + 
+					getMonth(dataString.substring(dataString.indexOf("/")+1, dataString.lastIndexOf("/"))) + 
+					dataString.substring(dataString.lastIndexOf("/"));
+		patternIn  = "";
+	}
+	
+	try {
+		if(!patternIn.equals("")) {
+			try {
+				Date dt = DateUtil.stringToDate(dataString, patternIn);
+				texto	= DateUtil.dateToString(dt, patternOut);
+			} catch (Exception e) {;
+				return getCampoDate(dataString, "", patternOut);
+			}
+		} else {
+			if(dataString.length() > 11){
+				String formato = "";
+				if(dataString.length() > 16 && dataString.charAt(13) == ':' && dataString.charAt(16) == ':'){
+					if(dataString.charAt(2) == '/' && dataString.charAt(5) == '/') {texto = cutString(dataString, 0, 10); formato = "dd/MM/yyyy";} //21/05/2018
+					if(dataString.charAt(4) == '/' && dataString.charAt(7) == '/') {texto = cutString(dataString, 0, 10); formato = "yyyy/MM/dd";} //2018/05/21
+					if(dataString.charAt(2) == '-' && dataString.charAt(5) == '-') {texto = cutString(dataString, 0, 10); formato = "dd-MM-yyyy";} //21-05-2018
+					if(dataString.charAt(4) == '-' && dataString.charAt(7) == '-') {texto = cutString(dataString, 0, 10); formato = "yyyy-MM-dd";} //2018-05-21
+				}else{
+				
+					if(dataString.contains("/") && dataString.charAt(dataString.indexOf("/")+3) == '/'){
+						texto = dataString;
+						if(texto.indexOf("/") > 2) texto = cutString(texto, texto.indexOf("/")-2);		//resolve "periodo 12/11/1999"
+						formato = "dd/MM/yyyy";
+					}else if(dataString.contains("-") && dataString.charAt(dataString.indexOf("-")+3) == '-'){
+						texto = dataString;
+						if(texto.indexOf("-") > 2) texto = cutString(texto, texto.indexOf("-")-2);  //resolve "periodo 12-11-1999"
+						formato = "dd-MM-yyyy";
+					}
+					texto = cutString(texto,0, 10);
+				}
+				return getCampoDate(texto, formato, patternOut);
+			}
+			else if(dataString.contains("/") || dataString.contains("-")) {
+				if(dataString.lastIndexOf("/") > dataString.indexOf("/") || dataString.lastIndexOf("-") > dataString.indexOf("-")) {
+					dataString = dataString.replaceAll("-","/");
+					if(dataString.indexOf("/") == 1)dataString = "0"+dataString;
+					if(dataString.lastIndexOf("/") - dataString.indexOf("/") == 2){
+						dataString = dataString.substring(0,dataString.indexOf("/")+1) + "0" + dataString.substring(dataString.indexOf("/")+1);
+					}
+					if(dataString.length() == 11) patternIn = "dd/MMM/yyyy";
+					if(dataString.length() == 10) patternIn = "dd/MM/yyyy";
+					if(dataString.length() == 10 && dataString.indexOf("/") == 4) patternIn = "yyyy/MM/dd";
+					if(dataString.length() == 9) patternIn = "dd/MMM/yy";
+					if(dataString.length() == 8) patternIn = "dd/MM/yy";
+					
+					
+				}else {
+					if(dataString.length() == 7) patternIn = "MM/yyyy";
+					if(dataString.length() == 5) patternIn = "MM/yy";
+				}
+				//validacao de campos texto
+				int dd = 0;
+				int yy = 0;
+				if(patternIn.contains("dd")){
+					try{dd = Integer.parseInt(cutString(dataString, 0, 2));}
+					catch(Exception exc) {dd = 0;}
+				}
+				
+				if(patternIn.contains("yy") && patternIn.contains("/")){
+					try{yy = Integer.parseInt(cutString(dataString, dataString.lastIndexOf("/")));}
+					catch(Exception exc) { yy = 0; }
+				}
+				
+				/* COMENTADO POIS ESTAVA TRAVANDO AS ROTAS - XAVIER 13-12-20
+				if(patternIn.contains("yy") && patternIn.contains("/")){
+					try{
+						String auxYY = cutString(dataString, dataString.lastIndexOf("/"));
+						if(auxYY.contains("/")){
+							yy = Integer.parseInt(cutString(dataString, dataString.lastIndexOf("/")+1));
+						}else{
+							yy = Integer.parseInt(cutString(dataString, dataString.lastIndexOf("/")));
+						}
+					}
+					catch(Exception exc) {yy = 0;}
+				} */
+				
+				
+				if(dd > 0 && yy > 0) return getCampoDate(dataString, patternIn, patternOut);
+
+			// } else if(dataString.charAt(2) == '.' && dataString.charAt(5) == '.') {
+				// if(dataString.length() == 10) patternIn = "dd.MM.yyyy";
+				// if(dataString.length() == 8) patternIn = "dd.MM.yy";				
+			} else if(dataString.length() == 8) {
+				if (dataString.startsWith("202")) {
+					patternIn = "yyyyMMdd";
+				} else {					
+					patternIn = "ddMMyyyy";
+				}
+			} else if(dataString.length() == 6) {
+				patternIn = "ddMMyy";
+				if(cutString(dataString, 2, 4).equals("20")) patternIn = "MMyyyy";
+			} else {
+				//return dataString;
+			}
+			
+			try {
+				Date dt = DateUtil.stringToDate(dataString, patternIn);
+				texto	= DateUtil.dateToString(dt, patternOut);
+			}catch (Exception e) { 	
+				String c = getDateSeparator(dataString);
+				if(!c.equals("")) {
+ 					
+					String formato = "";
+					if(dataString.length() == 10) formato = String.format("dd%sMM%syyyy",c, c);
+					if(dataString.length() == 8) formato = String.format("dd%sMM%syy",c, c);
+ 
+//					NAO chamar "getCampoDate" novamente risco de looping
+					try {
+						Date dt = DateUtil.stringToDate(dataString, formato);
+						texto	= DateUtil.dateToString(dt, patternOut);
+					}catch (Exception ee) { }
+				}
+			}
+		}
+	}catch (Exception e) { }
+	return texto;
+	
+}
+public String getDateSeparator(String dataString) {
+		
+	String separator = dataString.replaceAll("[0-9a-zA-Z]*", "");
+	// Chars restantes devem ser 2
+	if (separator.length() == 2) 
+		separator = separator.replaceAll("(.)\\1{1,}", "$1"); //Replace chars iguais '--' > '-'  ou '//' > '/'
+	
+	if (separator.length() == 1) return separator;
+	
+	return "";
+}
+	
+
+/*
+public String getCampoDate(String dataString, String patternIn, String patternOut){
+	
+	String texto = "";
+	//usado pra encontrar OUTUBRO / OUT / OCTOBER / OCT   ex: 10/OUTUBRO/2018
+	if(patternIn.contains("dd/MMM/yy") && dataString.lastIndexOf("/") > dataString.indexOf("/")){
+		dataString = dataString.substring(0,dataString.indexOf("/")+1) + 
+					getMonth(dataString.substring(dataString.indexOf("/")+1, dataString.lastIndexOf("/"))) + 
+					dataString.substring(dataString.lastIndexOf("/"));
+		patternIn  = "";
+	}
+	
+	try {
+		if(!patternIn.equals("")) {
+			try {
+				Date dt = DateUtil.stringToDate(dataString, patternIn);
+				texto	= DateUtil.dateToString(dt, patternOut);
+			} catch (Exception e) {
+				return getCampoDate(dataString, "", patternOut);
+			}
+		} else {
+			if(dataString.length() > 11){
+				String formato = "";
+				if(dataString.length() > 16 && dataString.charAt(13) == ':' && dataString.charAt(16) == ':'){
+					if(dataString.charAt(2) == '/' && dataString.charAt(5) == '/') {texto = cutString(dataString, 0, 10); formato = "dd/MM/yyyy";} //21/05/2018
+					if(dataString.charAt(4) == '/' && dataString.charAt(7) == '/') {texto = cutString(dataString, 0, 10); formato = "yyyy/MM/dd";} //2018/05/21
+					if(dataString.charAt(2) == '-' && dataString.charAt(5) == '-') {texto = cutString(dataString, 0, 10); formato = "dd-MM-yyyy";} //21-05-2018
+					if(dataString.charAt(4) == '-' && dataString.charAt(7) == '-') {texto = cutString(dataString, 0, 10); formato = "yyyy-MM-dd";} //2018-05-21
+				}else{
+				
+					if(dataString.contains("/") && dataString.charAt(dataString.indexOf("/")+3) == '/'){
+						texto = dataString;
+						if(texto.indexOf("/") > 2) texto = cutString(texto, texto.indexOf("/")-2);		//resolve "periodo 12/11/1999"
+						formato = "dd/MM/yyyy";
+					}else if(dataString.contains("-") && dataString.charAt(dataString.indexOf("-")+3) == '-'){
+						texto = dataString;
+						if(texto.indexOf("-") > 2) texto = cutString(texto, texto.indexOf("-")-2);  //resolve "periodo 12-11-1999"
+						formato = "dd-MM-yyyy";
+					}
+					texto = cutString(texto,0, 10);
+				}
+				return getCampoDate(texto, formato, patternOut);
+			}
+			else if(dataString.contains("/") || dataString.contains("-")) {
+				if(dataString.lastIndexOf("/") > dataString.indexOf("/") || dataString.lastIndexOf("-") > dataString.indexOf("-")) {
+					dataString = dataString.replaceAll("-","/");
+					if(dataString.indexOf("/") == 1)dataString = "0"+dataString;
+					if(dataString.lastIndexOf("/") - dataString.indexOf("/") == 2){
+						dataString = dataString.substring(0,dataString.indexOf("/")+1) + "0" + dataString.substring(dataString.indexOf("/")+1);
+					}
+					if(dataString.length() == 11) patternIn = "dd/MMM/yyyy";
+					if(dataString.length() == 10) patternIn = "dd/MM/yyyy";
+					if(dataString.length() == 9) patternIn = "dd/MMM/yy";
+					if(dataString.length() == 8) patternIn = "dd/MM/yy";
+					
+				}else {
+					if(dataString.length() == 7) patternIn = "MM/yyyy";
+					if(dataString.length() == 5) patternIn = "MM/yy";
+				}
+				
+				//alterado 20181214_1744 chamar metodo novamente para 
+				//dia e ano devem ser numeros
+				int dd = 0;
+				int yy = 0;
+				if(patternIn.contains("dd")){
+					try{dd = Integer.parseInt(cutString(dataString, 0, 2));}
+					catch(Exception exc) { dd = 0; }
+				}
+				if(patternIn.contains("yy") && patternIn.contains("/")){
+					try{yy = Integer.parseInt(cutString(dataString, dataString.lastIndexOf("/")));}
+					catch(Exception exc) { yy = 0; }
+				}
+				if(dd > 0 && yy > 0) return getCampoDate(dataString, patternIn, patternOut);
+		
+				
+			} else if(dataString.length() == 8) {
+				patternIn = "ddMMyyyy";
+			} else if(dataString.length() == 6) {
+				patternIn = "ddMMyy";
+				if(cutString(dataString, 2, 4).equals("20")) patternIn = "MMyyyy";
+			} else {
+				//return dataString;
+			}
+			
+			try {
+				Date dt = DateUtil.stringToDate(dataString, patternIn);
+				texto	= DateUtil.dateToString(dt, patternOut);
+			}catch (Exception e) { }
+		}
+	}catch (Exception e) { }
+	return texto;
+	
+}
+*/
+
+
+public String getMonth(String mesString) {
+	mesString = StringUtil.removeSpecialCharsToUC(mesString).toUpperCase().trim();
+	String retorno = "";
+	// tratar mesString pra pegar apenas 
+	
+	List monthsList = Arrays.asList(new String[]{
+											"JANEIRO", 
+											"FEVEREIRO", 
+											"MARCO", 
+											"ABRIL", 
+											"MAIO", 
+											"JUNHO", 
+											"JULHO", 
+											"AGOSTO", 
+											"SETEMBRO", 
+											"OUTUBRO", 
+											"NOVEMBRO", 
+											"DEZEMBRO"
+										});
+										
+	if (retorno.equals("") && monthsList.contains(mesString)) retorno = String.valueOf(monthsList.indexOf(mesString.toUpperCase()) + 1);
+	
+	monthsList = Arrays.asList(new String[]{
+											"JANUARY", 
+											"FEBRUARY", 
+											"MARCH", 
+											"APRIL", 
+											"MAY", 
+											"JUNE", 
+											"JULY", 
+											"AUGUST", 
+											"SEPTEMBER", 
+											"OCTOBER", 
+											"NOVEMBER", 
+											"DECEMBER"
+										});
+	if (retorno.equals("") && monthsList.contains(mesString)) retorno = String.valueOf(monthsList.indexOf(mesString.toUpperCase()) + 1);
+	
+	monthsList = Arrays.asList(new String[]{
+											"JAN", 
+											"FEV", 
+											"MAR", 
+											"ABR", 
+											"MAI", 
+											"JUN",
+											"JUL", 
+											"AGO", 
+											"SET", 
+											"OUT", 
+											"NOV", 
+											"DEZ"
+										});
+	if (retorno.equals("") && monthsList.contains(mesString)) retorno = String.valueOf(monthsList.indexOf(mesString.toUpperCase()) + 1);
+	
+	monthsList = Arrays.asList(new String[]{
+											 "JAN", 
+											 "FEB", 
+											 "MAR", 
+											 "APR", 
+											 "MAY", 
+											 "JUN",
+											 "JUL", 
+											 "AUG", 
+											 "SEP", 
+											 "OCT", 
+											 "NOV", 
+											 "DEC"
+										});
+										
+	if (retorno.equals("") && monthsList.contains(mesString)) retorno = String.valueOf(monthsList.indexOf(mesString.toUpperCase()) + 1);
+	
+	monthsList = Arrays.asList(new String[]{
+											 "ENERO", 
+											 "FEBRERO", 
+											 "MARZO", 
+											 "ABRIL", 
+											 "MAYO", 
+											 "JUNIO",
+											 "JULIO", 
+											 "AGOSTO", 
+											 "SEPTIEMBRE", 
+											 "OCTUBRE", 
+											 "NOVIEMBRE", 
+											 "DECIEMBRE"
+										});
+	
+	if (retorno.equals("") && monthsList.contains(mesString)) retorno = String.valueOf(monthsList.indexOf(mesString.toUpperCase()) + 1);
+	
+	if(!retorno.equals("")) return StringUtil.leftPad(String.valueOf(retorno), 2, "0");
+	//return ""; ALTERADO EM 10/09/2018, para acompanhar mudanca feita no GETCAMPODATE <<if(patternIn.contains("dd/MMM/yy")>>
+	return mesString;
+}
+
+public String getDecendioAnterior(String dataMovimento){
+	return getDecendioAnterior(dataMovimento, "dd/MM");
+}
+public String getDecendioAnterior(String dataMovimento, String pattern){
+	int dia = Integer.parseInt(dataMovimento.substring(0,2));
+	String dataString = dataMovimento;
+	if(dia > 20) dataString = "20" + cutString(dataString, 2);
+	else if(dia > 10) dataString = "10" + cutString(dataString, 2);
+	else{
+		try {
+			Date dt		= DateUtil.stringToDate(dataMovimento, "dd/MM/yyyy");
+			dt			= subDaysToDate(dt, 11);
+			dataString	= getLastDayOfMonth(DateUtil.dateToString(dt, "dd/MM/yyyy"));
+		} catch (Exception xx) { }
+	}
+	dataString = getCampoDate(dataString, "", pattern);
+	return dataString;
+}
+
+
+public String trataCpfCnpj(String cpfCnpj){
+	return trataCpfCnpj(cpfCnpj, true);
+}
+public String trataCpfCnpj(String cpfCnpj, boolean apenasNumeros){
+	return trataCpfCnpj(cpfCnpj, apenasNumeros, true);
+}
+public String trataCpfCnpj(String cpfCnpj, boolean apenasNumeros, boolean aceitaCpf){
+	boolean valido = false;
+	if (cpfCnpj.contains(".") && cpfCnpj.contains("E")) cpfCnpj = removerNotacaoCientificaExcel(cpfCnpj);
+    
+	cpfCnpj = cpfCnpj.replaceAll("[^0-9]*", "").trim();
+
+	for(int kk = 0; kk < 15; kk++){
+		if(cpfCnpj.length() > 1 && cpfCnpj.startsWith("0")) cpfCnpj = cpfCnpj.substring(1);
+	}
+	if(cpfCnpj.length() < 3) return "";
+	
+	if(cpfCnpj.length() < 11) cpfCnpj = StringUtil.leftPad(cpfCnpj, 11, "0");
+	valido	= isCPF(cpfCnpj);
+	if(valido && aceitaCpf){
+		if(!apenasNumeros) cpfCnpj = formataCpfCnpj(cpfCnpj);
+		return cpfCnpj;
+	}
+	
+	if(cpfCnpj.length() < 14) cpfCnpj = StringUtil.leftPad(cpfCnpj, 14, "0");
+	valido	= isCNPJ(cpfCnpj);
+	if(valido){
+		if(!apenasNumeros) cpfCnpj = formataCpfCnpj(cpfCnpj);
+		return cpfCnpj;
+	}
+	
+	return "";
+}
+
+public String formataCpfCnpj(String cpfCnpj){
+		
+	if(cpfCnpj.length() == 14){
+		cpfCnpj = String.format("%s.%s.%s/%s-%s", cpfCnpj.substring(0,2), 
+												cpfCnpj.substring(2,5), 
+												cpfCnpj.substring(5,8), 
+												cpfCnpj.substring(8,12), 
+												cpfCnpj.substring(12)
+												);
+	}
+
+	if(cpfCnpj.length() == 11){
+		cpfCnpj = String.format("%s.%s.%s-%s", cpfCnpj.substring(0,3), 
+												cpfCnpj.substring(3,6), 
+												cpfCnpj.substring(6,9), 
+												cpfCnpj.substring(9)
+												);
+	}
+	return cpfCnpj;
+	
+}
+
+public boolean isCPF(String CPF) {
+	CPF = CPF.replaceAll("[^0-9]*", "");
+	// considera-se erro CPF's formados por uma sequencia de numeros iguais
+	
+	if (CPF.replaceAll("(.)\\1+", "$1").length() == 1 || CPF.length() != 11) return(false);
+
+	char dig10, dig11;
+	int sm, i, r, num, peso;
+
+	// "try" - protege o codigo para eventuais erros de conversao de tipo (int)
+	try {
+		// Calculo do 1o. Digito Verificador
+		sm = 0;
+		peso = 10;
+		for (i=0; i<9; i++) {              
+			// converte o i-esimo caractere do CPF em um numero:
+			// por exemplo, transforma o caractere '0' no inteiro 0         
+			// (48 eh a posicao de '0' na tabela ASCII)         
+			num = (int)(CPF.charAt(i) - 48); 
+			sm = sm + (num * peso);
+			peso = peso - 1;
+		}
+
+		r = 11 - (sm % 11);
+		if ((r == 10) || (r == 11))
+			dig10 = '0';
+		else dig10 = (char)(r + 48); // converte no respectivo caractere numerico
+
+		// Calculo do 2o. Digito Verificador
+		sm = 0;
+		peso = 11;
+		for(i=0; i<10; i++) {
+			num = (int)(CPF.charAt(i) - 48);
+			sm = sm + (num * peso);
+			peso = peso - 1;
+		}
+
+		r = 11 - (sm % 11);
+		if ((r == 10) || (r == 11))
+			dig11 = '0';
+		else dig11 = (char)(r + 48);
+
+		// Verifica se os digitos calculados conferem com os digitos informados.
+		if ((dig10 == CPF.charAt(9)) && (dig11 == CPF.charAt(10)))
+			return(true);
+		else return(false);
+	} catch (Exception er) {
+		return(false);
+	}
+}
+
+private String getCpfCnpj(String line) {
+    if (line.length() >= 18 && line.contains(".") && (line.contains("/") || line.contains("-"))) {
+        for (int i = 0; i < line.length(); i++) {
+            if (isCNPJ(cutString(line, i, i + 19)) && cutString(line, i, i + 19).matches("^(\\d{2})\\.(\\d{3})\\.(\\d{3})/(\\d{4})-(\\d{2})$")) {
+                return cutString(line, i, i + 19);
+			} else {
+				if (isCNPJ(cutString(line, i, i + 19)) && cutString(line, i, i + 19).matches("^(\\d{2})\\.(\\d{3})\\.(\\d{3}).(\\d{4})-(\\d{2})$")) {
+					return cutString(line, i, i + 19);
+				} else if (isCPF(cutString(line, i, i + 15)) && cutString(line, i, i + 15).matches("^(\\d{3})\\.(\\d{3})\\.(\\d{3})-(\\d{2})$")) {
+					return cutString(line, i, i + 15);
+				}
+            }  
+        }
+    }
+    return "";
+}
+
+public boolean isCNPJ(String CNPJ) {
+	CNPJ = CNPJ.replaceAll("[^0-9]*", "");
+	// considera-se erro CNPJ's formados por uma sequencia de numeros iguais
+	if (CNPJ.replaceAll("(.)\\1+", "$1").length() == 1 || CNPJ.length() != 14) return(false);
+
+	char dig13, dig14;
+	int sm, i, r, num, peso;
+
+	// "try" - protege o código para eventuais erros de conversao de tipo (int)
+	try {
+		// Calculo do 1o. Digito Verificador
+		sm = 0;
+		peso = 2;
+		for (i=11; i>=0; i--) {
+			// converte o i-ésimo caractere do CNPJ em um número:
+			// por exemplo, transforma o caractere '0' no inteiro 0
+			// (48 eh a posição de '0' na tabela ASCII)
+			num = (int)(CNPJ.charAt(i) - 48);
+			sm = sm + (num * peso);
+			peso = peso + 1;
+			if (peso == 10)
+				peso = 2;
+		}
+
+		r = sm % 11;
+		if ((r == 0) || (r == 1))
+			dig13 = '0';
+		else dig13 = (char)((11-r) + 48);
+
+		// Calculo do 2o. Digito Verificador
+		sm = 0;
+		peso = 2;
+		for (i=12; i>=0; i--) {
+			num = (int)(CNPJ.charAt(i)- 48);
+			sm = sm + (num * peso);
+			peso = peso + 1;
+			if (peso == 10)
+				peso = 2;
+		}
+
+		r = sm % 11;
+		if ((r == 0) || (r == 1))
+			dig14 = '0';
+		else dig14 = (char)((11-r) + 48);
+
+		// Verifica se os dígitos calculados conferem com os dígitos informados.
+		if ((dig13 == CNPJ.charAt(12)) && (dig14 == CNPJ.charAt(13)))
+			return(true);
+		else return(false);
+	} catch (Exception er) {
+		return(false);
+	}
+}
+
+
+/**
+ if(nomeArquivo.toUpperCase().startsWith("FILTRO")) filtro = validaFiltro(nomeArquivo, dataMovimento);
+ if(!filtro) continue;
+*/
+public boolean validaFiltro(String nomeArquivo, String dataMovimento){
+	nomeArquivo = nomeArquivo.toUpperCase();
+	
+	String dataInicial = cutString(nomeArquivo, "FILTRO_", "-");
+	String dataFinal   = cutString(nomeArquivo, dataInicial + "-", "_");
+
+	if (dataInicial.length() == 6) 
+		dataInicial = dataInicial.substring(4) + dataInicial.substring(2,4) + dataInicial.substring(0,2);
+	
+
+	if (dataFinal.length() == 6) 
+		dataFinal = dataFinal.substring(4) + dataFinal.substring(2,4) + dataFinal.substring(0,2);
+	
+	
+	if (dataMovimento.length() == 10) {
+		String dataValidaMovimento = dataMovimento.substring(8) + dataMovimento.substring(3,5) + dataMovimento.substring(0,2);
+		int intDataMovimento = 0;
+		int intdataInicial   = 0;
+		int intdataFinal	 = 0;
+		
+		try {
+			intDataMovimento = Integer.parseInt(String.valueOf(dataValidaMovimento));
+			intdataInicial   = Integer.parseInt(String.valueOf(dataInicial));
+			intdataFinal 	 = Integer.parseInt(String.valueOf(dataFinal));
+			
+		} catch (Exception xx) {
+			return false;
+		}
+		
+		if (intDataMovimento > 0 && intdataInicial > 0 && intDataMovimento > 0) {
+			if (intDataMovimento >= intdataInicial && intDataMovimento <= intdataFinal) return true;
+		}
+	}
+	return false;
+}
+	
+
+//retorna numero de repeticoes de "c" na string "S"
+public int quantityOf(String s, String c) {
+	return (s.length() - s.replace(c, "").length())/c.length();
+}
+
+public String fromCRM(String descricao){
+	if(descricao.equalsIgnoreCase("NOMEORIGEM"))		return "fornecedor";
+	else if(descricao.equalsIgnoreCase("CLIENTE"))		return "fornecedor";
+	else if(descricao.equalsIgnoreCase("NOMEPORTADOR"))	return "portador";
+	else if(descricao.equalsIgnoreCase("DOCUMENTO"))	return "documentoNF";
+	else if(descricao.equalsIgnoreCase("CODCCORIGEM"))	return "centroCusto";
+	else return descricao;
+}
+
+public int getTransacaoAtual(String nomeArquivo){
+	String nomeTransacao = nomeArquivo.toUpperCase();
+	int transacaoInicial = 0;
+	try {
+		if (nomeTransacao.toUpperCase().startsWith("FILTRO_")) {
+			nomeTransacao = cutString(cutString(nomeTransacao, "_"), "_");
+			//filtro_010618-220618_99_Contas pagas Marcia 06-2018 trazer apartir do 99_
+		}
+		transacaoInicial = Integer.parseInt(nomeTransacao.substring(0, nomeTransacao.indexOf("_")));
+	}
+	catch (Exception xx) {
+		transacaoInicial = 0;
+	}
+	return transacaoInicial;
+}
+
+
+public int buscaIndiceRoteiro(String parametro, JSONObject roteiroCRM) {
+
+    int validaCampo = -1;
+    try {
+        if (!roteiroCRM.optString(parametro).equals("")) {
+            try { validaCampo = Integer.parseInt(roteiroCRM.optString(parametro).replaceAll("@","").trim());}
+            catch (Exception xx) { validaCampo = -1;}
+        }
+    }
+    catch (Exception xx) {validaCampo = -1;}
+    return  validaCampo;
+
+}
+/*
+nomeOrigem = getIndice("nomeOrigem", inomeOrigem, roteiroCRM);
+*/
+public int getIndice(String parametro, int indice, JSONObject roteiroCRM) throws Exception{
+	//se e menor que 3 bytes e se nao contem letras(se tiver ao menos 1 letra nao entra)
+	parametro = fromCRM(parametro);
+	if(roteiroCRM.optString(parametro).replaceAll("@","").trim().length() < 3 && roteiroCRM.optString(parametro).replaceAll("@","").trim().matches("^\\d+$")) {
+		try { return buscaIndiceRoteiro(parametro, roteiroCRM); } 
+		catch (Exception xx) { }
+	}
+	return indice;
+}
+
+/*
+ inomeOrigem = getIndiceCabecalho("nomeOrigem", inomeOrigem, memFile, roteiroCRM);
+ */
+public int getIndiceCabecalho(String parametro, int indice, MemoryFile memFile, JSONObject roteiroCRM) throws Exception{
+	
+	parametro = fromCRM(parametro);
+
+	if (roteiroCRM.optString(parametro).toUpperCase().matches(".*[A-Z]+.*") && roteiroCRM.optString(parametro).length() >= 3) {
+		for (int k = 0; k < memFile.getFieldsSize(); k++) {
+			if (roteiroCRM.optString(parametro).toUpperCase().matches(".*[A-Z]+.*") && roteiroCRM.optString(parametro).length() >= 3 
+				&& memFile.getStringFieldRemoveEspCharsUpper(k).replaceAll("\"","").equals(StringUtil.removeSpecialCharsToUC(roteiroCRM.optString(parametro)).toUpperCase().replace("@",""))) { 
+					return k;
+			} 
+		}
+	}
+	return indice;
+}
+
+
+public String getIndiceCabecalhoExtra(String parametro, MemoryFile memFile) throws Exception{
+	
+	if (parametro.toUpperCase().matches(".*[A-Z]+.*") && parametro.length() >= 3) {
+		for (int k = 0; k < memFile.getFieldsSize(); k++) {
+			if (parametro.toUpperCase().matches(".*[A-Z]+.*") && parametro.length() >= 3 
+				&& memFile.getStringFieldRemoveEspCharsUpper(k).replaceAll("\"","").equals(StringUtil.removeSpecialCharsToUC(parametro).toUpperCase().replace("@",""))) { 
+					return String.valueOf(k);
+			} 
+		}
+	}
+	return parametro;
+}
+
+public String getDate(String campo, int icampo, String line, boolean zerar, String textoCRM, MemoryFile memFile, InoutLogger logger) throws Exception{
+    String dataMovimento = "";
+    // inicio padrao do template
+    String dataString = getCampoString(campo, icampo, line, false, textoCRM, memFile, logger).trim();
+	
+	if(dataString.contains("-Q") && dataString.length() == 10){ 
+		// logger.logDebug("Validou");
+		// logger.logDebug("I DS -> "+dataString.indexOf("-Q"));
+		dataString = cutString(dataString,0,dataString.indexOf("-Q"));
+	}
+	if(dataString.contains("-P") && dataString.length() == 10){ 
+		// logger.logDebug("Validou");
+		// logger.logDebug("I DS -> "+dataString.indexOf("-Q"));
+		dataString = cutString(dataString,0,dataString.indexOf("-P"));
+	}
+	// logger.logDebug("DS V1 => "+dataString.length()+" - DS V2 => "+dataString"));
+	// logger.logDebug("DataString => " + dataString + " | " + icampo + " | " + textoCRM);
+    if (!dataString.equals("")) {
+    	String dataMovimentoAux	  = getCampoDate(dataString);
+		// logger.logDebug("dataMovAux -> "+dataMovimentoAux);
+    	if (dataMovimentoAux.contains("/")) {
+            dataMovimento     = getCampoDate(dataString);
+            // dataLote trata fora
+        }
+        if (!dataMovimento.equals("")){
+            // logger.logDebug("getDate getCampoString => " + dataMovimento);
+            return dataMovimento;
+        } else {//Adicioando essa else para tentar ler dataSerial quando possui #Contem
+			if (icampo == -1 && dataString.length() == 5) { // tenta calcular a data serial [5 digitos] do excell
+				//if (memFile.getStringFieldRemoveEspCharsUpper(icampo).length() == 5){
+					try {
+						Date dt  = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
+						int datanum = Integer.parseInt(dataString);
+						Calendar calSerial = Calendar.getInstance();
+						calSerial.setTime(dt);
+						calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
+						dataMovimento = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
+					} catch (Exception dt2) {}
+					
+					if (!dataMovimento.equals("")) return dataMovimento;
+				//} //else logger.logDebug("campo nao contem data serial 5 digitos => " + memFile.getStringFieldRemoveEspCharsUpper(icampo));
+			}
+		}
+    } 
+    // fim padrao do template
+    if (dataString.equals("") && (icampo != 0))	{ // para quando o getCampoString falha para formato de data de alguns office free
+        dataString = memFile.getStringFieldRemoveEspCharsUpper(icampo).trim();
+        String dataMovimentoAux	  = getCampoDate(dataString);
+        
+        if (!dataMovimentoAux.contains("/")){
+            dataString = dataString.replace(".", "/").replace("-", "/");
+            if (dataString.indexOf("/") == 2) dataString = cutString(dataString, dataString.indexOf("/")-2, dataString.lastIndexOf("/")+4).trim();// DD/MM/AAAA ou MM/DD/AAAA
+            else if (dataString.indexOf("/") == 4) dataString = cutString(dataString, dataString.indexOf("/")-4, dataString.lastIndexOf("/")+2).trim();// AAAA/DD/MM ou AAAA/MM/DD
+                else dataString = cutString(dataString, 0, 10).trim();
+            dataMovimentoAux	  = getCampoDate(dataString);
+        }
+		
+		// logger.logDebug("LENDO DATA " + dataString + "<<>>" + dataMovimentoAux + "<<>>" + memFile.getStringFieldRemoveEspCharsUpper(icampo));
+        
+        if (dataMovimentoAux.contains("/")) {
+            dataMovimento     = getCampoDate(dataString);
+            // dataLote trata fora
+        }
+        if (!dataMovimento.equals("")){
+            // logger.logDebug("getDate getStringFieldRemoveEspCharsUpper => " + dataMovimento);
+            return dataMovimento;
+        }
+    } else if (icampo > -1) { // tenta calcular a data serial [5 digitos] do excell
+        if (memFile.getStringFieldRemoveEspCharsUpper(icampo).length() == 5){
+            try {
+                Date dt  = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
+                int datanum = Integer.parseInt(memFile.getStringFieldRemoveEspCharsUpper(icampo));
+                Calendar calSerial = Calendar.getInstance();
+                calSerial.setTime(dt);
+                calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
+                dataMovimento = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
+            } catch (Exception dt2) {}
+        }// else logger.logDebug("campo nao contem data serial 5 digitos => " + memFile.getStringFieldRemoveEspCharsUpper(icampo));
+    } 
+	// logger.logDebug("getDate serial => " + dataMovimento);
+    return dataMovimento;
+}
+
+
+//Valida baixa do fiscal com base na razaoSocial
+JSONObject validaRazaoSocial(JSONObject jDescricaoDupl, String razaoSocial) throws Exception {
+    int meioRazao = 0;	
+	int validaFornecedorFiscal = 0;
+	if (jDescricaoDupl.has("VALIDAFORNECEDORFISCAL")) {
+		try { validaFornecedorFiscal = jDescricaoDupl.optInt("VALIDAFORNECEDORFISCAL"); } 
+		catch (Exception er) {validaFornecedorFiscal = 0;}
+		
+		
+		String continuoNome = geraNomeContinuo(razaoSocial);
+		String continuoDuplicata = geraNomeContinuo(jDescricaoDupl.optString("RAZAOSOCIAL"));
+		
+		if (validaFornecedorFiscal > 0 && !cutString(continuoNome, 0, validaFornecedorFiscal).equals(cutString(continuoDuplicata, 0, validaFornecedorFiscal))) {
+			jDescricaoDupl.put("TIPO",        "FORNECEDOR");
+			jDescricaoDupl.put("CODEMPRESA",            "");
+			jDescricaoDupl.put("CHAVEDUPLICATA",        "");
+			jDescricaoDupl.put("PARCELADOC",            "");
+			jDescricaoDupl.put("PARCELADOCORIGINAL",    "");
+			jDescricaoDupl.put("DATAMOVIMENTO",         "");
+			jDescricaoDupl.put("DATAVENCIMENTO",        "");
+			jDescricaoDupl.put("DUPLICATA",             "");
+			jDescricaoDupl.put("VALORFINAL",            "");
+			jDescricaoDupl.put("VALORFINALJUROS",       "");
+			jDescricaoDupl.put("VALORFINALMULTA",       "");
+			jDescricaoDupl.put("VALORFINALDESCONTO",    "");
+			jDescricaoDupl.put("TABELACONTABIL",        "");
+			jDescricaoDupl.put("CODIGOFORNECEDOR",      "");
+			jDescricaoDupl.put("SERIE",                 "");
+			jDescricaoDupl.put("SITUACAO",              "");
+			jDescricaoDupl.put("CHAVE",                 "");
+			jDescricaoDupl.put("VALORPARCELA",          "");
+			jDescricaoDupl.put("FORNECEDORESNAOBATEM",  "");
+			jDescricaoDupl.put("RAZAOSOCIAL",           "");
+		}
+		
+	} else {
+		if (jDescricaoDupl != null && (jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").length() >= razaoSocial.replaceAll("[0-9]", "").length())){ 
+			meioRazao = razaoSocial.replaceAll("[0-9]", "").length()/2;
+		} else { meioRazao = jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").length()/2; }
+		if (jDescricaoDupl != null && (!jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").contains(cutString(razaoSocial.replaceAll("[0-9]", ""), 0, meioRazao)))){
+			jDescricaoDupl.put("TIPO",        "FORNECEDOR");
+			jDescricaoDupl.put("CODEMPRESA",            "");
+			jDescricaoDupl.put("CHAVEDUPLICATA",        "");
+			jDescricaoDupl.put("PARCELADOC",            "");
+			jDescricaoDupl.put("PARCELADOCORIGINAL",    "");
+			jDescricaoDupl.put("DATAMOVIMENTO",         "");
+			jDescricaoDupl.put("DATAVENCIMENTO",        "");
+			jDescricaoDupl.put("DUPLICATA",             "");
+			jDescricaoDupl.put("VALORFINAL",            "");
+			jDescricaoDupl.put("VALORFINALJUROS",       "");
+			jDescricaoDupl.put("VALORFINALMULTA",       "");
+			jDescricaoDupl.put("VALORFINALDESCONTO",    "");
+			jDescricaoDupl.put("TABELACONTABIL",        "");
+			jDescricaoDupl.put("CODIGOFORNECEDOR",      "");
+			jDescricaoDupl.put("SERIE",                 "");
+			jDescricaoDupl.put("SITUACAO",              "");
+			jDescricaoDupl.put("CHAVE",                 "");
+			jDescricaoDupl.put("VALORPARCELA",          "");
+			jDescricaoDupl.put("FORNECEDORESNAOBATEM",  "");
+			jDescricaoDupl.put("RAZAOSOCIAL",           "");
+
+		}
+	}
+    return jDescricaoDupl;
+}
+/* public JSONObject validaRazaoSocial(JSONObject jDescricaoDupl, String razaoSocial){ 	//#ComentadoEm-2021-02-15
+    // #Fabrica(2019-05-17) @Becker
+    int meioRazao = 0;
+    if (jDescricaoDupl != null && (jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").length() >= razaoSocial.replaceAll("[0-9]", "").length())){ 
+        meioRazao = razaoSocial.replaceAll("[0-9]", "").length()/2;
+    } else { meioRazao = jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").length()/2; }
+    if (jDescricaoDupl != null && (!jDescricaoDupl.optString("RAZAOSOCIAL").replaceAll("[0-9]", "").contains(cutString(razaoSocial.replaceAll("[0-9]", ""), 0, meioRazao)))){
+        jDescricaoDupl.put("TIPO",        "FORNECEDOR");
+        jDescricaoDupl.put("CODEMPRESA",            "");
+        jDescricaoDupl.put("CHAVEDUPLICATA",        "");
+        jDescricaoDupl.put("PARCELADOC",            "");
+        jDescricaoDupl.put("PARCELADOCORIGINAL",    "");
+        jDescricaoDupl.put("DATAMOVIMENTO",         "");
+        jDescricaoDupl.put("DATAVENCIMENTO",        "");
+        jDescricaoDupl.put("DUPLICATA",             "");
+        jDescricaoDupl.put("VALORFINAL",            "");
+        jDescricaoDupl.put("VALORFINALJUROS",       "");
+        jDescricaoDupl.put("VALORFINALMULTA",       "");
+        jDescricaoDupl.put("VALORFINALDESCONTO",    "");
+        jDescricaoDupl.put("TABELACONTABIL",        "");
+        jDescricaoDupl.put("CODIGOFORNECEDOR",      "");
+        jDescricaoDupl.put("SERIE",                 "");
+        jDescricaoDupl.put("SITUACAO",              "");
+        jDescricaoDupl.put("CHAVE",                 "");
+        jDescricaoDupl.put("VALORPARCELA",          "");
+		jDescricaoDupl.put("FORNECEDORESNAOBATEM",  "");
+        jDescricaoDupl.put("RAZAOSOCIAL",           "");
+    }
+    return jDescricaoDupl;
+}*/
+
+//valida baixa do fiscal com base no codigo de filial
+public JSONObject validaBaixaPorFilial(JSONObject jDescricaoDupl, String filial){
+    
+     if(!jDescricaoDupl.optString("SITUACAO").equals(filial)){
+        jDescricaoDupl.put("TIPO",        "FORNECEDOR");
+        jDescricaoDupl.put("CODEMPRESA",            "");
+        jDescricaoDupl.put("CHAVEDUPLICATA",        "");
+        jDescricaoDupl.put("PARCELADOC",            "");
+        jDescricaoDupl.put("PARCELADOCORIGINAL",    "");
+        jDescricaoDupl.put("DATAMOVIMENTO",         "");
+        jDescricaoDupl.put("DATAVENCIMENTO",        "");
+        jDescricaoDupl.put("DUPLICATA",             "");
+        jDescricaoDupl.put("VALORFINAL",            "");
+        jDescricaoDupl.put("VALORFINALJUROS",       "");
+        jDescricaoDupl.put("VALORFINALMULTA",       "");
+        jDescricaoDupl.put("VALORFINALDESCONTO",    "");
+        jDescricaoDupl.put("TABELACONTABIL",        "");
+        jDescricaoDupl.put("CODIGOFORNECEDOR",      "");
+        jDescricaoDupl.put("SERIE",                 "");
+        jDescricaoDupl.put("SITUACAO",              "");
+        jDescricaoDupl.put("CHAVE",                 "");
+        jDescricaoDupl.put("VALORPARCELA",          "");
+        jDescricaoDupl.put("RAZAOSOCIAL",           "");
+    }
+    return jDescricaoDupl;
+}
+
+//Valida baixa do fiscal com base na data de vencimento OBS: data de vencimento da planilha financeira deve estar mapeada no complemento06
+public JSONObject validaBaixaPorDataVencimento(JSONObject jDescricaoDupl, String dataVencimento){
+
+    String dataConvertida = "";
+	
+    String aux = cutString(jDescricaoDupl.optString("DATAVENCIMENTO"), 0, " ");
+    if(dataVencimento.contains(" ") && dataVencimento.contains("-")) dataVencimento = cutString(dataVencimento, 0, dataVencimento.indexOf(" "));
+    if(dataVencimento.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) {
+        dataConvertida = getCampoDate(dataVencimento, "yyyy-MM-dd", "dd/MM/yyyy");
+        dataVencimento = dataConvertida;
+    }
+	
+    if(!jDescricaoDupl.equals("") &&!jDescricaoDupl.optString("DATAVENCIMENTO").equals(dataVencimento)){
+        jDescricaoDupl.put("TIPO",        "FORNECEDOR");
+        jDescricaoDupl.put("CODEMPRESA",            "");
+        jDescricaoDupl.put("CHAVEDUPLICATA",        "");
+        jDescricaoDupl.put("PARCELADOC",            "");
+        jDescricaoDupl.put("PARCELADOCORIGINAL",    "");
+        jDescricaoDupl.put("DATAMOVIMENTO",         "");
+        jDescricaoDupl.put("DATAVENCIMENTO",        "");
+        jDescricaoDupl.put("DUPLICATA",             "");
+        jDescricaoDupl.put("VALORFINAL",            "");
+        jDescricaoDupl.put("VALORFINALJUROS",       "");
+        jDescricaoDupl.put("VALORFINALMULTA",       "");
+        jDescricaoDupl.put("VALORFINALDESCONTO",    "");
+        jDescricaoDupl.put("TABELACONTABIL",        "");
+        jDescricaoDupl.put("CODIGOFORNECEDOR",      "");
+        jDescricaoDupl.put("SERIE",                 "");
+        jDescricaoDupl.put("SITUACAO",              "");
+        jDescricaoDupl.put("CHAVE",                 "");
+        jDescricaoDupl.put("VALORPARCELA",          "");
+        jDescricaoDupl.put("RAZAOSOCIAL",           "");
+    }else{
+        jDescricaoDupl.put("PARCELADOC", StringUtil.leftPad(String.valueOf(jDescricaoDupl.optInt("PARCELADOC")), 3, "0"));
+    }
+
+    return jDescricaoDupl;
+}
+
+public String getStringTXTHashTag(String parametro1, String line,  String param, JSONObject objColuna) {
+	try {
+		if(parametro1.replaceAll(" ", "").startsWith("#")){
+			//#CONTEM(BANCO:)"									retorna conteudo da LINHA  ---> OK!
+			//#COLUNA (0,33) CONTEM (BANCO:) COLUNA (50,55)"	retorna substring(50,55)
+			//#COLUNA (0,33) CONTEM (BANCO:)"					retorna substring(0,33)
+			if(parametro1.replaceAll(" ", "").startsWith("#CONTEM")){
+				String termoBuscado = cutString(parametro1, "(", ")").toUpperCase();
+				if(line.toUpperCase().contains(termoBuscado)){
+                    return line;
+				}
+			}else{
+				if(parametro1.replaceAll(" ", "").startsWith("#COLUNA")){
+					if(!parametro1.contains("[") && !parametro1.contains("]")){
+                        String[] arrayCOLUNA = parametro1.split("COLUNA");
+                        String[] arrayCONTEM = arrayCOLUNA[1].split("CONTEM");
+
+                        int inicioCorteLine = Integer.parseInt(cutString(parametro1, "(", ","));
+                        int finalCorteLine = Integer.parseInt(cutString(parametro1, ",", ")"));
+                        String pedacoASerVerificado = cutString(line, inicioCorteLine, finalCorteLine).toUpperCase();
+                        String palavraASerBuscada = arrayCONTEM[1].replaceAll("[(|)| ]", "");
+                        
+                        //#COLUNA (0,33) CONTEM (BANCO:)"					retorna substring(0,33)
+                        if(arrayCOLUNA.length == 2){
+                            if(pedacoASerVerificado.replaceAll("[(|)| ]", "").contains(palavraASerBuscada)){
+                                return pedacoASerVerificado;
+                            }
+                        }
+                        //#COLUNA (0,33) CONTEM (BANCO:) COLUNA (50,55)"	retorna substring(50,55)
+                        if(arrayCOLUNA.length == 3){
+                            inicioCorteLine = Integer.parseInt(cutString(arrayCOLUNA[2], "(", ","));
+                            finalCorteLine = Integer.parseInt(cutString(arrayCOLUNA[2], ",", ")"));
+                            if(pedacoASerVerificado.replaceAll("[(|)| ]", "").contains(palavraASerBuscada)){
+                                return cutString(line, inicioCorteLine, finalCorteLine);
+                            }
+                        }
+                    }
+                }else{ // contem [ ] ----> Passara array para pesquisa
+                    //TO-DO!!!!
+                }
+            }
+			return param;
+			}else{
+				int colInicio = getColunaInicial(parametro1, objColuna);
+				int colFinal  = getColunaFinal(parametro1, objColuna);
+				if (colInicio < colFinal && colInicio >= 0 && line.length() > colFinal) {
+					String valorString      = line.substring(colInicio, colFinal);
+					return valorString;
+				}
+				if (colInicio < colFinal && colInicio >= 0 && line.length() <= colFinal) {
+					String valorString      = line.substring(colInicio);
+					return valorString;
+				}
+				return "";
+			}
+	}catch (Exception xx) {
+		return "";
+	}
+
+}
+
+
+
+
+public void fazerShrinkDelimitandoPosicoes(JSONObject roteiroCRM, MemoryFile memFile) throws Exception{
+
+    if (roteiroCRM.optString("fazerShrink").toUpperCase().equals("TRUE")){
+        //(0,9);11
+        int segurancaBOB = 0; //missão de bob é freiar o shirnk para apenas 10 situações diferentes
+        for(String posicoes : roteiroCRM.optString("colunaShrink").split(";")){
+            if(posicoes.trim().startsWith("(") && posicoes.trim().endsWith(")")){
+                // (0,9)
+                String[] pos = posicoes.split(",");
+                if(pos.length == 2){
+                    int inicial = 0;
+                    int fim = 0;
+                    try { inicial = Integer.parseInt(pos[0].replaceAll("[^0-9]", "")); } catch (Exception e) { inicial = 0; }
+                    try { fim = Integer.parseInt(pos[1].replaceAll("[^0-9]", "")); } catch (Exception e) { fim = 0; }
+                    
+                    int segurancaFRED = 0; //missão de fred é evitar loops, não pode passar de 100(número possível de casas) passadas.
+                    int contador = inicial;
+                    if(fim > inicial){
+
+                        for (int j=inicial; j<=fim; j++) {
+                            if (!memFile.getStringField(j).equals("") && j<=memFile.getFieldsSize()) {
+                                memFile.setField(contador, memFile.getStringField(j));
+                                if (j > contador) memFile.setField(j,"");
+                                contador++;
+                                if(segurancaFRED++ == 100) 
+                                throw new IllegalArgumentException("segurancaFRED -> nao pode ter mais que 100 posicoes no shrink delimitado (n,m) ");
+                                
+                            }
+                        }
+                    }else throw new IllegalArgumentException("valor INICIAL maior que FINAL no shrink");
+                }// texto1
+            }else{
+                // 11
+                int colunaShrink = 0;
+                try {
+                    colunaShrink = Integer.parseInt(posicoes.replaceAll("[^0-9]", ""));
+                } catch (Exception e) {
+                    //TODO: handle exception
+                    colunaShrink = 0;
+                }
+                int segurancaJHONNY = 0; //missão de fred é evitar loops, não pode passar de 100(número possível de casas) passadas.
+                
+                int contador = colunaShrink;
+                for (int j=colunaShrink; j<=memFile.getFieldsSize(); j++) {
+                    if (!memFile.getStringField(j).equals("")) {
+                        memFile.setField(contador, memFile.getStringField(j));
+                        if (j > contador) memFile.setField(j,"");
+                        contador++;
+                        if(segurancaJHONNY++ == 100)
+                        throw new IllegalArgumentException("segurancaJHONNY -> nao pode ter mais que 100 posicoes no shrink nao-delimitado n ");
+                    }
+                }
+            } 
+            if(segurancaBOB++ == 10)
+            throw new IllegalArgumentException("segurancaBOB -> nao pode ter mais que 10 configuracoes no shrink");
+            
+        } 
+    }
+}
+
+
+public void importaDePara(MemoryFile memFile, String pathIN, String extensao, InoutLogger logger){
+    if(memFile.getFilename().startsWith("OK_DeParaConta__")){
+		logger.logDebug("ENTROU IMPORTA DEPARA");
+        try{
+            String nameFile = cutString(memFile.getFilename(), 0, memFile.getFilename().lastIndexOf("_")) + "_" + System.currentTimeMillis() + "_OK"  + cutString(extensao, 0, 4);
+            File oldFile = new File(pathIN + "/" + memFile.getFilename());
+            File newFile = new File(pathIN + "/" + nameFile);
+            if(oldFile.renameTo(newFile))
+                FileUtil.moveToDir(pathIN + "/" + nameFile, cutString(pathIN, 0, pathIN.lastIndexOf("/")) + "/DePara/");
+        }catch(Exception e){}
+    }
+}
+
+public void importaDePara(MemoryFile memFile, String pathIN, String extensao, InoutLogger logger, SysProperties props){
+    if(memFile.getFilename().startsWith("OK_DeParaConta__")){
+		if (memFile.getFilename().toUpperCase().contains("ELIMINAR PAG") || memFile.getFilename().toUpperCase().contains("ELIMINAR REC")) {
+			
+			logger.logInfo("APAGAR O DEPARA " + pathIN + " | " + cutString(pathIN, "_#", pathIN.lastIndexOf("/")));
+			DataBase dbIOCont = null;
+			if (dbIOCont == null) {
+				try {
+					dbIOCont = connectIOContabil(props, logger);
+				} catch (Exception e) {}
+			}
+			
+			try {
+				deleteDeparaPorCodEmpresa(cutString(pathIN, "_#", pathIN.lastIndexOf("/")), dbIOCont, logger, memFile.getFilename().toUpperCase());
+			} catch (Exception e) {}
+			
+			if (dbIOCont != null) {
+				try {
+					dbIOCont.closeConnection();
+				} catch (Exception e) {}
+				dbIOCont = null;
+			}
+		} 
+		try{
+			String nameFile = cutString(memFile.getFilename(), 0, memFile.getFilename().lastIndexOf("_")) + "_" + System.currentTimeMillis() + "_OK"  + cutString(extensao, 0, 4);
+			File oldFile = new File(pathIN + "/" + memFile.getFilename());
+			File newFile = new File(pathIN + "/" + nameFile);
+			if(oldFile.renameTo(newFile))
+				FileUtil.moveToDir(pathIN + "/" + nameFile, cutString(pathIN, 0, pathIN.lastIndexOf("/")) + "/DePara/");
+		}catch(Exception e){}
+		
+    }
+}
+
+
+/** Retorna uma string com as informções necessárias para a inserção no arquivo
+  * @param parceiro nome da empresa parceira
+  * @param nomeContabil nome resumido contabilidade
+  * @param idContabil id da contabilidade registrado no salesforce
+  * @param nomeEmpresa nome resumido empresa
+  * @return um string com todas as informções organizadas e separadas no formato json;
+  * exemplo {"PARTNER_OTTIMIZZA": "parceiro", "CONTABILIDADE_NOME": "contabilidade", "CONTABILIDADE_ID": "id", "EMPRESA": "empresa", "IDexterno": "parceiro-nomeEmpresa", "data": "MM-YYYY", "Belvo": "N"}
+  */
+public static String TXTcontentGenerator(String parceiro, String nomeContabil, String idContabil, String nomeEmpresa) {
+    String idExterno = parceiro+"-"+nomeEmpresa;
+    JSONObject retorno  = new JSONObject();
+    String[]  infos = {parceiro, nomeContabil, idContabil, nomeEmpresa, idExterno, DateUtil.dateToString(new Date(),"MM-yyyy"), "N"},
+        identifiers = {"PARTNER_OTTIMIZZA", "CONTABILIDADE_NOME", "CONTABILIDADE_ID", "EMPRESA", "ID_EXTERNO", "DATA", "BELVO"};
+
+    for(int i=0; i< infos.length; i++){
+        retorno.put(identifiers[i], infos[i]);
+    }
+
+    return retorno.toString();
+}
+
+/**
+  * Para uso caso a empresa faça parte do projeto belvo
+  * @param codConta conta corrente do banco para quando a empresa faz parte do projeto belvo
+  */
+public static String TXTcontentGenerator(String parceiro, String nomeContabil, String idContabil, String nomeEmpresa, String codConta) {
+    String idExterno = parceiro+"-"+nomeEmpresa+"-"+codConta;
+    JSONObject retorno  = new JSONObject();
+    String[]  infos = {parceiro, nomeContabil, idContabil, nomeEmpresa, idExterno, DateUtil.dateToString(new Date(),"MM-yyyy"), "S", codConta},
+        identifiers = {"PARTNER_OTTIMIZZA", "CONTABILIDADE_NOME", "CONTABILIDADE_ID", "EMPRESA", "ID_EXTERNO", "DATA", "BELVO", "CONTA_CORRENTE"};
+
+    for(int i=0; i< infos.length; i++){
+        retorno.put(identifiers[i], infos[i]);
+    }
+
+    return retorno.toString();
+}
+
+/**
+  * @param content um JSONObject convertido para string gerado pela função TXTcontentGenerator()
+  * @return retorna se a função foi bem sucedida ou não
+**/
+public static String TXTfileGenerator(String jsonContent) {
+  try{
+    if(!jsonContent.contains("{")) 
+      return "O parametro inserido nao e um JSONObject.toString()";
+    JSONObject objContent = new JSONObject(jsonContent);
+    String data = DateUtil.dateToString(new Date(), "yyyy-MM");
+    String parceiro = objContent.optString("PARTNER_OTTIMIZZA");
+	String idExterno = objContent.optString("ID_EXTERNO");
+	
+
+    FileWriter exportado = new FileWriter("/inout/contabil/ottimizza/atualiza_parceiros/" + parceiro + "_" + idExterno + "_" + data+".txt");
+    exportado.writeNewFile(jsonContent);
+
+    return "Arquivo gerado e preenchido com sucesso!";
+  } catch(Exception e) {
+    
+    return "Nao foi possivel gerar o arquivo: " + e.toString();
+  }
+}
+
+public double capturaValor(String vdAux) throws Exception{
+    vdAux = vdAux.replaceAll(",", "\\.").replaceAll("[^0-9\\.]", "");
+    while (vdAux.matches("[0-9]+\\.[0-9]{3}.*")) {
+        vdAux = vdAux.replaceFirst("\\.", "");
+    }
+    if (vdAux.matches("\\d+(.*\\d{1,2})?")) {
+        return DecimalUtil.toDecimal(vdAux);
+    }
+    throw new Exception("Valor invalido: " + vdAux);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

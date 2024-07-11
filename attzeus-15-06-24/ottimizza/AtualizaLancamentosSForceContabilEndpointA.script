@@ -1,0 +1,276 @@
+{import: io_contabil.Database};
+{import: io_contabil.Regras};
+{import: io_contabil.Util};
+{import: io_contabil.Heroku};
+
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    JSONArray  records  = new JSONArray(); 
+    
+    HashMap mapaLote			= new HashMap();
+    
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+
+
+    try {
+
+        SysProperties routesProperties = SysProperties.getInstance();
+        SysProperties props  = SysProperties.getInstance();
+
+        try {
+
+            int iEmpresa		= 0;	// Juracitortas;
+            int iQtdLanc		= 1;	// 186;
+            int iLote			= 2;	// Juracitortas_916_extrato caixa 12-2020.ofx_2020-12_RECEBER;
+            int iContabilidade	= 3;	// Escoplan
+
+            File dirInoutContabil = new File(String.format("%s/contabil/SForce/", RouteEngine.INOUT_HOME));
+            LancamentosApi apiWeb = new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);
+
+            if (dirInoutContabil.exists()) {
+
+                JSONArray toCloudArray	= new JSONArray();
+
+                //dados auxiliares url, nomeArray
+                JSONObject auxObj		= new JSONObject();
+                auxObj.put("nomeArray",	"lotes");
+                auxObj.put("server",	LancamentosApi.SERVER_INTEGRADOR);
+                auxObj.put("mapping",	IMPORTAR_LOTE_PROCESSADO);
+
+                JSONObject auxObjBucket		= new JSONObject();
+                auxObjBucket.put("server",	LancamentosApi.SERVER_INTEGRADOR);
+                auxObjBucket.put("mapping",	IMPORTAR_ARQUIVO_EMPRESA);
+
+
+
+                String origem	= RouteEngine.INOUT_HOME+"/contabil/SForce/";
+                //String destino	= origem + "Processado/";
+                String destino	= origem + "Processado/"+getCampoDate(DateUtil.dateToString(new Date(),"dd/MM/yyyy"),"dd/MM/yyyy","yyyy/MM")+"/";
+                
+                if (!FileUtil.fileExists(destino)) {
+                    FileUtil.mkDir(destino);
+                }
+                
+                String extensao	= ".txt,.TXT";
+                for (int xx = 0; xx<20;xx++){   // trocar por 20
+
+                    FilesLoader fileLoader = new FilesLoader(origem, extensao, destino, true, logger);
+                    int[] abas = {0};
+                    fileLoader.setSheetsToRead(abas);
+                    fileLoader.loadFiles();
+
+
+                    for (MemoryFile memFile: fileLoader.getMemFiles()) {
+
+                        memFile.setFieldSeparator(";");
+
+                        String nomeArquivo = memFile.getFilename().replaceAll(".TXT","").replaceAll(".txt","");
+                        
+
+                        int totalLinhas		= 0;
+
+                        String contabilidade = "";
+                        String lote			= "";
+                        String codEmpresa	= "";
+                        String nomeEmpresa	= "";
+                        int qtdLanc			= 0;
+
+                        JSONObject objetoParametro = new JSONObject();
+
+                        while (memFile.hasNextLine()) {
+
+                            try {
+                                String line = memFile.nextLine();
+                                line		= StringUtil.removeSpecialCharsToUC(line); 
+                                totalLinhas++;
+
+                                lote			= memFile.getStringFieldRemoveEspChars(iLote).replaceAll("\"","").trim();
+                                nomeEmpresa		= memFile.getStringFieldRemoveEspChars(iEmpresa).replaceAll("\"","").trim();
+                                contabilidade	= memFile.getStringFieldRemoveEspChars(iContabilidade).replaceAll("\"","").trim();
+                                String tipoPlanilha = memFile.getStringFieldRemoveEspChars(4).replaceAll("\"","").trim();
+
+                                String loteSf = lote;
+                                if (loteSf.contains("oud_id")) {
+                                    loteSf = cutString(loteSf, "oud_");
+                                    loteSf = cutString(loteSf, "_");
+                                }
+                                
+
+                                // Kodecomercio_944_planilha contas ? pagar kode mes 01-2021.xlsx_2021-01_PAGAR.txt
+                                int ultimoDosUnderscore = lote.lastIndexOf("_");
+                                codEmpresa				= cutString(lote, "_", "_"); 
+                                String tipoMovimento	= cutString(lote, ultimoDosUnderscore+1); 
+                                String anoMes			= cutString(lote, ultimoDosUnderscore-7, ultimoDosUnderscore)+"-01"; 
+
+                                props.load("contabil/" + contabilidade + "/contabil.properties");							
+
+                                String cnpjEmpresa		 = props.get(nomeEmpresa.toUpperCase() + "_CNPJ_EMPRESA");
+                                String cnpjContabilidade = props.get("CONTABILIDADE_CNPJ");
+                                String idSFContabilidade = props.get("CONTABILIDADE_ID");
+
+
+                                try { qtdLanc	= Integer.parseInt(memFile.getStringFieldRemoveEspCharsUpper(iQtdLanc).replaceAll("\"","").trim()); } 
+                                catch (Exception er) { qtdLanc = 0;}
+
+                                JSONObject jDados = new JSONObject();
+                                jDados.put("Empresa",			nomeEmpresa);
+                                jDados.put("Qtde_Lancamentos",	qtdLanc);
+                                jDados.put("Lote",				loteSf);
+                                jDados.put("IDEmpresa",			"");
+                                jDados.put("Contabilidade",		contabilidade);
+                                jDados.put("idContabilidade",   idSFContabilidade);
+                                jDados.put("tipoPlanilha",   	tipoPlanilha);
+
+                                if ((!nomeArquivo.toUpperCase().contains("OTTIMIZZA") && !nomeArquivo.toUpperCase().contains("TESTE")) ||
+                                    (nomeArquivo.toUpperCase().contains("PLANILHA_PADRAO_OTTIMIZZA"))) {
+                                    
+                                    ttLote ttLot    = (ttLote)mapaLote.get(idSFContabilidade+loteSf);
+                                    if (ttLot       == null) {
+                                        ttLot       = new ttLote();
+                                        mapaLote.put(idSFContabilidade+loteSf,ttLot);
+                                        records.put(jDados);
+                                        logger.logInfo(idSFContabilidade+loteSf);
+                                    }
+                                }
+
+
+                                ////////////////////////////////////////////////////////////////////////////////////////////
+                                // 								PUBLICACAO DO ARQUIVO NO OUD (somente para 3.0
+                                ////////////////////////////////////////////////////////////////////////////////////////////
+								// adicionada a validacao de _ID para nao subir o arquivo duas vezes para o 4.0
+                                if (lote.toUpperCase().contains("_OUD") && !lote.toUpperCase().contains("_ID")) {
+                                    JSONObject jBucket = new JSONObject();
+                                    jBucket.put("cnpjContabilidade",	cnpjContabilidade);
+                                    jBucket.put("cnpjEmpresa",			cnpjEmpresa);
+                                    if (lote.endsWith("_RECEBER")) {
+                                        jBucket.put("tipoMovimento", "REC");
+                                    }
+                                    else {
+                                        jBucket.put("tipoMovimento", "PAG");
+                                    }
+                                    String nomeArquivo64 = "";
+                                    if (props.get("ERP_CONTABILIDADE").contains("QUESTOR")) {
+
+                                        jBucket.put("tipoArquivo", "QUE");
+                                        jBucket.put("nomeArquivo", lote + ".que");
+                                        nomeArquivo64 = lote + ".que";
+                                    }
+                                    else {
+                                        if (props.get("ERP_CONTABILIDADE").contains("CONTMATIC")) {
+                                            
+                                            jBucket.put("tipoArquivo", "M" + cutString(anoMes, 2,4));
+                                            jBucket.put("nomeArquivo", lote + ".M"+ cutString(anoMes, 2,4));
+                                            nomeArquivo64 = lote + ".M"+ cutString(anoMes, 2,4);
+                                        }
+                                        
+                                        
+
+                                        else  {
+                                            jBucket.put("tipoArquivo", "TXT");
+                                            jBucket.put("nomeArquivo", lote + ".txt");
+                                            nomeArquivo64 = lote + ".txt";
+                                        }
+                                    } 
+
+
+                                    String dirRouteName = "c:/buckets/oic-arquivo-pronto/"+contabilidade+"/"+DateUtil.dateToString(new Date(), "yyyy/MM/dd")+"/";
+                                    if (!FileUtil.fileExists(dirRouteName)) {
+                                        FileUtil.mkDir(dirRouteName);
+                                    }
+
+                                    File arquivoOrigem  = new File("c:/inout/contabil/"+contabilidade+"/arquivos/Enviados/" + nomeArquivo64);
+                                    if (!arquivoOrigem.exists()) {
+                                        arquivoOrigem  = new File("c:/inout/contabil/"+contabilidade+"/arquivos/" + nomeArquivo64);
+                                    }
+                                    
+                                    
+                                    if (arquivoOrigem.exists()) {
+
+                                        File arquivoDeploy  = new File(dirRouteName + nomeArquivo64);
+
+                                        FileUtil.copyFolder(arquivoOrigem, arquivoDeploy);
+
+
+                                        nomeArquivo64 = "https://"+servDinamic+".ottimizza.com.br:55325/storage/"  + Base64.getEncoder().encodeToString((dirRouteName + nomeArquivo64).getBytes());
+                                        jBucket.put("linkArquivo", nomeArquivo64);
+
+
+                                        try {
+
+                                            String uriIntegrador = String.format("%s%s", auxObjBucket.optString("server"), auxObjBucket.optString("mapping"));
+                                            String retorno = apiWeb.genericPost(uriIntegrador, jBucket, logger);                            }
+                                        catch (Exception xx) {}
+                                    }
+									
+ 
+                                }
+                                ////////////////////////////////////////////////////////////////////////////////////////////
+                                //  				FINAL PUBLICACAO ARQUIVO NO OUD PARA DOWNLOAD
+                                ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+                                jDados.put("cnpjContabilidade",	cnpjContabilidade);
+                                jDados.put("cnpjEmpresa",		cnpjEmpresa);
+                                jDados.put("anoMes",			anoMes);
+                                jDados.put("tipoMovimento",		tipoMovimento);
+                                jDados.put("codigoErp",			codEmpresa);
+                                jDados.put("erpContabil",		props.get("ERP_CONTABILIDADE"));
+                                jDados.put("tipoRegistro",		"CONTABIL");
+                                //jDados.put("tipoPlanilha",		tipoPlanilha);
+
+                                //objeto que recebe o array pra ser enviado
+                                JSONObject toCloudObj	= new JSONObject();
+
+                                try {
+
+                                    JSONObject toSend = geraSForceToCloudInt(jDados);
+                                    toCloudArray.put(toSend);
+                                    toCloudArray = sendToCloud(toCloudArray, toCloudObj, auxObj, -1, apiWeb, 100, logger);
+                                } catch (Exception ee) {}
+                            } catch (Exception ee) {
+                                logger.logError("EndpointA: ", ee);
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception ee) {}
+    } catch (Exception ee) {}
+
+    return records;
+}
+
+class ttLote {
+    public String lote;
+    public ttLote(){}
+    public ttLote(ttLote tt){
+        lote=tt.lote;
+    }
+}
+
+
+public JSONObject geraSForceToCloudInt(JSONObject jDados) {
+
+    JSONObject response = new JSONObject();	
+    if (jDados.has("Qtde_Lancamentos"))	response.put("quantidadeLancamentos", jDados.optInt("Qtde_Lancamentos")); else response.put("quantidadeLancamentos", 0);
+    if (jDados.has("Empresa"))			response.put("empresa",			jDados.optString("Empresa"));		else response.put("empresa",		"");
+    if (jDados.has("Lote"))				response.put("lote",			jDados.optString("Lote"));			else response.put("lote",			"");
+    if (jDados.has("codigoErp"))		response.put("codigoErp",		jDados.optString("codigoErp"));		else response.put("codigoErp",		"");
+    if (jDados.has("Contabilidade"))	response.put("contabilidade",	jDados.optString("Contabilidade"));	else response.put("contabilidade",	"");
+    if (jDados.has("tipoRegistro"))		response.put("tipoRegistro",	jDados.optString("tipoRegistro"));	else response.put("tipoRegistro",	"");
+
+    if (jDados.has("cnpjContabilidade"))response.put("cnpjContabilidade",jDados.optString("cnpjContabilidade"));else response.put("cnpjContabilidade", "");
+    if (jDados.has("erpContabil"))		response.put("erpContabil",		jDados.optString("erpContabil"));	else response.put("erpContabil",	"");
+    if (jDados.has("cnpjEmpresa"))		response.put("cnpjEmpresa",		jDados.optString("cnpjEmpresa"));	else response.put("cnpjEmpresa",	"");
+    if (jDados.has("anoMes"))			response.put("anoMes",			jDados.optString("anoMes"));		else response.put("anoMes",			"");
+    if (jDados.has("tipoMovimento"))	response.put("tipoMovimento",	jDados.optString("tipoMovimento"));	else response.put("tipoMovimento",	"");
+
+    return response;
+}

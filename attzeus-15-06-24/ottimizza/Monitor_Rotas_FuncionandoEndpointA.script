@@ -1,0 +1,175 @@
+ 
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    JSONArray records = new JSONArray();
+
+    // Carrega as propriedades
+    SysProperties props = SysProperties.getInstance();
+
+    String nomeArquivo      = "";
+    String nomeArquivoOriginal = ""; 
+
+     String dirName = "/inout/logs/workflow";
+
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+ 
+    try {
+
+
+        String extencao = "";
+        for (int extArquivo = 0; extArquivo < 1; extArquivo++) {
+            if (extArquivo == 0) extencao = ".csv,.CSV";
+            if (extArquivo == 1) extencao = ".csv,.CSV";
+            if (extArquivo == 2) extencao = ".csv,.CSV";
+            if (extArquivo == 3) extencao = ".csv,.CSV"; 
+            if (extArquivo == 4) extencao = ".csv,.CSV"; 
+            if (extArquivo == 5) extencao = ".csv,.CSV"; 
+            if (extArquivo == 6) extencao = ".csv,.CSV"; 
+            if (extArquivo == 7) extencao = ".csv,.CSV"; 
+
+
+            for (int porAba = 0; porAba < 1; porAba++) {
+
+                // =============================  =============================   =============================
+                // =============================  VARIAVEIS PARA LEITURA DE PDF   =============================
+                // =============================  =============================   =============================
+  
+                try {
+
+                    FilesLoader fileLoader = new FilesLoader(dirName, extencao, null, false, logger);
+                    int[] abas = {0};
+                    fileLoader.setSheetsToRead(abas);
+                    fileLoader.setMaxFiles(100);
+                    fileLoader.loadFiles();
+
+
+                    for (MemoryFile memFile: fileLoader.getMemFiles()) { 
+
+                        // =============================  =============================   =============================
+                        // =============================  VARIAVEIS PARA LEITURA DE PDF   =============================
+                        // =============================  =============================   =============================
+
+                        nomeArquivo = memFile.getFilename();
+
+
+                        nomeArquivoOriginal = nomeArquivo;
+
+                        memFile.setFieldSeparator(";");
+                         
+
+
+                        StringBuilder  guias = new StringBuilder();
+                        while (memFile.hasNextLine()) {
+                            try {
+                                String line = memFile.nextLine();
+                                line = StringUtil.removeSpecialCharsToUC(line); 
+                                
+  
+                                Date dataFinal = new Date();
+
+
+                                // nao gera log durante a noite ou finais de semana.
+                                if (isWeekend(dataFinal)) continue;
+                                int horaDoDia = Integer.parseInt(DateUtil.dateToString(dataFinal, "HH"));
+                                if (horaDoDia < 8 || horaDoDia > 18) continue;
+
+                                double horaFinal    = dataFinal.getTime();
+                                double horaInicial  = memFile.getDoubleField(1);
+
+                                double resultado = horaFinal - horaInicial;                                
+                                 
+                                if (resultado < 600000) continue;   // 10 minutos esta ok
+ 
+ 
+                                JSONObject fila = new JSONObject();
+                                fila.put("Contabilidade com Problema", memFile.getStringField(0));
+                                records.put(fila);
+                                
+                                String subject = memFile.getStringField(0) + " - ROBO Integracao OTTIMIZZA "+servDinamic+" Parado. :#13122021 " ;
+                                String sendToName = "suporte@ottimizza.com.br";
+                                StringBuilder msg = new StringBuilder();
+                                
+
+                                msg.append("<html>\n")
+                                .append("<head>\n")
+                                .append("</head>\n")
+                                .append("<body lang=\"en-US\" dir=\"ltr\">\n")
+                                .append("<p><font style=\"font-size: 10pt\">\n")
+                                .append("<br/><br/>Atencao. PROBLEMAS NO "+servDinamic+". WORKFLOW PARADO OU LENTO.  Avaliar contabilidade/emnpresa : <b>").append(memFile.getStringField(0))
+                                .append("</b>")
+                                .append("</b>")
+                                .append("<br/>Enviado automaticamente pela rota ottimizza_monitor_rotas_funcionando") 
+                                .append("</b>")
+                                .append("<br/>").append("</body>\n").append("</html>\n");
+
+                                 
+                                enviaEmail(subject, sendToName, sendToName, msg.toString(), null, logger);
+                                
+
+                            }
+                            catch (Exception ex) {}
+                        }	
+                    }                    
+
+
+                } catch (Exception ex) {}
+
+            }
+        }
+    } catch (Exception ee) {}
+
+
+    return records;
+}
+
+
+public void enviaEmail(String subject,
+                       String sendTo,
+                       String sendToName, 
+                       String mensagem,
+                       String filename,
+                       InoutLogger logger) throws Exception {
+
+    EmailStruct emailStruct = new EmailStruct();
+    emailStruct.setSmtpServer("mail.ottimizza.com.br");
+    emailStruct.setSmtpPort("26");
+    emailStruct.setSmtpUser("monitorrobo@ottimizza.com.br");
+    emailStruct.setSmtpPassword("Oic@Ott.321");
+    emailStruct.setSubject(subject);   
+    emailStruct.setMessage(mensagem);
+    emailStruct.setFrom("monitorrobo@ottimizza.com.br");
+    emailStruct.setSendTo(sendTo);
+    emailStruct.setName("monitorrobo@ottimizza.com.br");
+    if (filename != null) {
+        emailStruct.addAttachedFilename(filename);
+    }
+    emailStruct.setMessageType(InoutConstants.MESSAGE_TYPE_HTML);
+    //logger.logInfo(">> EmailStruct:\n" + emailStruct.toJSONObject());
+    SendEmail se = new SendEmail(null);
+    se.send(emailStruct);
+    logger.logInfo(">> Email Enviado!!");
+
+}
+
+
+public static boolean isWeekend(Date date) {
+    Calendar calendar = GregorianCalendar.getInstance();
+
+    if (date == null) {
+        calendar = GregorianCalendar.getInstance();
+    } else {
+        calendar.setTime(date);
+    }
+
+    date = calendar.getTime();
+
+    return (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY
+            || calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SATURDAY);
+}

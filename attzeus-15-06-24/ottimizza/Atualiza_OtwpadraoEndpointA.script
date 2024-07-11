@@ -1,0 +1,149 @@
+{import: io_contabil.Database};
+{import: io_contabil.Regras};
+{import: io_contabil.Util};
+
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    JSONObject js = new JSONObject();
+    JSONArray records = new JSONArray();
+
+    String dataAtual = DateUtil.dateToString(new Date(), "mm");
+
+    HashMap mapaLote			= new HashMap();
+
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+
+    postStatus(servDinamic.toUpperCase(), "Ottimizza", "Atualizaotwpadrao", "Atualizaotwpadrao", "PAGAR", "Ottimizza");
+	
+    // Definido com o Xavier que o processo abaixo ira rodar a cada 60min.
+    if(dataAtual.equals("00")){
+        try {
+            // Obtem os e-mail com as configuracoes de MalaDireta
+            PopStruct pop = new PopStruct();
+            pop.setPopServer("mail.ottimizza.com.br");
+            pop.setPopPort(110);
+            pop.setPopUser("otwpadrao@ottimizza.com.br");
+            pop.setPopPassword("Oic@Ott.321");
+            pop.setPopFolderName("Inbox");
+            String localDir = "C:/Inout/Contabil/Ottimizza/AtualizaOtwpadrao/";
+            pop.setDestinationFolder(localDir);
+            GetPopMail getMail = new GetPopMail(pop, logger);
+            // Faz download dos arquivos anexados em cada e-mail em pasta temporaria local
+            List filenames = getMail.getEmailAttachements(false);
+
+
+            String nomeImagem = "";
+
+
+            List mensagem = getMail.getMessages(true);
+            String textoMensagem = "";
+            String assunto = "";
+
+
+            for (int j=0; j<mensagem.size(); j++) {
+                textoMensagem = mensagem.get(j).toString();
+                String contabilidade = textoMensagem.replaceAll("#Contabilidade:","").trim();
+
+                //Vamos processar apenas uma contabilidade, pois automaticamente todas serao atualizadas no endPointB 
+                if (j > 0) continue;
+
+                ttLote ttLot    = (ttLote)mapaLote.get(contabilidade);
+                if (ttLot       == null) {
+                    ttLot       = new ttLote();
+                    ttLot.lote  =contabilidade;
+                }
+                mapaLote.put(contabilidade,ttLot);
+
+
+            }
+
+            Iterator ite = mapaLote.keySet().iterator();
+            while (ite.hasNext()) {
+
+                String key = (String)ite.next();
+                ttLote ttLot = (ttLote)mapaLote.get(key);
+
+                js = new JSONObject();
+                js.put("IDCONTABILIDADE",ttLot.lote);
+                records.put(js);
+
+            }     
+
+
+        }
+        catch (Exception xx) {}
+    }
+
+    return records;
+}
+
+public void postStatus(String servidor, String workflow, String contabilidade, String empresa, String tipo, String id) {
+    String url = "https://api-status-server.herokuapp.com/status";
+
+
+    try {
+
+
+        JSONObject body = new JSONObject();
+
+        body.put("servidor", servidor);
+        body.put("workflow", workflow);
+        body.put("contabilidade", contabilidade);
+        body.put("empresa", empresa);
+        body.put("tipo", tipo);
+        body.put("id", servidor + id);
+
+        java.net.URL serviceURL = new java.net.URL(url);
+
+        // Opens java.net.URL as a POST Request
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(body.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logError("Erro tentando enviar informa??es para o status server -> " + ex1);
+        } 
+
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            StringBuilder responseRaw = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+
+            //logger.logDebug("RESPONSE " + responseRaw.toString());
+            //logger.logDebug("BODY     " + body.toString());
+
+        } catch (Exception ex2) {
+            logger.logError("Segundo Catch " + ex2);
+        } 
+
+    } catch (Exception ex2) {
+        logger.logError("Segundo Catch " + ex2);
+    }
+
+}
+
+class ttLote {
+    public String lote;
+    public ttLote(){}
+    public ttLote(ttLote tt){
+        lote=tt.lote;
+    }
+}

@@ -1,0 +1,808 @@
+import javax.xml.namespace.QName;
+
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    JSONArray records = new JSONArray();
+
+
+    try {
+
+        ////////////////////////////////////////////////////////////////////
+        // Obtem conexao no Salesforce /////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+
+        ConnectorConfig config = new ConnectorConfig();
+        config.setUsername("adm@ottimizza.com.br");
+        config.setPassword("oic@3333222YXZRHYLH8cxrchPu0rjyGH1j8");
+        config.setTraceMessage(true);
+        PartnerConnection connection = Connector.newConnection(config);
+
+        //String oauthToken = doLogin("adm@ottimizza.com.br", "ottimizza@123", "https://oauth.ottimizza.com.br", logger);
+        String oauthToken = doLogin("integracao@ottimizzaapptareffa.com.br", "12345", "https://oauth.ottimizza.com.br", logger);
+
+        // Token Exclusivo pra integracao com api-parceiros
+        String oauthTokenTareffa = "1bd99f10-d1ff-11ec-9d64-0242ac120002";
+
+        ////////////////////////////////////////////////////////////////////
+        // Obtem Contabilidades ////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+
+
+        String sql2 = "SELECT Id, Name, Valor__c, CNPJ_contabilidade_completo__c, Contabilidade__c, Produto_da_Contabilidade__c, OK_Faturar__c, OK_Faturar_Calculado__c, CNPJ_Contabilidade__c, ID_Funcoes_do_Portal__c FROM Itens_PRodutos__c WHERE OK_Faturar__c = true  and  OK_Faturar_Calculado__c = false LIMIT 2000";
+        String sql3 = "SELECT Id, Name, Valor__c, CNPJ_contabilidade_completo__c, Contabilidade__c, Produto_da_Contabilidade__c, OK_Faturar__c, OK_Faturar_Calculado__c, CNPJ_Contabilidade__c, ID_Funcoes_do_Portal__c FROM Itens_PRodutos__c WHERE OK_Faturar__c = false and  OK_Faturar_Calculado__c = true  LIMIT 2000";
+        String sql4 = "SELECT Id, Name, Valor__c, CNPJ_contabilidade_completo__c, Contabilidade__c, Produto_da_Contabilidade__c, OK_Faturar__c, OK_Faturar_Calculado__c, CNPJ_Contabilidade__c, ID_Funcoes_do_Portal__c FROM Itens_PRodutos__c WHERE Liberar_Funcao_Portal__c = true LIMIT 2000";
+        String sql5 = "SELECT Id, Name, Valor__c, CNPJ_contabilidade_completo__c, Contabilidade__c, Produto_da_Contabilidade__c, OK_Faturar__c, OK_Faturar_Calculado__c, CNPJ_Contabilidade__c, ID_Funcoes_do_Portal__c FROM Itens_PRodutos__c WHERE Gatilho_Atualiza_Cor__c = true LIMIT 2000";
+
+
+        // codigos para carregar servicos do legado
+        //StringBuilder cnpjs = new StringBuilder();
+        // empresas que estamos implantando Tareffa
+        //cnpjs.append("('217.308.018-03','07.720.222/0001-28','07.537.287/0001-32','04.220.318/0001-39','19.925.902/0001-67','10.923.803/0001-71','25.549.775/0001-41','42.219.080/0001-10','02.757.241/0001-05','50.936.263/0001-85','15.178.031/0001-04',");
+        //cnpjs.append("'02.470.597/0001-63','48.886.251/0001-41','20.354.233/0001-08','31.570.137/0001-05','36.668.755/0001-06','15.064.767/0001-51','26.297.214/0001-65','36.558.389/0001-32','01.448.747/0001-70',");
+        //cnpjs.append("'07.565.819/0001-45','37.494.184/0001-01','30.964.568/0001-93','03.875.717/0001-75','04.828.273/0001-80','09.618.039/0001-41','04.413.622/0001-00','11.507.275/0001-32','38.537.738/0001-65','23.242.746/0001-07','42.375.612/0001-09','39.681.134/0001-50','03.780.401/0001-08','42.536.851/0001-01','17.181.766/0001-12','23.929.264/0003-91','08.961.929/0001-99',");
+        //cnpjs.append("'37.501.012/0001-00','01.709.285/0001-05','76.793.322/0001-05','079.111.794-41','37.585.531/0001-01','05.560.505/0001-24','10.746.240/0001-93','45.545.810/0001-61','08.049.625/0001-50','18.623.350/0001-70',");
+        //cnpjs.append("'17.078.001/0001-51','11.207.431/0001-40','20.535.673/0001-53','24.845.407/0001-88','52.099.007/0001-06','05.459.124/0001-53','17.453.416/0001-68','26.551.921/0001-36','51.838.802/0001-06','27.467.511/0001-74','40.717.189/0001-52','052.165.296-08')");
+
+
+        // meu integrador
+        //cnpjs.append("('04.413.622/0001-00','11.507.275/0001-32','23.242.746/0001-07','39.681.134/0001-50','01.601.728/0001-31','11.394.971/0001-80','03.918.923/0001-15','41.911.577/0001-32','26.153.815/0001-02','28.913.706/0001-63','11.304.973/0001-30','12.430.787/0001-00','24.949.828/0001-59','20.531.564/0001-68','22.999.269/0001-66','08.109.298/0001-84','30.417.138/0001-51','16.737.163/0001-91','33.024.174/0001-43','24.669.112/0001-06','10.544.434/0001-06','34.479.357/0001-16','48.573.920/0001-25','27.708.294/0001-67','10.544.434/0001-06','20.354.233/0001-08','10.626.697/0001-64','34.890.464/0001-32','97.529.044/0001-45',");
+        //cnpjs.append("'11.692.713/0001-80','11.651.694/0001-43','27.881.128/0001-68','10.625.910/0001-13','47.104.053/0001-16','06.133.329/0001-07','29.565.147/0001-00','24.845.407/0001-88','45.158.931/0001-50','10.556.704/0001-07','47.577.784/0001-89','28.558.307/0001-21','17.887.235/0001-40','13.994.317/0001-32','05.459.124/0001-53','16.939.373/0001-62','12.578.066/0001-42','02.757.241/0001-05','22.090.030/0001-79','08.736.703/0001-94','36.903.277/0001-71','36.101.312/0001-39','27.868.250/0001-02','40.349.954/0001-29','01.365.523/0001-02','83.023.846/0001-74','703.249.421-84')");
+
+        //cnpjs.append("('00.407.278/0001-88','09.556.672/0001-52','41.911.577/0001-32','26.153.815/0001-02','28.913.706/0001-63','35.798.697/0001-72','10.835.975/0001-93','24.949.828/0001-59','30.417.138/0001-51','33.024.174/0001-43','24.669.112/0001-06','21.946.408/0001-20','77.340.479/0001-30',");
+        //cnpjs.append("'34.479.357/0001-16','48.573.920/0001-25','20.354.233/0001-08','10.626.697/0001-64','34.890.464/0001-32','05.145.683/0001-99','09.394.282/0001-23','97.529.044/0001-45','11.692.713/0001-80','11.651.694/0001-43','27.881.128/0001-68','10.625.910/0001-13','06.133.329/0001-07','29.565.147/0001-00','47.577.784/0001-89','28.558.307/0001-21','10.664.866/0001-50','73.216.582/0001-11','13.994.317/0001-32','05.459.124/0001-53','15.011.303/0001-87','16.939.373/0001-62',");
+        //cnpjs.append("'02.757.241/0001-05','22.090.030/0001-79','22.825.682/0001-04','36.903.277/0001-71','07.301.650/0001-16','27.868.250/0001-02','01.365.523/0001-02')");
+
+
+        //atendimento ao cliente
+        //cnpjs.append("('25.549.775/0001-41','42.219.080/0001-10','02.757.241/0001-05','50.936.263/0001-85','15.178.031/0001-04','02.470.597/0001-63','48.886.251/0001-41','20.354.233/0001-08','02.989.141/0001-04','31.570.137/0001-05','36.668.755/0001-06','26.297.214/0001-65','36.558.389/0001-32','01.448.747/0001-70','09.618.039/0001-41','42.536.851/0001-01')");
+        //String sql4 = "SELECT Id, Name, CNPJ_contabilidade_completo__c, Contabilidade__c, Produto_da_Contabilidade__c, OK_Faturar__c, OK_Faturar_Calculado__c, CNPJ_Contabilidade__c, ID_Funcoes_do_Portal__c FROM Itens_PRodutos__c WHERE ID_Funcoes_do_Portal__c = 'ID_BuscaExtrato' and CNPJ_contabilidade_completo__c in " + cnpjs.toString() +  " LIMIT 2000";
+
+        boolean leuEmpresa = false;
+
+        logger.logInfo("vai ler sql2");
+
+
+        QueryResult qres2 = connection.query(sql2);
+
+        if (qres2 != null) {
+
+
+
+            // Invoca rota que busca vai criar os amarelos de acordo com o produto vendido para o cliente
+            RouteEngine.execRoute("Ottimizza.Cria_Cor_Antes_OKFaturar");
+
+            for (int xx=0; xx<qres2.getSize(); xx++) {
+                SObject sobj2 = qres2.getRecords()[xx];
+
+
+                String idContabilidade = "";
+                try { idContabilidade = sobj2.getField("Name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                if (idContabilidade.equals("")) try { idContabilidade = sobj2.getField("name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+
+                if (!idContabilidade.equals("")) { 
+                    String OK_Faturar_Calculado  = "";
+                    String OK_Faturar = "";
+                    String cnpjContabilidade = "";
+                    String produtoIdPai = "";
+                    String idProduto = "";
+                    SObject Produto_da_Contabilidade__c = new SObject();
+                    String razaoSocial = "";
+                    String cnpjCompleto = "";
+                    String valorItem = "";
+
+
+                    try { OK_Faturar 			= sobj2.getField("OK_Faturar__c").toString();} catch(Exception xx) {OK_Faturar = ""; } 
+                    try { OK_Faturar_Calculado  = sobj2.getField("OK_Faturar_Calculado__c").toString();} catch(Exception xx) {OK_Faturar_Calculado = ""; } 
+                    try { cnpjContabilidade 	= sobj2.getField("CNPJ_Contabilidade__c").toString(); } catch(Exception ex) {cnpjContabilidade = ""; }
+                    try { produtoIdPai    		= sobj2.getField("ID_Funcoes_do_Portal__c").toString(); } catch(Exception ex) {produtoIdPai = ""; }
+                    try { idProduto 			= sobj2.getField("Produto_da_Contabilidade__c").toString();} catch(Exception xx) {idProduto = ""; } 
+                    try { razaoSocial 	 		= sobj2.getField("Contabilidade__c").toString(); } catch(Exception ex) {razaoSocial = ""; }
+                    try { cnpjCompleto 	 		= sobj2.getField("CNPJ_contabilidade_completo__c").toString(); } catch(Exception ex) {cnpjCompleto = ""; }
+                    try { valorItem 	 		= sobj2.getField("Valor__c").toString(); } catch(Exception ex) {valorItem = ""; }
+
+
+                    JSONObject registros = new JSONObject();
+                    registros.put("name", idContabilidade);
+                    registros.put("idProduto", idProduto);
+                    registros.put("OK_Fatuar_Calculado", true);
+                    registros.put("OK_Faturar__c", true);
+                    registros.put("Liberar_Funcao_Portal", false);
+                    registros.put("Gatilho_Atualiza_Cor", false);
+
+                    records.put(registros); 
+
+                    try {
+                        // CRIA REGISTRO ORGANIZATION_FUNCTIONS
+                        JSONObject portalBody = new JSONObject().put("cnpj", cnpjContabilidade).put("productId", produtoIdPai);
+                        String urlImportarProdutos = "https://oauth.ottimizza.com.br/api/v1/functions/server/organization/import";
+                        genericPost(portalBody, urlImportarProdutos, oauthToken, logger);
+                    }
+                    catch(Exception ex) {
+                        logger.logInfo("ERROR Ao Importar Functions -> "+ex.getMessage());
+                    }
+
+
+                    // somente para valores vendidos e nao churnados
+                    if (!valorItem.contains("-")) {
+
+                        // CRIA REGISTROS DE CADASTRO DE EMPRESAS NA CONTABILIDADE TAREFFA - PARA USO DA EQUIPE DE CLIENTES
+                        try {
+                            JSONObject tareffaBody = new JSONObject();
+                            tareffaBody.put("cnpj", cnpjCompleto);
+                            tareffaBody.put("razaoSocial", StringUtil.removeSpecialChars(razaoSocial));
+                            tareffaBody.put("nomeFantasia", StringUtil.removeSpecialChars(razaoSocial));
+                            tareffaBody.put("codigoERP", idContabilidade);
+                            tareffaBody.put("inscricaoEstadual", "Isento");
+                            tareffaBody.put("regimeTributario", 1);
+                            tareffaBody.put("cnaePrimario", "69.20-6-01");
+                            tareffaBody.put("situacao", 1);
+                            tareffaBody.put("dataInicioRegime", DateUtil.dateToString(new Date(), "yyyy-MM-dd"));
+                            //tareffaBody.put("caracteristicas", new JSONArray());
+
+
+
+
+                            tareffaBody.put("idQuestorZen", idProduto);
+                            tareffaBody.put("codigoCopiaERP", "");
+                            
+                            logger.logInfo("tareffaBody + " + tareffaBody.toString());
+                                           
+                            String urlEmpresas = "https://api-tareffa-spring-full.herokuapp.com/api/integracao/empresas";
+
+
+                            genericPost(tareffaBody, urlEmpresas, oauthToken, logger);
+                        }
+                        catch(Exception ex) {
+                            logger.logInfo("ERROR Ao Importar Empresas Tareffa -> "+ex.getMessage());
+                        }
+
+                        // CRIA SERVICOS AVULSOS PARA A EMPRESA - Tareffa
+                        try {
+
+                            String resultadoCriaServico =  geraServicoAvulso(oauthToken, cnpjContabilidade,produtoIdPai, oauthTokenTareffa, logger);
+
+                        }
+                        catch(Exception ex) {
+                            logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                        }
+
+                    }
+
+
+
+                }
+            }
+        }
+
+
+        logger.logInfo("vai ler sql3");
+
+        QueryResult qres3 = connection.query(sql3);
+        if (qres3 != null) {
+
+
+            for (int xx=0; xx<qres3.getSize(); xx++) {
+                SObject sobj2 = qres3.getRecords()[xx];
+
+
+                String idContabilidade = "";
+                try { idContabilidade = sobj2.getField("Name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                if (idContabilidade.equals("")) try { idContabilidade = sobj2.getField("name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+                if (!idContabilidade.equals("")) { 
+
+
+                    String OK_Faturar_Calculado  = "";
+                    String OK_Faturar = "";
+                    String cnpjContabilidade = "";
+                    String produtoIdPai = "";
+                    String idProduto = "";
+                    SObject Produto_da_Contabilidade__c = new SObject();
+                    String valorItem = "";
+
+
+
+                    try { OK_Faturar = sobj2.getField("OK_Faturar__c").toString();} catch(Exception xx) {OK_Faturar = ""; } 
+                    try { OK_Faturar_Calculado  = sobj2.getField("OK_Faturar_Calculado__c").toString();} catch(Exception xx) {OK_Faturar_Calculado = ""; } 
+                    try { cnpjContabilidade 	= sobj2.getField("CNPJ_Contabilidade__c").toString(); } catch(Exception ex) {cnpjContabilidade = ""; }
+                    try { produtoIdPai    		= sobj2.getField("ID_Funcoes_do_Portal__c").toString(); } catch(Exception ex) {produtoIdPai = ""; }
+                    try { idProduto 			= sobj2.getField("Produto_da_Contabilidade__c").toString();} catch(Exception xx) {idProduto = ""; } 
+                    try { valorItem 	 		= sobj2.getField("Valor__c").toString(); } catch(Exception ex) {valorItem = ""; }
+
+                    JSONObject registros = new JSONObject();
+                    registros.put("name", idContabilidade);
+                    registros.put("idProduto", idProduto);
+                    registros.put("OK_Fatuar_Calculado", false);
+                    registros.put("Liberar_Funcao_Portal", false);
+                    registros.put("Gatilho_Atualiza_Cor", false);
+
+
+                    records.put(registros); 
+
+                    try {
+                        // APAGA REGISTRO ORGANIZATION_FUNCTIONS
+                        JSONObject portalBody = new JSONObject().put("cnpj", cnpjContabilidade).put("productId", produtoIdPai);
+                        String urlImportarProdutos = "https://oauth.ottimizza.com.br/api/v1/functions/server/organization/inactive";
+                        genericPost(portalBody, urlImportarProdutos, oauthToken, logger);
+                    }
+                    catch(Exception ex) {
+                        logger.logInfo("ERROR Ao Inativar Functions -> "+ex.getMessage());
+                    }
+
+
+
+                }
+            }
+        }
+
+        logger.logInfo("vai ler sql4");
+
+
+        QueryResult qres4 = connection.query(sql4);
+
+        if (qres4 != null) {
+
+            for (int xx=0; xx<qres4.getSize(); xx++) {
+                SObject sobj4 = qres4.getRecords()[xx];
+
+
+                String idContabilidade = "";
+                try { idContabilidade = sobj4.getField("Name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                if (idContabilidade.equals("")) try { idContabilidade = sobj4.getField("name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+
+                if (!idContabilidade.equals("")) { 
+                    String OK_Faturar_Calculado  = "";
+                    String OK_Faturar = "";
+                    String cnpjContabilidade = "";
+                    String produtoIdPai = "";
+                    String idProduto = "";
+                    SObject Produto_da_Contabilidade__c = new SObject();
+                    String razaoSocial = "";
+                    String cnpjCompleto = "";
+                    String valorItem = "";
+
+
+
+                    try { OK_Faturar 			= sobj4.getField("OK_Faturar__c").toString();} catch(Exception xx) {OK_Faturar = ""; } 
+                    try { OK_Faturar_Calculado  = sobj4.getField("OK_Faturar_Calculado__c").toString();} catch(Exception xx) {OK_Faturar_Calculado = ""; } 
+                    try { cnpjContabilidade 	= sobj4.getField("CNPJ_Contabilidade__c").toString(); } catch(Exception ex) {cnpjContabilidade = ""; }
+                    try { produtoIdPai    		= sobj4.getField("ID_Funcoes_do_Portal__c").toString(); } catch(Exception ex) {produtoIdPai = ""; }
+                    try { idProduto 			= sobj4.getField("Produto_da_Contabilidade__c").toString();} catch(Exception xx) {idProduto = ""; } 
+                    try { razaoSocial 	 		= sobj4.getField("Contabilidade__c").toString(); } catch(Exception ex) {razaoSocial = ""; }
+                    try { cnpjCompleto 	 		= sobj4.getField("CNPJ_contabilidade_completo__c").toString(); } catch(Exception ex) {cnpjCompleto = ""; }
+                    try { valorItem 	 		= sobj4.getField("Valor__c").toString(); } catch(Exception ex) {valorItem = ""; }
+
+
+
+
+                    JSONObject registros = new JSONObject();
+                    registros.put("name", idContabilidade);
+                    registros.put("idProduto", idProduto);
+                    registros.put("Liberar_Funcao_Portal", false);
+                    registros.put("Gatilho_Atualiza_Cor", false);
+
+
+
+                    if (OK_Faturar.toUpperCase().contains("TRUE"))  registros.put("OK_Faturar__c", true);
+                    if (OK_Faturar.toUpperCase().contains("FALSE"))  registros.put("OK_Faturar__c", false);
+                    if (OK_Faturar_Calculado.toUpperCase().contains("TRUE"))  registros.put("OK_Fatuar_Calculado", true);
+                    if (OK_Faturar_Calculado.toUpperCase().contains("FALSE"))  registros.put("OK_Fatuar_Calculado", false);
+
+                    if (!records.toString().contains(idProduto)) {
+                        records.put(registros); 
+
+                        try {
+                            // CRIA REGISTRO ORGANIZATION_FUNCTIONS
+                            JSONObject portalBody = new JSONObject().put("cnpj", cnpjContabilidade).put("productId", produtoIdPai);
+                            String urlImportarProdutos = "https://oauth.ottimizza.com.br/api/v1/functions/server/organization/import";
+                            genericPost(portalBody, urlImportarProdutos, oauthToken, logger);
+                        }
+                        catch(Exception ex) {
+                            logger.logInfo("ERROR Ao Importar Functions -> "+ex.getMessage());
+                        }
+
+
+                        if (!valorItem.contains("-")) { 
+                            // CRIA REGISTROS DE CADASTRO DE EMPRESAS NA CONTABILIDADE TAREFFA - PARA USO DA EQUIPE DE CLIENTES
+                            try {
+                                JSONObject tareffaBody = new JSONObject();
+                                tareffaBody.put("cnpj", cnpjCompleto);
+                                tareffaBody.put("razaoSocial", StringUtil.removeSpecialChars(razaoSocial));
+                                tareffaBody.put("nomeFantasia", StringUtil.removeSpecialChars(razaoSocial));
+                                tareffaBody.put("codigoERP", idContabilidade);
+                                tareffaBody.put("inscricaoEstadual", "Isento");
+                                tareffaBody.put("regimeTributario", 1);
+                                tareffaBody.put("cnaePrimario", "69.20-6-01");
+                                tareffaBody.put("situacao", 1);
+                                tareffaBody.put("dataInicioRegime", DateUtil.dateToString(new Date(), "yyyy-MM-dd"));
+                                //tareffaBody.put("caracteristicas", new JSONArray());
+
+                                logger.logInfo("tareffaBody + " + tareffaBody.toString());
+
+
+
+                                tareffaBody.put("idQuestorZen", idProduto);
+                                tareffaBody.put("codigoCopiaERP", "");
+                                String urlEmpresas = "https://api-tareffa-spring-full.herokuapp.com/api/integracao/empresas";
+
+
+                                genericPost(tareffaBody, urlEmpresas, oauthToken, logger);
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Importar Empresas Tareffa -> "+ex.getMessage());
+                            }
+
+                            // CRIA SERVICOS AVULSOS PARA A EMPRESA - Tareffa
+                            try {
+
+                                String resultadoCriaServico =  geraServicoAvulso(oauthToken, cnpjContabilidade,produtoIdPai, oauthTokenTareffa, logger);
+
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                            }
+
+
+                        }
+                    }
+
+
+                }
+            }
+
+
+        }
+
+        logger.logInfo("vai ler sql5");
+
+        QueryResult qres5 = connection.query(sql5);
+
+        if (qres5 != null) {
+
+            for (int xx=0; xx<qres5.getSize(); xx++) {
+                SObject sobj5 = qres5.getRecords()[xx];
+
+
+                String idContabilidade = "";
+                try { idContabilidade = sobj5.getField("Name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                if (idContabilidade.equals("")) try { idContabilidade = sobj5.getField("name").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+
+                if (!idContabilidade.equals("")) { 
+                    String OK_Faturar_Calculado  = "";
+                    String OK_Faturar = "";
+                    String cnpjContabilidade = "";
+                    String produtoIdPai = "";
+                    String idProduto = "";
+                    SObject Produto_da_Contabilidade__c = new SObject();
+                    String razaoSocial = "";
+                    String cnpjCompleto = "";
+                    String valorItem = "";
+
+
+                    try { OK_Faturar 			= sobj5.getField("OK_Faturar__c").toString();} catch(Exception xx) {OK_Faturar = ""; } 
+                    try { OK_Faturar_Calculado  = sobj5.getField("OK_Faturar_Calculado__c").toString();} catch(Exception xx) {OK_Faturar_Calculado = ""; } 
+                    try { cnpjContabilidade 	= sobj5.getField("CNPJ_Contabilidade__c").toString(); } catch(Exception ex) {cnpjContabilidade = ""; }
+                    try { produtoIdPai    		= sobj5.getField("ID_Funcoes_do_Portal__c").toString(); } catch(Exception ex) {produtoIdPai = ""; }
+                    try { idProduto 			= sobj5.getField("Produto_da_Contabilidade__c").toString();} catch(Exception xx) {idProduto = ""; } 
+                    try { razaoSocial 	 		= sobj5.getField("Contabilidade__c").toString(); } catch(Exception ex) {razaoSocial = ""; }
+                    try { cnpjCompleto 	 		= sobj5.getField("CNPJ_contabilidade_completo__c").toString(); } catch(Exception ex) {cnpjCompleto = ""; }
+                    try { valorItem 	 		= sobj5.getField("Valor__c").toString(); } catch(Exception ex) {valorItem = ""; }
+
+
+
+                    JSONObject registros = new JSONObject();
+                    registros.put("name", idContabilidade);
+                    registros.put("idProduto", idProduto);
+                    registros.put("Liberar_Funcao_Portal", false);
+                    registros.put("Gatilho_Atualiza_Cor", false);
+
+
+
+                    if (OK_Faturar.toUpperCase().contains("TRUE"))  registros.put("OK_Faturar__c", true);
+                    if (OK_Faturar.toUpperCase().contains("FALSE"))  registros.put("OK_Faturar__c", false);
+                    if (OK_Faturar_Calculado.toUpperCase().contains("TRUE"))  registros.put("OK_Fatuar_Calculado", true);
+                    if (OK_Faturar_Calculado.toUpperCase().contains("FALSE"))  registros.put("OK_Fatuar_Calculado", false);
+
+                    if (!records.toString().contains(idProduto)) {
+                        records.put(registros); 
+
+                        try {
+                            // CRIA REGISTRO ORGANIZATION_FUNCTIONS
+                            JSONObject portalBody = new JSONObject().put("cnpj", cnpjContabilidade).put("productId", produtoIdPai);
+                            String urlImportarProdutos = "https://oauth.ottimizza.com.br/api/v1/functions/server/organization/import";
+                            genericPost(portalBody, urlImportarProdutos, oauthToken, logger);
+                        }
+                        catch(Exception ex) {
+                            logger.logInfo("ERROR Ao Importar Functions -> "+ex.getMessage());
+                        }
+
+                        if (!valorItem.contains("-")) {
+
+                            // CRIA REGISTROS DE CADASTRO DE EMPRESAS NA CONTABILIDADE TAREFFA - PARA USO DA EQUIPE DE CLIENTES
+                            try {
+                                JSONObject tareffaBody = new JSONObject();
+                                tareffaBody.put("cnpj", cnpjCompleto);
+                                tareffaBody.put("razaoSocial", StringUtil.removeSpecialChars(razaoSocial));
+                                tareffaBody.put("nomeFantasia", StringUtil.removeSpecialChars(razaoSocial));
+                                tareffaBody.put("codigoERP", idContabilidade);
+                                tareffaBody.put("inscricaoEstadual", "Isento");
+                                tareffaBody.put("regimeTributario", 1);
+                                tareffaBody.put("cnaePrimario", "69.20-6-01");
+                                tareffaBody.put("situacao", 1);
+                                tareffaBody.put("dataInicioRegime", DateUtil.dateToString(new Date(), "yyyy-MM-dd"));
+                                //tareffaBody.put("caracteristicas", new JSONArray());
+
+
+                                logger.logInfo("tareffaBody + " + tareffaBody.toString());
+
+
+                                tareffaBody.put("idQuestorZen", idProduto);
+                                tareffaBody.put("codigoCopiaERP", "");
+                                String urlEmpresas = "https://api-tareffa-spring-full.herokuapp.com/api/integracao/empresas";
+
+
+                                genericPost(tareffaBody, urlEmpresas, oauthToken, logger);
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Importar Empresas Tareffa -> "+ex.getMessage());
+                            }
+
+                            // CRIA SERVICOS AVULSOS PARA A EMPRESA - Tareffa
+                            try {
+
+                                String resultadoCriaServico =  geraServicoAvulso(oauthToken, cnpjContabilidade,produtoIdPai, oauthTokenTareffa, logger);
+
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                            }
+                        }
+
+                    }
+
+
+                }
+            }
+
+
+        }
+
+    } catch (Exception e) {
+        logger.logError(e);
+    }
+
+    return records;
+    //return new JSONArray();
+
+
+}
+
+
+public void enviaEmailGeral(String assunto,
+                            String destinatarioNome,
+                            String destinatarioEmail,
+                            StringBuilder mensagem,
+                            InoutLogger logger) throws Exception { 
+
+    for (int ff=0;ff<900000000;ff++) {
+
+    }
+
+    String subject = assunto;
+    String sendToName = destinatarioNome;
+    StringBuilder msg = mensagem;
+    enviaEmail(subject, destinatarioEmail, sendToName, msg.toString(), null, logger);
+}
+
+public void enviaEmail(String subject,
+                       String sendTo,
+                       String sendToName, 
+                       String mensagem,
+                       String filename,
+                       InoutLogger logger) throws Exception {
+
+
+
+    EmailStruct emailStruct = new EmailStruct();
+    emailStruct.setSmtpServer("mail.ottimizza.com.br");
+    emailStruct.setSmtpPort("26");
+    emailStruct.setSmtpUser("suporte@ottimizza.com.br");
+    emailStruct.setSmtpPassword("suporte@123");
+    emailStruct.setSubject(subject);   
+    emailStruct.setMessage(mensagem);
+    emailStruct.setFrom("suporte@ottimizza.com.br");
+    emailStruct.setSendTo(sendTo);
+    emailStruct.setName(sendToName);
+    if (filename != null) {
+        emailStruct.addAttachedFilename(filename);
+    }
+    emailStruct.setMessageType(InoutConstants.MESSAGE_TYPE_HTML);
+    //logger.logInfo(">> EmailStruct:\n" + emailStruct.toJSONObject());
+    SendEmail se = new SendEmail(null);
+    se.send(emailStruct);
+    logger.logInfo(">> Email Enviado!!" + subject + "---" + sendTo);
+    for (int ff=0;ff<900000000;ff++) {
+
+    }
+}
+
+public JSONObject genericPost(JSONObject body, String url, String authorization, InoutLogger logger) throws Exception {
+    StringBuilder responseRaw = new StringBuilder();
+    java.net.URL serviceURL = new java.net.URL(url);
+    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+    connection.setDoOutput(true); // indicates a post
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Authorization", "Bearer " + authorization);
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("Accept", "application/json");
+    try {
+        java.io.OutputStream os = connection.getOutputStream();
+        os.write(body.toString().getBytes());
+        os.flush();
+        os.close();
+    } catch (Exception ex1) {
+        logger.logInfo("Algo deu errado escrevendo Request Body.");
+        logger.logInfo(ex1.getMessage());
+    }
+    // Writes the Response Body...
+    try {
+        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            responseRaw.append(line);
+        }
+        reader.close();
+    } catch (Exception ex2) {
+        logger.logInfo("Algo deu errado escrevendo Response Body.");
+        logger.logInfo(ex2.getMessage());
+    }
+    return new JSONObject(responseRaw.toString());
+}
+
+
+public JSONObject genericSimplePost(JSONObject body, String url, String authorization, InoutLogger logger) throws Exception {
+    StringBuilder responseRaw = new StringBuilder();
+    java.net.URL serviceURL = new java.net.URL(url);
+    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+    connection.setDoOutput(true); // indicates a post
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Authorization", authorization);
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("Accept", "application/json");
+    try {
+        java.io.OutputStream os = connection.getOutputStream();
+        os.write(body.toString().getBytes());
+        os.flush();
+        os.close();
+    } catch (Exception ex1) {
+        logger.logInfo("Algo deu errado escrevendo Request Body.");
+        logger.logInfo(ex1.getMessage());
+    }
+    // Writes the Response Body...
+    try {
+        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            responseRaw.append(line);
+        }
+        reader.close();
+    } catch (Exception ex2) {
+        logger.logInfo("Algo deu errado escrevendo Response Body.");
+        logger.logInfo(ex2.getMessage());
+    }
+    return new JSONObject(responseRaw.toString());
+}
+public String doLogin(String username, String password, String server, InoutLogger logger) {
+    try {
+        String url = String.format(
+            "%s/oauth/token", server
+        );
+        StringBuilder responseRaw = new StringBuilder();
+        String token = "";
+        String form = String.format(
+            "username=%s&password=%s&grant_type=%s",
+            username, password, "password"
+        );
+
+        JSONObject data = new JSONObject();
+        data.put("grant_type", "password").put("username", username).put("password", password);
+        java.net.URL serviceURL = new java.net.URL(url);
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+        String authorization = Base64.getEncoder().encodeToString("858f84ff24730d133a63:1e601be1748c753a77f38cb85d5da097e3c63ead".getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + authorization);
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(form.getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logInfo("Algo deu errado escrevendo Request Body.");
+            logger.logInfo(ex1.getMessage());
+        }
+        // Writes the Response Body...
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+        } catch (Exception ex2) {
+            logger.logInfo("Algo deu errado escrevendo Response Body.");
+            logger.logInfo(ex2.getMessage());
+        }
+        if (responseRaw.toString().startsWith("{") && responseRaw.toString().endsWith("}")) {
+            JSONObject response = new JSONObject(responseRaw.toString());
+            if (response.has("access_token")) {
+                token = response.optString("access_token", "");
+            }
+        } else {
+            throw new Exception(responseRaw.toString());
+        }
+        return token;
+    } catch (Exception ex0) { }
+    return "";
+}
+
+
+public String geraServicoAvulso(String oauthToken, String cnpjContabilidade, String produtoIdPai, String oauthTokenTareffa, InoutLogger logger) {
+
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+    
+    try {
+
+        JSONObject tareffaBody = new JSONObject();
+        tareffaBody.put("Authorization", oauthToken);
+        tareffaBody.put("cnpjEmpresa", cnpjContabilidade);
+        tareffaBody.put("observacao", "Criado por "+servDinamic+".ottimizza.Atualiza_OK_Para_Faturar");
+        tareffaBody.put("complemento", "");
+
+        String urlTareffaAvulso = "https://api-parceiros.herokuapp.com/api/v1/questor/servico/avulso";
+        Date dataVencimento = new Date();
+
+        if (produtoIdPai.equals("ID_GestaoServicos")) {
+
+
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +1); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas Tareffa
+            tareffaBody.put("relatorioID", "BOAS_VINDAS_TAREFFA");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // criando ativacao de base tareffa
+            tareffaBody.put("relatorioID", "ATIVACAO_BASE_TAREFFA");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+            cal.add (Calendar.DATE, +3); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+
+            // CRIA SERVICO DE SOLICITACAO DE DOCUMENTOS
+            tareffaBody.put("relatorioID", "SOLICITACAO_DOCUMENTO_TAREFFA");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            cal.add (Calendar.DATE, +37); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+
+            // CRIA SERVICO DE HOMOLOGACAO TAREFFA
+            tareffaBody.put("relatorioID", "HOMOLOGACAO_TAREFFA");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+            cal.add (Calendar.DATE, +7); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+
+            // CRIA SERVICO DE ACOMPANHAMENTO TAREFFA
+            tareffaBody.put("relatorioID", "ACOMPANHAMENTO_TAREFFA");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+        }
+
+        if (produtoIdPai.equals("ID_Integrador")) {
+
+
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +1); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas integrador
+            tareffaBody.put("relatorioID", "BOAS_VINDAS_MEU_INTEGRADOR");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // CRIA SERVICO DE CAPACITACAO TAREFFA
+            cal.add (Calendar.DATE, +6); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            tareffaBody.put("relatorioID", "CAPACITACAO_INTEGRADOR");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // CRIA SERVICO DE CUSTOMIZACAO_INTEGRADOR 
+            //cal.add (Calendar.DATE, +23); 
+            //dataVencimento  = cal.getTime();
+            //tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            //tareffaBody.put("relatorioID", "CUSTOMIZACAO_INTEGRADOR");
+            //genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // CRIA SERVICO DE ACOMPANHAMENTO INTEGRADOR 
+            cal.add (Calendar.DATE, +23); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            tareffaBody.put("relatorioID", "ACOMPANHAMENTO_INTEGRADOR");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+
+
+        }
+        if (produtoIdPai.equals("ID_BuscaExtrato")) {
+
+
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +1); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas busca extrato
+            tareffaBody.put("relatorioID", "BOAS_VINDAS_BUSCA_EXTRATO");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // CRIA SERVICO DE HOMOLOGACAO BUSCA EXTRATO
+            cal.add (Calendar.DATE, +6); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            tareffaBody.put("relatorioID", "HOMOLOGACAO_BUSCA_EXTRATO");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+        }
+
+        if (produtoIdPai.equals("ID_Atendimento")) {
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +1); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas busca extrato
+            tareffaBody.put("relatorioID", "BOAS_VINDAS_ATENDIMENTO");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+            // CRIA SERVICO DE HOMOLOGACAO INTEGRADOR
+            cal.add (Calendar.DATE, +6); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            tareffaBody.put("relatorioID", "HOMOLOGACAO_ATENDIMENTO");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+        }
+    } catch (Exception ex0) { 
+        return ex0.toString();
+
+    }
+
+    return "ok";
+
+
+
+}
+
+

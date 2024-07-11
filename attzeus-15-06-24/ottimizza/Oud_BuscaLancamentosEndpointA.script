@@ -1,0 +1,448 @@
+{import: io_contabil.Database}; 
+{import: io_contabil.Regras};
+{import: io_contabil.Util};
+{import: io_contabil.Cloud};
+{import: io_contabil.DatabasePostgreSQL};
+{import: io_contabil.Salesforce};
+
+//oud
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    DatabasePostgreSQL postgre	= new DatabasePostgreSQL();
+    DBPostgreSQL db				= null;
+    CloudAPI cloudAPI			= new CloudAPI();
+
+    JSONArray cnpjs				= new JSONArray();
+    JSONArray lancamentos		= new JSONArray();
+
+    String tipoMov				= "";
+    String rn					= "\r\n";
+    String aspas				= "\"";
+
+    SysProperties propsCont		= SysProperties.getInstance();
+    SysProperties props			= SysProperties.getInstance();
+	SysProperties propsOtt = SysProperties.getInstance();
+
+    propsOtt.load("contabil/Ottimizza/contabil.properties");
+
+    DataBase dbIOCont = null;
+    // DataBase dbIOContOtt = null;
+
+    JSONArray records = new JSONArray();
+    
+    String protocoloAnterior = "";
+	
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+
+    /*DBPostgreSQL dbFila = null;
+	try {
+		dbFila = postgre.connectDatabase("fila-workers", logger);
+	} catch (Exception e) {
+		logger.logError("Erro ao conextar fila-workers " + e.getMessage());
+		return new JSONArray();
+	}*/
+    
+    postStatus(servDinamic.toUpperCase(), "Ottimizza", "OUD_Busca", "Nada Pendente", "OUD_BuscaLancamentos", "OUD_BuscaLancamentos");
+	
+    try {
+
+        // routes.properties atualizado pelo atualiza_otwpadrao
+        propsCont.load("/contabil/Ottimizza/routes.properties");
+
+        db		= DatabasePostgreSQL.connectDatabase("api-listener-oic-processado", logger);
+
+        boolean conectado		= false;
+        StringBuilder listaIds	= new StringBuilder();
+        listaIds.append("[");
+
+        StringBuilder lancPg		= new StringBuilder();
+        StringBuilder lancRc		= new StringBuilder();
+        String empresa				= "";
+        String cnpjContabilidade	= "";
+        String listaIdsStr			= "";
+        String codErp				= "";
+        String contabilidade		= "";
+        String nomeBanco			= "";
+        String cnpj = "";
+
+
+        try {
+            lancamentos = postgre.buscaLancamentosOicProcessado(db, cnpj, logger);
+        } catch (Exception e) {
+			logger.logError("Erro buscando lancamentos " + e.getMessage());
+        }
+
+
+        if (lancamentos.length() > 0) {
+
+
+            for (int tt=0; tt<lancamentos.length(); tt++) {
+                
+                postStatus(servDinamic.toUpperCase(), INOUT_ROUTE_ID.substring(0, INOUT_ROUTE_ID.indexOf(".")), "Ocioso", "Nada Pendente", "Sem Arquivo Para Processar", INOUT_ROUTE_ID.substring(0, INOUT_ROUTE_ID.indexOf(".")));
+				
+                try {
+                    JSONObject lancamentoObj = new JSONObject(lancamentos.optJSONObject(tt).optString("lancamentos").replaceAll("\\\\",""));
+                    String listaId = "[" + lancamentos.optJSONObject(tt).optString("id") + "]";
+
+                    String nomeArquivo        =  lancamentoObj.optString("nomeArquivo");
+                    String nomeContabilidade  =  lancamentoObj.optString("nomeContabilidade");
+                    String nomeEmpresa 		  =  lancamentoObj.optString("nomeEmpresa");
+                    String codigoERP		  =  lancamentoObj.optString("codigoERP");
+                    String tipoMovimento      =  lancamentoObj.optString("tipoMovimento");
+                    String tipoLancamento     =  lancamentoObj.optString("tipoLancamento");
+                     
+
+                    String diretorio = "";
+
+                    logger.logInfo(lancamentoObj.toString()); 
+
+
+                    if (tipoMovimento.contains("DEB") || tipoMovimento.contains("PAG") || tipoLancamento.equals("1")) {
+                        diretorio = "/inout/contabil/"+nomeContabilidade+"/"+nomeEmpresa+"_#"+codigoERP+"/APagar/Processado";
+                    }
+                    else  {
+                        diretorio = "/inout/contabil/"+nomeContabilidade+"/"+nomeEmpresa+"_#"+codigoERP+"/AReceber/Processado";
+                    }
+
+                    nomeArquivo = cutString(nomeArquivo, codigoERP, "_202");
+                    if (!nomeArquivo.toUpperCase().contains("OTT_OUD")) nomeArquivo = nomeArquivo.replaceAll("OUD_","");
+
+                    if (nomeArquivo.toUpperCase().contains("XLSX") && !nomeArquivo.toUpperCase().contains(".XLSX")) {
+                        nomeArquivo = nomeArquivo.replaceAll("XLSX","\\.XLSX");
+                    }
+
+                    File file2 = new File(diretorio);
+                    File []  files = file2.listFiles();
+
+
+                    if (FileUtil.dirHasFiles(diretorio)) {
+
+                        if (FileUtil.dirHasFiles(diretorio)) {
+                            for (File fl: files) {
+  
+                                if (nomeArquivo.toUpperCase().contains("PROTOCOLO:")) {
+
+                                    if (StringUtil.removeSpecialChars(cutString(fl.getAbsolutePath().toUpperCase(), "PROCESSADO")).contains("_ID"+cutString(nomeArquivo.toUpperCase(), "PROTOCOLO:"))) {
+
+
+
+                                        if (!nomeContabilidade.toUpperCase().contains("RODAR_TODAS")) {
+
+                                            try{
+                                                props.load("contabil/" + nomeContabilidade + "/contabil.properties");
+
+                                                // conecta ao BANCO DE DADOS
+                                                if (dbIOCont == null) {
+                                                    dbIOCont = connectIOContabil(props, logger);
+                                                }
+                                                try{
+                                                    String stringLote = "_PAGAR";
+                                                    String loteIdBucket = "";
+                                                    
+													if (tipoMovimento.toUpperCase().contains("CRE") || tipoMovimento.toUpperCase().contains("REC") || tipoLancamento.equals("2")) stringLote = "_RECEBER";
+
+
+                                                    //#2304-003450. Elimina os arquivos que ainda nao foram processados para evitar de encontrarmos 2 IDs
+                                                    // o que causa erro na integracao
+                                                    try {
+
+                                                        // loteIdBucket = cutString(fl.getName().toUpperCase(), "_ID", "_");
+                                                        loteIdBucket = getProtocoloId(fl.getName());
+  
+                                                        String diretorioAuxDepara = "c:/inout/contabil/" + nomeContabilidade + "/" + toDisplayCase(nomeEmpresa) + "_#" + codigoERP + "/DePara";
+                                                        String diretorioDestino  = "c:/inout/contabil/" + nomeContabilidade + "/" + toDisplayCase(nomeEmpresa) + "_#" + codigoERP + "/APagar";
+                                                        if (stringLote.toUpperCase().contains("RECEBE"))  diretorioDestino  = "c:/inout/contabil/" + nomeContabilidade + "/" + toDisplayCase(nomeEmpresa) + "_#" + codigoERP + "/AReceber";
+
+ 
+                                                        /*File auxFile2 = new File(diretorioDestino);
+                                                        File []  arquivosCaixaTemp = auxFile2.listFiles();
+                                                        for (File auxFl: arquivosCaixaTemp) {
+                                                            if(auxFl.getName().toUpperCase().equals("PROCESSADO")) continue;
+
+                                                            String loteIdAux = cutString(auxFl.getName().toUpperCase(), "_ID", "_");
+                                                            if (loteIdAux.equals(loteIdBucket)) continue;
+
+                                                            try {
+                                                                FileUtil.deleteFile(auxFl);
+                                                            }
+                                                            catch (Exception xx) {}
+                                                        }  */
+
+
+                                                        File auxFile2 = new File(diretorioAuxDepara);
+                                                        File []  arquivosCaixaTemp = auxFile2.listFiles();
+                                                        for (File auxDeparaTemp: arquivosCaixaTemp) {
+															
+                                                             if(auxDeparaTemp.getName().toUpperCase().equals("PROCESSADO")) continue;
+
+                                                            // String loteIdAux = cutString(auxDeparaTemp.getName().toUpperCase(), "_ID", "_");
+                                                            String loteIdAux = getProtocoloId(auxDeparaTemp.getName());
+ 															
+															if (loteIdAux.equals(loteIdBucket)) continue;
+                                                            try {
+                                                                if (auxDeparaTemp.getName().toUpperCase().contains(stringLote)){
+ 																	
+                                                                    FileUtil.deleteFile(auxDeparaTemp);
+ 
+                                                                }
+                                                            }
+                                                            catch (Exception xx) { 
+                                                                logger.logInfo(" erro ao apagar " + xx);
+                                                            }
+                                                        }
+
+                                                    }
+                                                    catch (Exception xx) {
+                                                        logger.logInfo(" erro ao ler pasta depara " + xx);
+                                                    }  
+                                                     
+                                                    dbIOCont.delete("IO_MOVIMENTO")
+                                                    .where("CODEMPRESA=? AND LOTE like ?")
+                                                    .param(codigoERP)
+                                                    .param("%"+stringLote+"%")
+                                                    .execute();
+
+
+
+                                                }catch(Exception ec){
+													logger.logError("Problema 197 - " + ec.getMessage());
+                                                }
+
+                                            }catch(Exception ee) {
+												logger.logError("Problema 201 - " + ee.getMessage());
+                                            }
+
+                                            if (dbIOCont != null) {
+                                                dbIOCont.closeConnection();
+                                                dbIOCont = null;
+                                            }
+                                        }
+
+                                        JSONObject js = new JSONObject();
+                                        js.put("Contabilidade", nomeContabilidade);
+                                        js.put("Arquivo", 		nomeArquivo);
+                                        js.put("Empresa", nomeEmpresa);
+                                        js.put("Tipomovimento", tipoMovimento);
+                                        js.put("CodigoERP", codigoERP);
+                                        js.put("Encontrou Arquivo", cutString(fl.getAbsolutePath().toUpperCase(), "PROCESSADO"));
+                                        
+                                        records.put(js);
+
+
+                                        File arquivoDeploy  = new File(fl.getAbsolutePath());
+                                        File arquivoPortal  = new File(fl.getAbsolutePath().replaceAll("Processado\\\\",""));
+
+                                        //logger.logInfo("arquivoDeploy.getAbsolutePath " + arquivoDeploy.getAbsolutePath());
+                                        //logger.logInfo("arquivoPortal.getAbsolutePath " + arquivoPortal.getAbsolutePath());
+										
+										// if (dbIOContOtt == null) {
+											// dbIOContOtt = connectIOContabil(propsOtt, logger);
+										// }
+                                        
+                                        logger.logInfo("Protocolo anterior " + protocoloAnterior + " | " + getProtocoloId(fl.getName()));
+										
+										//if (fl.getAbsolutePath().toUpperCase().contains("FUTURO") || fl.getAbsolutePath().toUpperCase().contains("MARLIAN") || fl.getAbsolutePath().toUpperCase().contains("MICALI") || fl.getAbsolutePath().toUpperCase().contains("CONTAR") || fl.getAbsolutePath().toUpperCase().contains("CONCEITOCONTABILIDADE")) {
+                                        // if (!protocoloAnterior.equals(getProtocoloId(fl.getName()))) {
+                                        	/*if (fl.getAbsolutePath().toUpperCase().contains("MICALI") || fl.getAbsolutePath().toUpperCase().contains("MARLIAN") || nomeContabilidade.toUpperCase().startsWith("T")
+                                                    || nomeContabilidade.toUpperCase().startsWith("U") || nomeContabilidade.toUpperCase().startsWith("V") || nomeContabilidade.toUpperCase().startsWith("W")
+                                                    || nomeContabilidade.toUpperCase().startsWith("X") || nomeContabilidade.toUpperCase().startsWith("Y") || nomeContabilidade.toUpperCase().startsWith("Z")
+                                               		|| nomeContabilidade.toUpperCase().startsWith("M") || nomeContabilidade.toUpperCase().startsWith("N") || nomeContabilidade.toUpperCase().startsWith("O")
+                                               		|| nomeContabilidade.toUpperCase().startsWith("P") || nomeContabilidade.toUpperCase().startsWith("Q") || nomeContabilidade.toUpperCase().startsWith("R")
+                                               		|| nomeContabilidade.toUpperCase().startsWith("S") || nomeContabilidade.toUpperCase().startsWith("H") || nomeContabilidade.toUpperCase().startsWith("I")
+													|| nomeContabilidade.toUpperCase().startsWith("J") || nomeContabilidade.toUpperCase().startsWith("K") || nomeContabilidade.toUpperCase().startsWith("L")) {*/
+                                            
+                                            
+                                            logger.logInfo("Inicio reprocessamento " + nomeContabilidade.toUpperCase() + " | " + cutString(fl.getAbsolutePath().toUpperCase(), fl.getAbsolutePath().toUpperCase().lastIndexOf("/")) + " | " + getProtocoloId(fl.getName()));
+                                            
+											// if (!cutString(fl.getAbsolutePath().toUpperCase(), fl.getAbsolutePath().toUpperCase().lastIndexOf("/")).equals("/PROCESSADO")) {
+												// logger.logInfo("AP " + fl.getAbsolutePath().toUpperCase() + " | " + cutString(fl.getAbsolutePath(), 0, "Processado").replaceAll("\\\\", "/"));
+                                                
+                                                // String dateString = "2024-06-12"; // Exemplo de data
+												// Date sqlDate = java.sql.Date.valueOf(dateString);
+
+												// try {
+													// dbIOContOtt.insert("IO_FILA")
+														// .fields("DIRETORIO,DATA_CRIACAO,NOMEARQUIVO")
+														// .param(cutString(fl.getAbsolutePath(), 0, "Processado").replaceAll("\\\\", "/")+"/")
+														// .param(sqlDate)
+														// .param(fl.getName())
+														// .execute();
+												// } catch (Exception e) {
+													// logger.logInfo("ERRO INSERINDO NA FILA " + e.getMessage());
+												// }
+												
+												/*try {
+													dbFila.update("IO_LOG")
+													  .fields("REPROCESSAMENTO")
+													  .where("NOMEARQUIVO LIKE ?")
+													  .param("INICIADO")
+													  .param("%"+getProtocoloId(fl.getName())+"%")
+													  .debug(logger)
+													  .execute();
+												} catch (Exception e) {
+													logger.logError("Erro ao atualizar log " + e.getMessage());
+												}*/
+											// }
+                                        // }
+                                        
+                                        // protocoloAnterior = cutString(fl.getName().toUpperCase(), "_ID", "_");
+                                        protocoloAnterior = getProtocoloId(fl.getName());
+
+										// if (dbIOContOtt != null) {
+											// dbIOContOtt.closeConnection();
+											// dbIOContOtt = null;
+										// }
+										
+										/*if (dbFila != null) {
+											dbFila.closeConnection();
+											dbFila = null;
+										}*/
+
+
+                                        try {
+											FileUtil.copyFolder(arquivoDeploy, arquivoPortal);
+										} catch (Exception e) {
+											logger.logError("Erro copy folder1 " + e.getMessage());
+										}
+                                        continue;
+                                    }
+
+                                } 
+
+
+
+                                if (StringUtil.removeSpecialChars(cutString(fl.getAbsolutePath().toUpperCase().replaceAll("OUD__","").replaceAll("OUD_",""), "PROCESSADO")).contains(nomeArquivo.replaceAll("OUD__","").replaceAll("OUD_",""))) {
+
+
+                                    JSONObject js = new JSONObject();
+                                    js.put("Contabilidade", nomeContabilidade);
+                                    js.put("Arquivo", 		nomeArquivo);
+                                    js.put("Empresa", nomeEmpresa);
+                                    js.put("Tipomovimento", tipoMovimento);
+                                    js.put("CodigoERP", codigoERP);
+                                    records.put(js);
+
+
+                                    File arquivoDeploy  = new File(fl.getAbsolutePath());
+                                    File arquivoPortal  = new File(fl.getAbsolutePath().replaceAll("Processado\\\\",""));
+									
+									try {
+										FileUtil.copyFolder(arquivoDeploy, arquivoPortal);
+									} catch (Exception e) {
+										logger.logError("Erro copy folder2 " + e.getMessage());
+									}
+
+                                } 
+
+
+                            }
+                        }
+                    }
+
+
+                    try {
+
+                        String uri = "https://api-listener-oic-processado.herokuapp.com/api/v1/arquivos_processados/integra_oic";
+                        cloudAPI.doPost(uri, listaId);
+                    } catch (Exception e) {
+                        logger.logInfo("*** NAO foi possivel fazer update de lista de IDs "+ "[6]");
+                        logger.logInfo("*** Error "+e.getMessage());
+
+                    }
+
+
+
+
+                }
+                catch (Exception xx) {
+					logger.logError("Penultimo erro " + xx.getMessage());
+				}
+            }
+
+
+        }
+
+
+    } catch (Exception e) {
+        logger.logInfo("*** por algum motivo cai no catch geral da rota -> "+e.getMessage());
+    } finally {
+        if (db != null) db.closeConnection();
+		if (dbIOCont != null) {
+			dbIOCont.closeConnection();
+			dbIOCont = null;
+		}
+		// if (dbIOContOtt != null) {
+			// dbIOContOtt.closeConnection();
+			// dbIOContOtt = null;
+		// }
+    }
+    return records;
+}
+
+public String getProtocoloId(String nomeArquivo) {
+	return quantityOf(nomeArquivo.toUpperCase(), "_ID") > 1 ? 
+			cutString(nomeArquivo.toUpperCase(), nomeArquivo.toUpperCase().lastIndexOf("_ID")+3, "_") : cutString(nomeArquivo.toUpperCase(), "_ID", "_");
+}
+
+public void postStatus(String servidor, String workflow, String contabilidade, String empresa, String tipo, String id) {
+    String url = "https://api-status-server.herokuapp.com/status";
+
+
+    try {
+
+
+        JSONObject body = new JSONObject();
+
+        body.put("servidor", servidor);
+        body.put("workflow", workflow);
+        body.put("contabilidade", contabilidade);
+        body.put("empresa", empresa);
+        body.put("tipo", tipo);
+        body.put("id", servidor + id);
+
+        java.net.URL serviceURL = new java.net.URL(url);
+
+        // Opens java.net.URL as a POST Request
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(body.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logError("Erro tentando enviar informacoes para o status server -> " + ex1);
+        } 
+
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            StringBuilder responseRaw = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+			
+			//logger.logDebug("RESPONSE " + responseRaw.toString());
+			//logger.logDebug("BODY     " + body.toString());
+			
+        } catch (Exception ex2) {
+            logger.logError("Segundo Catch " + ex2);
+        } 
+
+    } catch (Exception ex2) {
+        logger.logError("Segundo Catch " + ex2);
+    }
+
+}

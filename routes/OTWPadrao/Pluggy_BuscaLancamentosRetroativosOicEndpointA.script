@@ -1,0 +1,661 @@
+{import: io_contabil.Database};
+{import: io_contabil.Regras};
+{import: io_contabil.Util};
+{import: io_contabil.DatabasePostgreSQL};
+{import: io_contabil.Lancamentos};
+
+//pluggy
+public JSONArray run(InoutLogger logger) throws Exception {
+
+
+    ////////////////////////////////////////////
+    // *** testa usando cnpj ottimizza
+    boolean testeD			= false;
+    boolean possuiMCTeste	= false;
+
+    DataBase dbIOContOtt = null;
+	
+    // gera seguranca nas conexoes com Heroku
+    // Create a trust manager that does not validate certificate chains
+    javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[] {
+        new javax.net.ssl.X509TrustManager(){
+            public java.security.cert.X509Certificate[] getAcceptedIssuers(){ return null; }
+            public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+            public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) { }
+        }
+    };
+
+    // Install the all-trusting trust manager
+    try {
+        javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("TLS");
+        sc.init(null, trustAllCerts, new java.security.SecureRandom());
+        javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+    } catch (Exception e) {
+        // 
+    }
+
+
+    DatabasePostgreSQL sqlDatabase	= new DatabasePostgreSQL();
+    DBPostgreSQL dbPartner			= null;
+	
+	// DBPostgreSQL dbFila = null;
+	/*try {
+		dbFila = sqlDatabase.connectDatabase("fila-workers", logger);
+	} catch (Exception e) {
+		logger.logError("Erro ao conextar fila-workers " + e.getMessage());
+		return new JSONArray();
+	}*/
+
+    StringBuilder uri	   = new StringBuilder();
+    JSONObject objPluggy   = new JSONObject();
+    JSONObject infosReprocessamento = new JSONObject();
+
+    StringBuilder podemLer = new StringBuilder();
+    StringBuilder txtFinal = new StringBuilder();
+    StringBuilder lancamentos = new StringBuilder();
+
+    String url			 = "";
+    String urn			 = "";
+
+    String cnpjContabilidade = "";
+    String cnpj		 = "";
+    String lote = "";
+    String tipoMovimento = "";
+    String banco = "";
+    String start		= "";	// yyyy-MM-dd
+    String end			= "";	// yyyy-MM-dd
+    String empresa		= "";	 
+    String codEmpresa   = "";
+
+    String dirNamePAG = "";
+    String dirNameREC = "";
+	
+    String nomeArquivoOMC = "";
+    String protocoloAnterior = "";
+
+
+    boolean leuPag = false;
+    boolean leuRec = false;
+
+    SysProperties propsCont	= SysProperties.getInstance(); 
+    SysProperties props		= SysProperties.getInstance(); 
+    SysProperties propsOtt = SysProperties.getInstance();
+
+    String contabilidade	= "";
+    boolean possuiMeuCaixa	= false;
+    String hoje				= DateUtil.dateToString(new Date(),"dd/MM/yyyy");
+    String dia				= cutString(hoje, 0, "/");
+    double saldo			= 0;
+
+    try { 
+        end			= getCampoDate(getPreviousDay(hoje, -1, false),"dd/MM/yyyy","yyyy-MM-dd");
+        start       = DateUtil.dateToString(subDaysToDate(new Date(), 90), "yyyy-MM-dd");
+
+        start		= cutString(start, 0, 8)+"-01";
+    } catch (Exception e) {
+        start		= "";
+        end			= "";
+    }
+	
+	int errorAccount = 0;
+
+    propsOtt.load("contabil/Ottimizza/contabil.properties");
+
+    // criaa hash mapp dos id lode de erro
+    StringBuilder deu_erro = new StringBuilder();
+    StringBuilder deu_ok = new StringBuilder();
+
+	postStatus("S11", "Ottimizza", "Pluggy_Retroativo", "Nada Pendente", "Sem Arquivo Para Processar", "Roda do S1", logger);
+
+    try {
+        propsCont.load("/contabil/Ottimizza/routes.properties");
+        dbPartner = DatabasePostgreSQL.connectDatabase("api-partner", logger);
+        String apiKey = generateApiKey("https://api.pluggy.ai/auth", "1be5f0c0-0866-4aa4-830a-bd26d9f531d3", "6c546d91-ebfb-43f2-8667-cd8652cf61a7", logger);
+        //apiKey = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjoiMjI1YmU0Zjk0MjQ4NDA3ZTFmYzAzMWQyYTQxNDZkOWU6NmEzZDdhNGZmMWUxNzAwZDQyYThmNmUwM2RkY2FkNjc1ODc0ZWI1NDVmOGZiNTgzZmJhNzA2OTUwMDRiMDM1MWQ5YmVkNDNkNzA2ODRhNWYxMjhhZjQxZDczMTgwMzc0ZmEwNWJhZGFhNzNlOTAyZTQ2NTk4OWZkNTM3NGIyOGUzZDZjYzM4MGVjN2IzNWNlZWNlOTc3ODEzMTI0NGU3ZiIsImlhdCI6MTcwMzE2MDAyNSwiZXhwIjoxNzAzMTY3MjI1fQ.VJEig7BG6cnyhwT9p02Nv82ISLyPcrbngxrLgOuP8epzZnSfJGOYnQVvtyxMgAsPD0OQe7chLFf4ny3Gj-hYFgThm7wdziYBdeChpDwICE6VfLAeTE-IA-v6T75LtYLLuuk-GnEXHOYKkKKt9DiUT9T53o3IoOtvhTF0JH7gkRsmx2G3oYZLcYI3eXhOG4UK9uO_fQO6Mj-I8VYdch1VX2nZX7joK3pjn7BK5y0c-V7jJDIT8bVTZ6EdMtPqgvklEnTkM-BHrOEVGKpbi5uD8qnchhKZWjdRhjAOEFGpvuagpvjxhG2mpspBShsort2nWquzuHci9-AVcJzm0kS2Kw";
+
+        File f = new File(RouteEngine.INOUT_HOME + "/contabil/ottimizza/processar/Pluggy");
+        String[] nomesArquivos = f.list();
+		String protocolosProcessadosAnteriormente = "";
+        for (String nomeArquivo : nomesArquivos) {
+            Boolean leuLancamentos = false;		
+			errorAccount = 0;
+            try {
+                if(nomeArquivo.equals("Processado")) continue;
+                logger.logInfo("LENDO ARQUIVO > "+nomeArquivo);
+
+                FileReader readerProps = new FileReader(RouteEngine.INOUT_HOME + "/contabil/ottimizza/processar/Pluggy/"+nomeArquivo);
+                String conteudo = readerProps.readAll();
+                infosReprocessamento = new JSONObject(conteudo);
+                //logger.logInfo(infosReprocessamento.toString());
+
+                String dateRange = infosReprocessamento.optString("dateRange");
+                List<String> datas = Arrays.asList(dateRange.split(";"));
+                start = datas.get(0).toString();
+                end = datas.get(1).toString();
+
+                cnpj = infosReprocessamento.optString("cpfCnpj");
+                cnpjContabilidade = infosReprocessamento.optString("cnpjAccounting");
+                lote = infosReprocessamento.optString("lote");
+                tipoMovimento = infosReprocessamento.optString("tipoMovimento");
+                banco = Arrays.asList(nomeArquivo.split("_")).get(1).toString();
+
+                JSONArray itemIdAray = buscaAuthorizationPorCnpj(dbPartner, cnpj, banco, logger);
+                for(int xx = 0; xx < itemIdAray.length(); xx ++) {
+
+                    JSONObject itemIdOb = itemIdAray.optJSONObject(xx);
+                    String itemId = itemIdOb.optString("token");
+                    
+                    //logger.logInfo( "itemId = " + itemId);
+                    
+
+                    //String itemId = buscaAuthorizationPorCnpj(dbPartner, cnpj, banco, logger);
+
+                    banco = StringUtil.removeSpecialCharsToUC(banco);
+                    if(banco.contains(" "))
+                        banco = banco.replaceAll(" ", "_");
+
+                    // ignora sujeiras
+                    if (cnpj == null) continue;
+                    if (cnpjContabilidade == null) continue;
+                    if (cnpj.equals("")) continue;
+                    if (cnpjContabilidade.equals("")) continue;
+
+                    try {
+                        contabilidade	= toDisplayCase(propsCont.get(cnpjContabilidade));
+                        props.load("/contabil/" + contabilidade + "/contabil.properties");
+                        empresa	= props.get(cnpj);             
+                        codEmpresa = props.get(empresa.toUpperCase() + "_COD_EMPRESA");			
+                    } catch (Exception xx) {
+                        logger.logError("ERROR 171 "+cnpjContabilidade);
+                        try{
+                            FileUtil.moveToDir(RouteEngine.INOUT_HOME+"/contabil/Ottimizza/processar/Pluggy/"+nomeArquivo, "C:/inout/contabil/Ottimizza/processar/Pluggy/Processado");
+                        }
+                        catch(Exception ex) {
+                            logger.logInfo("ERROR SEND TO FOLDER "+ ex.getMessage());
+                        }	
+                        continue;
+                    }
+                    String compDirName = empresa + "_#" + codEmpresa; 
+
+                    try {
+                        uri	= new StringBuilder();
+                        uri.append("https://api.pluggy.ai/accounts?itemId=").append(itemId);
+                        JSONObject itemAccounts = genericGet(uri.toString(), apiKey, logger);
+                        JSONArray accounts = itemAccounts.optJSONArray("results");
+						
+						if (accounts.length() == 0 && errorAccount == 0) {
+							errorAccount = 1;
+						}
+						
+                        for(int i = 0; i < accounts.length(); i ++) {										
+                            txtFinal = new StringBuilder();
+                            lancamentos = new StringBuilder();
+
+                            txtFinal.append("ARQUIVO GERADO PELA PARCERIA COM A PLUGGY");
+                            txtFinal.append("\n\r");
+
+                            JSONObject account = accounts.optJSONObject(i);
+                            String accountName = "";
+
+							// DEVINIDO QUE NAO SERA LIDO CONTAS DO SUBTYPE SAVINGS_ACCOUNT -> APLICACAO - POUPANCA - COTAS - ETC
+							if(account.has("subtype") && account.optString("subtype").toUpperCase().equals("SAVINGS_ACCOUNT"))
+								continue;
+
+                            try {
+                                if(account.has("bankData") && !account.optString("bankData").equals("") && account.optString("bankData") != null)
+                                    accountName = account.optJSONObject("bankData").optString("transferNumber");
+                                if(account.has("creditData") && !account.optString("creditData").equals("") && account.optString("creditData") != null)
+                                    accountName = account.optString("type")+"-"+account.optJSONObject("creditData").optString("brand");
+
+                                if(accountName.contains("/"))
+                                    accountName = accountName.replaceAll("/", "-");
+
+                                accountName = StringUtil.removeSpecialCharsToUC(accountName);
+                            }
+                            catch (Exception xx) {
+                                continue;
+
+                            }
+
+
+                            //logger.logInfo("AccountName -> "+StringUtil.removeSpecialCharsToUC(banco+"-"+accountName.trim()+"_"+start+"-"+end));
+                            uri = new StringBuilder();
+                            uri.append("https://api.pluggy.ai/transactions?accountId=").append(account.optString("id")).append("&from="+start).append("&to="+end).append("&pageSize=500");
+                            for (int offset=1;offset<100;offset++) {
+                                String urlExtrato = uri.toString()+"&page="+offset;
+                                objPluggy = genericGet(urlExtrato, apiKey, logger);
+                                // quando nao tiver mais paginas para ler do extrato, break para ir para o proximo CNPJ             
+                                if (objPluggy.has("results") && objPluggy.optJSONArray("results").length() == 0) break;
+                                JSONArray lancamentosPluggy = new JSONArray(objPluggy.optString("results").toString());
+                                for(int j = 0; j < lancamentosPluggy.length(); j++) {
+                                    JSONObject objArr = lancamentosPluggy.getJSONObject(j);
+                                    objArr.put("PARTNER_OTTIMIZZA", "PLUGGY");
+                                    objArr.put("periodoExtrato_ott", start+" a "+end);
+                                    objArr.put("nomeArquivo_ott", StringUtil.removeSpecialCharsToUC(banco+"-"+accountName.trim()+"_"+start+"-"+end));
+                                    objArr.put("protocoloId_ott", lote);
+                                    objArr.put("cnpjContabilidade_ott", cnpjContabilidade);
+                                    objArr.put("cnpjEmpresa_ott", cnpj);
+                                    objArr.put("accountName", accountName);
+                                    txtFinal.append(objArr.toString());
+                                    txtFinal.append("\n\r");								
+                                }
+                            }
+							
+							nomeArquivoOMC = "ott_oud_id"+lote+"_PLUGGY_"+cnpj+"_"+banco+"-"+accountName.trim()+"_"+i + "_"+start+"-"+end+".omc";
+
+                            if(tipoMovimento.contains("PAG")) {
+                                leuPag = true;
+								errorAccount = 2;
+								
+								// nomeArquivoOMC = "ott_oud_id"+lote+"_PLUGGY_"+cnpj+"_"+banco+"-"+accountName.trim()+"_"+i + "_"+start+"-"+end+".omc";
+								
+                                dirNamePAG = RouteEngine.INOUT_HOME+"/contabil/"+contabilidade+"/"+compDirName+"/APagar/ott_oud_id"+lote+"_PLUGGY_"+cnpj+"_"+banco+"-"+accountName.trim()+"_"+i + "_"+start+"-"+end+".omc";						logger.logInfo("Dir -> "+dirNamePAG);
+                                FileWriter 	arquivoTpPAG = new FileWriter(dirNamePAG);
+                                arquivoTpPAG.writeNewFile(txtFinal.toString()); 
+
+                            }
+                            else {
+                                leuRec = true;
+								errorAccount = 2;
+								
+								// nomeArquivoOMC = "ott_oud_id"+lote+"_PLUGGY_"+cnpj+"_"+banco+"-"+accountName.trim()+"_"+i + "_"+start+"-"+end+".omc";
+								
+                                dirNameREC = RouteEngine.INOUT_HOME+"/contabil/"+contabilidade+"/"+compDirName+"/AReceber/ott_oud_id"+lote+"_PLUGGY_"+cnpj+"_"+banco+"-"+accountName.trim()+"_"+i + "_"+start+"-"+end+".omc";
+                                FileWriter 	arquivoTpREC = new FileWriter(dirNameREC);
+                                arquivoTpREC.writeNewFile(txtFinal.toString()); 
+								
+								
+
+
+
+                            }
+                        }
+                        if (dbIOContOtt == null) {
+                            dbIOContOtt = connectIOContabil(propsOtt, logger);
+                        }
+							logger.logInfo("DD " + tipoMovimento + " | " + leuPag + " | " + leuRec + " | " + getProtocoloId(nomeArquivoOMC) + " | " + protocolosProcessadosAnteriormente);
+						// if (!protocoloAnterior.equals(getProtocoloId(nomeArquivoOMC))) {
+						if (!protocolosProcessadosAnteriormente.contains(getProtocoloId(nomeArquivoOMC))) {
+							if (leuPag) {
+								/*if (dirNamePAG.toUpperCase().contains("MARLIAN") || dirNamePAG.toUpperCase().contains("MICALI") || contabilidade.toUpperCase().startsWith("T")
+									|| contabilidade.toUpperCase().startsWith("U") || contabilidade.toUpperCase().startsWith("V") || contabilidade.toUpperCase().startsWith("W")
+									|| contabilidade.toUpperCase().startsWith("X") || contabilidade.toUpperCase().startsWith("Y") || contabilidade.toUpperCase().startsWith("Z") 
+									|| contabilidade.toUpperCase().startsWith("M") || contabilidade.toUpperCase().startsWith("N") || contabilidade.toUpperCase().startsWith("O")
+									|| contabilidade.toUpperCase().startsWith("P") || contabilidade.toUpperCase().startsWith("Q") || contabilidade.toUpperCase().startsWith("R")
+									|| contabilidade.toUpperCase().startsWith("S") || contabilidade.toUpperCase().startsWith("H") || contabilidade.toUpperCase().startsWith("I") 
+									|| contabilidade.toUpperCase().startsWith("J") || contabilidade.toUpperCase().startsWith("K") || contabilidade.toUpperCase().startsWith("L")) {*/
+								/*String dateString = "2024-06-12"; // Exemplo de data
+								Date sqlDate = java.sql.Date.valueOf(dateString);*/
+								try {
+									dbIOContOtt.insert("IO_FILA")
+									.fields("DIRETORIO,DATA_CRIACAO,NOMEARQUIVO")
+									.param(RouteEngine.INOUT_HOME+"/contabil/"+contabilidade+"/"+compDirName+"/APagar/")
+									.param(new Date())
+									.param(nomeArquivoOMC)
+									.execute();
+								} catch (Exception e) {
+									logger.logInfo("ERRO INSERINDO NA FILA " + e.getMessage());
+								}
+								
+							}
+							if (leuRec) {
+								/*if (dirNameREC.toUpperCase().contains("MARLIAN")  || dirNamePAG.toUpperCase().contains("MICALI") || contabilidade.toUpperCase().startsWith("T")
+									|| contabilidade.toUpperCase().startsWith("U") || contabilidade.toUpperCase().startsWith("V") || contabilidade.toUpperCase().startsWith("W")
+									|| contabilidade.toUpperCase().startsWith("X") || contabilidade.toUpperCase().startsWith("Y") || contabilidade.toUpperCase().startsWith("Z") 
+									|| contabilidade.toUpperCase().startsWith("M") || contabilidade.toUpperCase().startsWith("N") || contabilidade.toUpperCase().startsWith("O")
+									|| contabilidade.toUpperCase().startsWith("P") || contabilidade.toUpperCase().startsWith("Q") || contabilidade.toUpperCase().startsWith("R")
+									|| contabilidade.toUpperCase().startsWith("S") || contabilidade.toUpperCase().startsWith("H") || contabilidade.toUpperCase().startsWith("I") 
+									|| contabilidade.toUpperCase().startsWith("J") || contabilidade.toUpperCase().startsWith("K") || contabilidade.toUpperCase().startsWith("L")) {*/								
+								String dateString = "2024-06-12"; // Exemplo de data
+								Date sqlDate = java.sql.Date.valueOf(dateString);
+								try {
+									dbIOContOtt.insert("IO_FILA")
+									.fields("DIRETORIO,DATA_CRIACAO,NOMEARQUIVO")
+									.param(RouteEngine.INOUT_HOME+"/contabil/"+contabilidade+"/"+compDirName+"/AReceber/")
+									.param(sqlDate)
+									.param(nomeArquivoOMC)
+									.execute();
+								} catch (Exception e) {
+									logger.logInfo("ERRO INSERINDO NA FILA " + e.getMessage());
+								}
+							
+							}
+						}
+						
+						// protocoloAnterior = getProtocoloId(nomeArquivoOMC); 
+						protocolosProcessadosAnteriormente += getProtocoloId(nomeArquivoOMC)+";"; 
+                        if (dbIOContOtt != null) {
+                            dbIOContOtt.closeConnection();
+                            dbIOContOtt = null;
+                        }
+                    }
+                    catch(Exception ex){
+                        logger.logInfo("ERROR AO CONSULTAR TRANSACTIONS -> "+ex.getMessage());
+                    }
+                }
+				
+				// TRATA ERRO PROCESSAMENTO 
+				if (errorAccount != 2) {
+                    /**
+                     *  Tratativa que gera mensagem para todos os arquivos processados descontinuada 15/06/2024
+                     * 
+                     *  LancamentosApi apiWeb = new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);
+				     *  atualizaProtocolo("", "PROBLEMALINK", "", getProtocoloId("ott_oud_id"+lote), apiWeb, logger);
+                     * 
+                     */
+                    deu_erro.append("ott_oud_id"+lote).append(";");
+				}else{
+                    deu_ok.append("ott_oud_id"+lote).append(";");
+                }
+
+            }
+            catch(Exception ex) {
+                logger.logInfo("ERROR GET TRANSACTIONS -> "+ex.getMessage());
+                try{
+                    FileUtil.moveToDir(RouteEngine.INOUT_HOME+"/contabil/Ottimizza/processar/Pluggy/"+nomeArquivo, "C:/inout/contabil/Ottimizza/processar/Pluggy/Processado");
+                }
+                catch(Exception ex) {
+                    logger.logInfo("ERROR SEND TO FOLDER "+ ex.getMessage());
+                }	
+            }
+
+            //VITOR 25/02/2022 TXT GENERATOR TEST
+            try {
+                String conteudoTXT = TXTcontentGenerator( "PLUGGY-" + banco, 
+                                                         props.get("CONTABILIDADE_NOME"), 
+                                                         props.get("CONTABILIDADE_ID"), 
+                                                         empresa);
+                // logger.logInfo(conteudoTXT);
+                String result = TXTfileGenerator(conteudoTXT);
+                // logger.logInfo(result);
+            } catch(Exception e) {
+                logger.logInfo("ERROR TRYING TO GET PROPERTIES" +e.toString());
+            }
+
+            try{
+                FileUtil.moveToDir(RouteEngine.INOUT_HOME+"/contabil/Ottimizza/processar/Pluggy/"+nomeArquivo, "C:/inout/contabil/Ottimizza/processar/Pluggy/Processado");
+            }
+            catch(Exception ex) {
+                logger.logInfo("ERROR SEND TO FOLDER "+ ex.getMessage());
+            }	
+
+        }
+
+    } catch (Exception xx) {
+        logger.logInfo("ERROR PRINCIPAL - "+xx.getMessage());
+    } finally {
+		if (dbIOContOtt != null) dbIOContOtt.closeConnection();
+		
+	}
+    if (dbPartner	 != null) dbPartner.closeConnection();
+    // if (dbFila != null) dbFila.closeConnection();
+
+    if(!deu_erro.toString().equals("")){ 
+        for(String process : deu_erro.toString().split(";")){
+            logger.logInfo("LOGDEAVALIACAO: " + process);
+            // se nao conter em deu_ok 
+            if(!deu_ok.toString().contains(process)){
+                logger.logInfo("DENTRO_IF: " + process);
+                LancamentosApi apiWeb = new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);
+                atualizaProtocolo("", "PROBLEMALINK", "", getProtocoloId(process), apiWeb, logger);
+            }
+        }
+    }
+
+    return new JSONArray();
+}
+
+public void postStatus(String servidor, String workflow, String contabilidade, String empresa, String tipo, String id, InoutLogger logger) {
+    String url = "https://api-status-server.herokuapp.com/status";
+	
+	if (servidor == null || servidor.equals("")) return; 
+    
+	JSONObject body = new JSONObject();
+
+    try {
+
+
+
+        body.put("servidor", servidor);
+        body.put("workflow", workflow);
+        body.put("contabilidade", contabilidade);
+        body.put("empresa", empresa);
+        body.put("tipo", tipo);
+        body.put("id", servidor + id);
+
+        java.net.URL serviceURL = new java.net.URL(url);
+
+        // Opens java.net.URL as a POST Request
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(body.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logError("Erro tentando enviar informacoes para o status server -> " + ex1);
+        }
+
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            StringBuilder responseRaw = new StringBuilder();
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+			
+			//logger.logDebug("RESPONSE " + responseRaw.toString());
+			//logger.logDebug("BODY     " + body.toString());
+			
+        } catch (Exception ex2) {
+            logger.logError("Primeiro Catch postStatus " + ex2);
+        } 
+
+    } catch (Exception ex2) {
+        logger.logError("Segundo Catch postStatus " + ex2);
+    } /*finally {
+		if (connection != null) {
+			connection.close();
+		}
+	}*/
+	
+	//logger.logInfo("Atualizando status servidor 40 - " + body.toString());
+
+
+}
+
+public String getProtocoloId(String nomeArquivo) {
+	return quantityOf(nomeArquivo.toUpperCase(), "_ID") > 1 ? 
+			cutString(nomeArquivo.toUpperCase(), nomeArquivo.toUpperCase().lastIndexOf("_ID")+3, "_") : cutString(nomeArquivo.toUpperCase(), "_ID", "_");
+}
+
+public void atualizaProtocolo(String liberaOic, String tipoErro, String diretoriArquivos, String protocolo_id, LancamentosApi apiWeb, InoutLogger logger) throws Exception {
+
+    JSONObject bodyProtocolo = new JSONObject().put("status", "3");
+	if (tipoErro.contains("PROBLEMALINK")) {
+        bodyProtocolo.put("mensagem", "Ooops. N"+(char)227+"o foi possivel buscar o extrato dessa empresa. Clique no banco para consultar o status da conta.");
+    }
+    else if (tipoErro.contains("NAOLEULINHAS")) {
+        bodyProtocolo.put("mensagem", "Ooops. Arquivo com grande volume. Entre em contato com a equipe de atendimento para maiores orientacoes.");
+    }
+    else if (tipoErro.contains("NAOLEUIGNORAR")) {
+        bodyProtocolo.put("mensagem", "Ooops. Nao conseguimos ler nenhum movimento de pagamento/recebimento nesse arquivo. Verifique as regras criadas de IGNORAR.");
+    }
+    else if (tipoErro.contains("NAOLEUFILTRO")) {
+        bodyProtocolo.put("mensagem", "Ooops. Nao conseguimos ler nenhum movimento pois nao ha lancamento no periodo informado. Verifique a data das movimentacoes dentro do arquivo.");
+    }
+    else if (tipoErro.contains("NAOLEUMOVIMENTO")) {
+        bodyProtocolo.put("mensagem", "Ooops. O layout do arquivo enviado nao esta de acordo. Por gentileza, verifique o mesmo. Caso seja um relatorio de extrato ou cartao, verifique os modelos disponiveis em nosso portal e certifique-se de ter selecionado a leitura do mesmo.");
+    }
+    else if (liberaOic.equals("NAO")) {
+        bodyProtocolo.put("mensagem", "Ooops. Devido a alguma questao administrativa, seu cadastro nao esta ativo no sistema. Contate o setor financeiro ( e-mail financeiro01@ottimizza.com.br ou 47 9636-4529)");
+    }
+    else {
+        bodyProtocolo.put("mensagem", "Ooops. Nao conseguimos ler nenhum movimento nesse arquivo. Entre em contato com a equipe de atendimento para maiores orientacoes.");
+    }
+
+    putStatus(diretoriArquivos, "", new JSONObject(), logger);
+
+    String atualizaStatus = apiWeb.atualizaStatusProtocolo("https://integrador-contabil.herokuapp.com", protocolo_id, bodyProtocolo);
+}
+
+public String generateApiKey(String url, String clientId, String clientSecret, InoutLogger logger) throws Exception {
+    try {
+        StringBuilder responseRaw = new StringBuilder();
+        java.net.URL serviceURL = new java.net.URL(url);
+
+        // Opensjava.net.URL as a POST Request
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+
+        // Default Headers.
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+
+        // Writes the Request Body...
+        JSONObject dataObject = new JSONObject();
+        dataObject.put("clientId", clientId);
+        dataObject.put("clientSecret", clientSecret);
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(dataObject.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logInfo("Primeiro Catch " + ex1);
+        }
+        // Writes the Response Body...
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+        } catch (Exception ex2) {
+            logger.logInfo("222 Segundo Catch " + ex2);
+        }
+        // checks if it is a valid json
+        if (responseRaw.toString().startsWith("{") && responseRaw.toString().endsWith("}")) {
+            JSONObject response = new JSONObject(responseRaw.toString());
+            String apiKey = response.optString("apiKey");
+            return apiKey;
+        }
+        else {
+            throw new Exception (responseRaw.toString());
+        }
+    } catch (Exception ex0) {
+        logger.logInfo(ex0.getMessage());
+        throw ex0;
+    }
+}
+
+
+public JSONObject genericGet(String uri, String apiKey, InoutLogger logger) throws Exception {	
+    try {
+        StringBuilder responseRaw = new StringBuilder();
+        java.net.URL serviceURL = new java.net.URL(uri);
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        // Default Headers.
+
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("x-api-key", apiKey);
+
+        // Writes the Response Body...
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line = "";
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+        } catch (Exception ex2) {
+            logger.logInfo("ERROR GET 2 ->"+ ex2.getMessage());
+            throw ex2;
+        }
+        if(responseRaw.toString().startsWith("{") && responseRaw.toString().endsWith("}")) {
+            JSONObject response = new JSONObject(responseRaw.toString());
+            return response;
+        }
+        return new JSONObject();
+    } catch (Exception ex0) {
+        logger.logInfo("ERROR GET ->"+ ex0.getMessage());
+        throw ex0;
+    }
+}
+
+
+public JSONArray buscaAuthorizationPorCnpj(DBPostgreSQL db, String cpfCnpj, String institution, InoutLogger logger) throws SQLException {
+
+    //String sql = "SELECT pu.token FROM partners_users pu WHERE partner_name = 'pluggy' AND cpf_cnpj ='"+cpfCnpj+"' AND additional_information ILIKE '%"+institution+"%' ";
+    String sql = "SELECT pu.token FROM partners_users pu WHERE partner_name = 'pluggy' AND cpf_cnpj ='"+cpfCnpj+"' AND additional_information ILIKE '%"+institution+"%' AND is_active = TRUE ";
+
+    try {
+        JSONArray retorno = db.sql(sql)
+        .setFields("token")
+        .debug(logger)
+        .query();	
+        return retorno;
+        
+        //if (!retorno.equals("") && retorno.startsWith("{")) {
+        //    return new JSONObject(retorno).optString("token");
+       // }
+
+    } catch (Exception e) {
+        logger.logInfo("ERROR GET PLUGGY AUTHORIZATION: "+e.getMessage());
+    }
+    return null;
+}
+
+public JSONObject genericPost(String url, JSONObject body, String authorization) throws Exception {
+    try {
+        StringBuilder responseRaw = new StringBuilder();
+        java.net.URL serviceURL = new java.net.URL(url);
+
+        // Opensjava.net.URL as a POST Request
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+
+        // Default Headers.
+        connection.setRequestProperty("Accept", "application/json");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Authorization", "Bearer "+authorization);
+
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(body.toString().getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logInfo("Primeiro Catch " + ex1);
+        }
+        // Writes the Response Body...
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+        } catch (Exception ex2) {
+            logger.logInfo("222 Segundo Catch " + ex2);
+        }
+        if(responseRaw.toString().startsWith("{") && responseRaw.toString().endsWith("}")) {
+            JSONObject response = new JSONObject(responseRaw.toString());
+            return response;
+        }
+        return new JSONObject();
+    }
+    catch(Exception ex) {
+        return new JSONObject();
+    }
+}

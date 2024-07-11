@@ -1,0 +1,808 @@
+public class DatabasePostgreSQL {
+
+	
+
+	// private static final String MEUCAIXA_LISTNER_HOST		= "ec2-34-195-140-228.compute-1.amazonaws.com";
+	// private static final String MEUCAIXA_LISTNER_DATABASE	= "ddgnvnt3maerkp";
+	// private static final String MEUCAIXA_LISTNER_USER		= "ufuo0fpg0kb5de";
+	// private static final String MEUCAIXA_LISTNER_PASSWD		= "p893d4d1faa91134f009b1244769df6e092138a974ce659d29c84ef4bbc14f37d";
+
+	// // mudar pra esse depois de mudar UPDATE pra requisicao via api
+	private static final String MEUCAIXA_LISTNER_HOST		= "ec2-34-195-140-228.compute-1.amazonaws.com";
+	private static final String MEUCAIXA_LISTNER_DATABASE	= "ddgnvnt3maerkp";
+	private static final String MEUCAIXA_LISTNER_USER		= "suporte_oic";
+	private static final String MEUCAIXA_LISTNER_PASSWD		= "p8213f3e9092814efd2975ad854bae1589a3674607281e68679fb627ecbcae042";
+	
+	
+	private static final String FILA_WORKERS_HOST		= "ec2-100-27-73-125.compute-1.amazonaws.com";
+	private static final String FILA_WORKERS_DATABASE	= "da46s1mi5dpi25";
+	private static final String FILA_WORKERS_USER		= "uam6495i69kkqt";
+	private static final String FILA_WORKERS_PASSWD		= "p69a20d01650b808caee3340b498ce5f144f017befa24de25c65bcd0292fda4e9";
+
+
+	// banco producao de parcerios. desativado para podermos usar o banco espelho
+	//private static final String APLICACAO_PARTNER_HOST		= "ec2-54-205-207-11.compute-1.amazonaws.com";
+	//private static final String APLICACAO_PARTNER_DATABASE	= "dcksnfl5bnufdp";
+	//private static final String APLICACAO_PARTNER_USER		= "u2gb9abid5okc3";
+	//private static final String APLICACAO_PARTNER_PASSWD	= "pe883383a0d8f24bbfaa96f2e2a960ccf695e81f8a0f55e58d30c894dedbc73bc";
+
+	private static final String APLICACAO_PARTNER_HOST		= "ec2-3-214-235-56.compute-1.amazonaws.com";
+	private static final String APLICACAO_PARTNER_DATABASE	= "dcksnfl5bnufdp";
+	private static final String APLICACAO_PARTNER_USER		= "u2gb9abid5okc3";
+	private static final String APLICACAO_PARTNER_PASSWD	= "pe883383a0d8f24bbfaa96f2e2a960ccf695e81f8a0f55e58d30c894dedbc73bc";
+
+	// banco antes da migracao - banco de 50 dolares 
+	// private static final String APLICACAO_INTEGRADOR_HOST		= "ec2-3-89-234-99.compute-1.amazonaws.com";
+	// private static final String APLICACAO_INTEGRADOR_DATABASE	= "d4qq8hl49hi7hr";
+	// private static final String APLICACAO_INTEGRADOR_USER		= "suporte_oic";
+	// private static final String APLICACAO_INTEGRADOR_PASSWD		= "p159b6bdf50a6107b32e27f8d1156201ef4b66dbe7115184663a65be306beb9ba";
+	
+	// BANCO DO INTEGRADOR ESTA SENDO USADO O FOLLOWER
+	private static final String APLICACAO_INTEGRADOR_HOST		= "ec2-52-20-229-254.compute-1.amazonaws.com";
+	private static final String APLICACAO_INTEGRADOR_DATABASE	= "dc3n7qlo3ot56e";
+	private static final String APLICACAO_INTEGRADOR_USER		= "suporte_oic";
+	private static final String APLICACAO_INTEGRADOR_PASSWD		= "pdfed6f8f8e1f1d852b5afbfac42845239c2ed2183a2ef5620fc396201c72488e";
+	
+	private static final String APLICACAO_INTEGRADOR_FOLLOWER_HOST		= "ec2-52-20-229-254.compute-1.amazonaws.com";
+	private static final String APLICACAO_INTEGRADOR_FOLLOWER_DATABASE	= "dc3n7qlo3ot56e";
+	private static final String APLICACAO_INTEGRADOR_FOLLOWER_USER		= "suporte_oic";
+	private static final String APLICACAO_INTEGRADOR_FOLLOWER_PASSWD		= "pdfed6f8f8e1f1d852b5afbfac42845239c2ed2183a2ef5620fc396201c72488e";
+	
+	
+	//private static final String APLICACAO_OAUTH_FOLLOWER_HOST		= "ec2-54-237-40-156.compute-1.amazonaws.com";
+	//private static final String APLICACAO_OAUTH_FOLLOWER_DATABASE	= "d40ba337mcfmt6";
+	//private static final String APLICACAO_OAUTH_FOLLOWER_USER		= "oauthsuporte";
+	//private static final String APLICACAO_OAUTH_FOLLOWER_PASSWD		= "pd87f1e6c1a877e94bee1cd8b2c543e435c4a156aeb28bff3d8ee156d93f84ca6";
+	
+	
+	private static final String APLICACAO_OAUTH_FOLLOWER_HOST		= "ec2-3-229-61-4.compute-1.amazonaws.com";
+	private static final String APLICACAO_OAUTH_FOLLOWER_DATABASE	= "dqdcrle7h2keq";
+	private static final String APLICACAO_OAUTH_FOLLOWER_USER		= "oauthsuporte";
+	private static final String APLICACAO_OAUTH_FOLLOWER_PASSWD		= "pf374ab470930a4dae5d7e2fa59a93f256bc5ee105da59708d1183f6042b9ca23";
+	
+	
+						 
+	private static final String APLICACAO_BELVO_HOST		= "ec2-52-205-206-87.compute-1.amazonaws.com";
+	private static final String APLICACAO_BELVO_DATABASE	= "d80o9rv2ctn5e8";
+	private static final String APLICACAO_BELVO_USER		= "ucr1vj6bei3k37";
+	private static final String APLICACAO_BELVO_PASSWD		= "p5c8e66b1fde1bb0ec2aa9cf924f30e305c1be66622fdb2c669ba04b6af2281d0"; 
+	
+	public DatabasePostgreSQL() { }
+	
+	public DatabasePostgreSQL(String param, InoutLogger logger) {
+		try {
+			connectDatabase(param, logger);
+		} catch (Exception e) {}
+	}
+	
+	public static DBPostgreSQL connectDatabase(String param, InoutLogger logger) throws SQLException, Exception {
+		
+		if (param.equalsIgnoreCase("fila-workers")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(FILA_WORKERS_HOST, 
+												"5432",
+												FILA_WORKERS_DATABASE,
+												FILA_WORKERS_USER,
+												FILA_WORKERS_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+
+		if (param.equalsIgnoreCase("api-listener-meucaixa")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(MEUCAIXA_LISTNER_HOST, 
+												"5432",
+												MEUCAIXA_LISTNER_DATABASE,
+												MEUCAIXA_LISTNER_USER,
+												MEUCAIXA_LISTNER_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+		
+		if (param.equalsIgnoreCase("api-listener-oic-processado")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(MEUCAIXA_LISTNER_HOST, 
+												"5432",
+												MEUCAIXA_LISTNER_DATABASE,
+												MEUCAIXA_LISTNER_USER,
+												MEUCAIXA_LISTNER_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+		
+		if (param.equalsIgnoreCase("api-listener-exporta-roteiros")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(MEUCAIXA_LISTNER_HOST, 
+												"5432",
+												MEUCAIXA_LISTNER_DATABASE,
+												MEUCAIXA_LISTNER_USER,
+												MEUCAIXA_LISTNER_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+		
+		if (param.equalsIgnoreCase("api-oauth-follower")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(APLICACAO_OAUTH_FOLLOWER_HOST, 
+												"5432",
+												APLICACAO_OAUTH_FOLLOWER_DATABASE,
+												APLICACAO_OAUTH_FOLLOWER_USER,
+												APLICACAO_OAUTH_FOLLOWER_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+		
+		if (param.equalsIgnoreCase("api-parceiros-belvo")) {
+			
+			
+			DBPostgreSQL dbIO = new DBPostgreSQL(APLICACAO_BELVO_HOST, 
+												"5432",
+												APLICACAO_BELVO_DATABASE,
+												APLICACAO_BELVO_USER,
+												APLICACAO_BELVO_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		} 
+		
+		
+
+		
+		
+		
+		
+		if (param.equalsIgnoreCase("api-partner")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(APLICACAO_PARTNER_HOST, 
+												"5432",
+												APLICACAO_PARTNER_DATABASE,
+												APLICACAO_PARTNER_USER,
+												APLICACAO_PARTNER_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+
+		if (param.equalsIgnoreCase("api-integrador-contabil")) {
+			DBPostgreSQL dbIO = new DBPostgreSQL(APLICACAO_INTEGRADOR_HOST, 
+												"5432",
+												APLICACAO_INTEGRADOR_DATABASE,
+												APLICACAO_INTEGRADOR_USER,
+												APLICACAO_INTEGRADOR_PASSWD);
+
+			if (dbIO == null || !dbIO.connectionIsValid()) {
+				throw new SQLException("EndpointB: Nao foi possivel conectar no banco da aplicacao: "+param);
+			}
+			return dbIO;
+		}
+		return null;
+	}
+	
+	public String buscaAutorizationTrioPorCnpjBanco(DBPostgreSQL db, String cpfCnpj, String institution, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT pu.token FROM partners_users pu WHERE partner_name = 'trio' AND cpf_cnpj ='"+cpfCnpj+"' AND additional_information ILIKE '%"+institution+"%' ";
+		
+		try {
+			String retorno = db.sql(sql)
+								  .setFields("token")
+								  .debug(logger)
+								  .queryUnique()
+								  .toString();			  
+			if (!retorno.equals("") && retorno.startsWith("{")) {
+				return new JSONObject(retorno).optString("token");
+			}
+			
+		} catch (Exception e) {
+			logger.logInfo("ERROR GET TRIO AUTHORIZATION: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONArray buscaInfoToReprocess(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String servDinamic = "";
+		try{
+			servDinamic = buscaServidor(logger).toLowerCase();
+			if(servDinamic.equals("")) servDinamic = "zeus";
+		}catch(Exception e){
+			logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+			servDinamic = "zeus";
+		}
+
+		String sql = "SELECT pr.id, pr.partner, pr.info_reprocess as infos "
+				   + "FROM partners_reprocess pr "
+				   + "WHERE pr.read = false and pr.info_reprocess::text like '%"+servDinamic+".ottimizza%'";
+				   /* backup: + "WHERE pr.read = false and pr.info_reprocess::text NOT like '%02218532000125%' and pr.info_reprocess::text NOT like '%77812196000143%' and  pr.info_reprocess::text NOT like '%07310888000108%' and pr.info_reprocess::text NOT like '%10276526000152%' and pr.info_reprocess::text NOT like '%23092757000158%' and pr.info_reprocess::text NOT like '%26532252000155%'  and pr.info_reprocess::text NOT like '%04727173000167%' and pr.info_reprocess::text NOT like '%04689159823%' and pr.info_reprocess::text NOT like '%18733337000173%' and pr.info_reprocess::text NOT like '%92860246000151%' and pr.info_reprocess::text NOT like '%15415383000136%' and pr.info_reprocess::text NOT like '%32019529000143%' and pr.info_reprocess::text NOT like '%73574899000120%'";*/
+				   
+
+
+
+	 			
+ 		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("id, partner, infos")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logInfo("ERROR GET INFO TO REPROCESS: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONArray buscaCnpjsMeuCaixa(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+		
+		String sql = "SELECT distinct objeto_livro_caixa -> 'cnpjEmpresa' AS cnpjs "
+						+"FROM livros_caixas "			
+						+"WHERE objeto_livro_caixa -> 'integradoContabilidade' = 'false' "
+						+"AND itegrado_oic = false;";			
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("cnpjs")
+								  .debug(logger)
+								  .query();
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjsMeuCaixa: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONArray buscaLinkBelvo(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		try {
+			String sql = "SELECT link AS link, external_id AS externalId, institution FROM belvo_links"; 
+			JSONArray records = db.sql(sql)
+								.setFields("link, externalId, institution")
+								.debug(logger)
+								.query();
+			return records;
+		}
+		catch(Exception exBelvo) {
+			logger.logInfo("error GET link Belvo "+ exBelvo.getMessage());
+		}
+		
+		return new JSONArray();
+
+	}
+	
+	public JSONArray buscaLinkBelvoHoje(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String hoje = DateUtil.dateToString(new Date(),"yyyy") + "-03-01";
+	
+		
+		try {
+			String sql = "SELECT link AS link, external_id AS externalId, institution FROM belvo_links where created_at >= '" + hoje + "'"; 
+			JSONArray records = db.sql(sql)
+								.setFields("link, externalId, institution")
+								.debug(logger)
+								.query();
+			return records;
+		}
+		catch(Exception exBelvo) {
+			logger.logDebug("error GET link Belvo "+ exBelvo.getMessage());
+		}
+		
+		return new JSONArray();
+
+	}
+	
+	public JSONArray buscaConnectionsTrio(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT additional_information, cpf_cnpj FROM partners_users WHERE partner_name = 'trio' AND additional_information ILIKE '%completed%' ";
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("additional_information, cpf_cnpj")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR GET CONNECTIONS TRIO: "+e.getMessage());
+		}
+		return null;
+	}
+	
+
+	
+	public JSONArray buscaLancamentosMeuCaixa(DBPostgreSQL db, String cnpjEmpresa, InoutLogger logger) throws SQLException {
+		String sql = "SELECT objeto_livro_caixa AS lancamentos "
+						+"FROM livros_caixas "
+						+"WHERE objeto_livro_caixa -> 'cnpjEmpresa' = '\""+cnpjEmpresa+"\"' "
+						+"AND itegrado_oic = false;";			
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("lancamentos")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaLancamentosMeuCaixa: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONArray buscaLancamentosOicProcessado(DBPostgreSQL db, String cnpjEmpresa, InoutLogger logger) throws SQLException {
+		
+		String servDinamic = "";
+		try{
+			servDinamic = buscaServidor(logger).toLowerCase();
+			if(servDinamic.equals("")) servDinamic = "zeus";
+		}catch(Exception e){
+			logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+			servDinamic = "zeus";
+		}
+		String sql = "SELECT id, objeto_arquivo_processado AS lancamentos  "
+						+"FROM arquivos_processados  "
+						// +"WHERE integrado_oic = false;";
+						+"WHERE integrado_oic = false and objeto_arquivo_processado ->> 'servidorPublicacao' = 'https://"+servDinamic+".ottimizza.com.br:55325'";			
+						
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("id, lancamentos")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaLancamentosOicProcessado: "+e.getMessage());
+		}
+		return null;
+	}
+	 
+	
+	public JSONArray buscaRoteiros(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String servDinamic = "";
+		try{
+			servDinamic = buscaServidor(logger).toLowerCase();
+			if(servDinamic.equals("")) servDinamic = "zeus";
+		}catch(Exception e){
+			logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+			servDinamic = "zeus";
+		}
+		
+		// INSERIDO PARA NAO LER CNPJ DA MONDO E DEIXAR PARA ATUALIZAR ESTES ROTEIROS NO S11
+		String sql = "SELECT id, exportado,  info_roteiros "
+						+"FROM atualiza_roteiros  "
+						//+"WHERE exportado = false  ";	    04689159823  		
+						//+"WHERE exportado = false  and info_roteiros::text NOT like '%10276526000152%'  and info_roteiros::text NOT like '%23092757000158%'  and info_roteiros::text NOT like '%26532252000155%'  and info_roteiros::text NOT like '%04727173000167%' and info_roteiros::text NOT like '%04689159823%' and info_roteiros::text NOT like '%18733337000173%' and info_roteiros::text NOT like '%92860246000151%' and info_roteiros::text NOT like '%15415383000136%' ";		
+						+"WHERE exportado = false  and info_roteiros::text like '%"+servDinamic+".ottimizza%' ";		
+
+						
+						
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("id, exportado,  info_roteiros")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaRoteiros: "+e.getMessage());
+		}
+		return null;
+	}
+	public JSONArray buscaRoteiros(DBPostgreSQL db, String lisraRoteiros, InoutLogger logger) throws SQLException {
+		
+		String servDinamic = "";
+		try{
+			servDinamic = buscaServidor(logger).toLowerCase();
+			if(servDinamic.equals("")) servDinamic = "zeus";
+		}catch(Exception e){
+			logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+			servDinamic = "zeus";
+		}
+		// INSERIDO PARA NAO LER CNPJ DA MONDO E DEIXAR PARA ATUALIZAR ESTES ROTEIROS NO S11
+		String sql = "SELECT id, exportado,  info_roteiros "
+						+"FROM atualiza_roteiros  "
+						//"WHERE exportado = false and info_roteiros::text like '%" + lisraRoteiros + "%';" ;			
+						//+"WHERE exportado = false and info_roteiros::text not like '%10276526000152%' and info_roteiros::text not like '%23092757000158%' and info_roteiros::text not like '%26532252000155%' and info_roteiros::text not like '%04727173000167%' and info_roteiros::text not like '%04689159823%' and info_roteiros::text not like '%18733337000173%' and info_roteiros::text not like '%92860246000151%' and info_roteiros::text not like '%15415383000136%' and info_roteiros::text like '%" + lisraRoteiros + "%';" ;			
+						//+"WHERE exportado = false and info_roteiros::text  like '%s1.ottimizza%'  and info_roteiros::text like '%" + lisraRoteiros + "%';" ;
+						+"WHERE exportado = false and (info_roteiros::text like '%"+servDinamic+".ottimizza%' or info_roteiros::text not like '%\"servidor\":%') and info_roteiros::text like '%" + lisraRoteiros + "%';" ;
+
+
+
+
+ 
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("id, exportado,  info_roteiros")
+								  .debug(logger)
+								  .query();
+
+			// logger.logInfo("RECORDS BUSCA ROTEIROS == "+records.toString());
+			
+			return records;
+
+		} catch (Exception e) {
+			logger.logInfo("ERROR buscaRoteiros: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONObject buscaEmpresaOauth(DBPostgreSQL db, String externalId, InoutLogger logger) throws SQLException {
+
+		try {
+			String sql = "SELECT o.cnpj as cnpjEmpresa, (select cnpj from organizations o2 where o2.id = o.fk_organizations_id) as cnpjContabilidade FROM organizations o where external_id = '"+externalId+"' "; 
+			JSONObject record = db.sql(sql)
+								.setFields("cnpjEmpresa, cnpjContabilidade")
+								.debug(logger)
+								.queryUnique();
+			return record;
+		}
+		catch(Exception exOauth) {
+			logger.logDebug("error GET empresa Oauth "+ exOauth.getMessage());
+		}
+		return null;
+	}
+	 
+	
+	
+	// @deprecated
+	public boolean updateIntegradoOic(DBPostgreSQL db, String ids, InoutLogger logger) throws SQLException {
+
+		try {
+			db.update("livros_caixas")
+					.fields("itegrado_oic")
+					.where("id in ("+ids+")")
+					.param(true)
+					.execute();
+			return true;
+		} catch (Exception er) {
+			logger.logDebug("error UPDATE integradoOic "+er.getMessage());
+		}
+		return false;
+		
+	}
+	
+	public JSONArray buscaTokenEmpresasVhsys(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT e.cnpj as cnpjEmpresa , c.cnpj as cnpjContabilidade, token_vhsys as token, secret_token_vhsys as secret FROM empresas e INNER JOIN contabilidades c ON c.ouath_id = e.accounting_id WHERE e.token_vhsys is not null and e.token_vhsys <> '' "; 
+		JSONArray records = db.sql(sql)
+							  .setFields("cnpjEmpresa, cnpjContabilidade, token, secret")
+							  .debug(logger)
+							  .query();
+		return records;
+	}
+	 
+	public JSONArray buscaTokenEmpresasPAG(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT e.cnpj as cnpjEmpresa , c.cnpj as cnpjContabilidade, token_erp_base_pag as token FROM empresas e INNER JOIN contabilidades c ON c.ouath_id = e.accounting_id WHERE e.token_erp_base_pag is not null and e.token_erp_base_pag <> '' "; 
+		JSONArray records = db.sql(sql)
+							  .setFields("cnpjEmpresa, cnpjContabilidade, token")
+							  .debug(logger)
+							  .query();
+		return records;
+	   
+	} 
+
+	public JSONArray buscaTokenEmpresasREC(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT e.cnpj as cnpjEmpresa , c.cnpj as cnpjContabilidade, token_erp_base_rec as token FROM empresas e INNER JOIN contabilidades c ON c.ouath_id = e.accounting_id WHERE e.token_erp_base_rec is not null and e.token_erp_base_rec <> '' "; 
+		JSONArray records = db.sql(sql)
+							  .setFields("cnpjEmpresa, cnpjContabilidade, token")
+							  .debug(logger)
+							  .query();
+		return records;
+	   
+	} 
+	
+	public JSONArray buscaTokenBancoAsaas(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		try {
+			String sql = "SELECT e.cnpj as cnpjEmpresa , c.cnpj as cnpjContabilidade, token_assaas as token FROM empresas e INNER JOIN contabilidades c ON c.ouath_id = e.accounting_id WHERE e.token_assaas is not null"; 
+			JSONArray records = db.sql(sql)
+								.setFields("cnpjEmpresa, cnpjContabilidade, token")
+								.debug(logger)
+								.query();
+			return records;
+		}
+		catch(Exception exRec) {
+			logger.logDebug("error GET tokensEmpresasREC "+ exRec.getMessage());
+		}
+		
+		return new JSONArray();
+	} 
+	
+
+	public JSONArray buscaCnpjsPartners(DBPostgreSQL db, String partnerName, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT cpf_cnpj FROM partners_users WHERE partner_name = '"+partnerName+"'; ";
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("cpf_cnpj")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaLancamentosMeuCaixa: "+e.getMessage());
+		}
+		return null;
+	}
+
+	public String buscaCnpjContabilidade(DBPostgreSQL db, String cnpjEmpresa, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT c.cnpj "
+						+"FROM contabilidades c "
+						+"WHERE c.ouath_id in ("
+						+"	SELECT e.accounting_id FROM empresas e "
+						+"	WHERE e.cnpj = ? order by id desc limit 1"
+						+") ";
+		
+		try {
+			String retorno = db.sql(sql)
+								.setFields("cnpj")
+								.param(cnpjEmpresa)
+								.debug(logger)
+								.queryUnique()
+								.toString();
+								
+			if (!retorno.equals("") && retorno.startsWith("{")) {
+				return new JSONObject(retorno).optString("cnpj");
+			}
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return "";
+	}
+	
+	public JSONArray buscaTokensContbank(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT c.cnpj as cnpj, c.contbank_client_id as client_id, c.contbank_client_secret as client_secret "
+				   + "FROM contabilidades c "
+				   + "WHERE c.contbank_client_id is not null "
+				   + "AND c.contbank_client_id <> '' "
+				   + "AND c.contbank_client_secret is not null "
+				   + "AND c.contbank_client_secret <> '' ";
+		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("cnpj, client_id, client_secret")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONArray buscaTokensCelero(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT c.cnpj as cnpj, c.token_celero as token "
+				   + "FROM contabilidades c "
+				   + "WHERE c.token_celero is not null "
+				   + "AND c.token_celero <> '' ";
+		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("cnpj, token")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return null;
+	}
+	public JSONArray buscaTokensOmie(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT e.cnpj as cnpj, e.token_omie as tokenOmie, e.secret_token_omie as secretToken "
+				   + "FROM empresas e "
+				   + "WHERE e.token_omie is not null "
+				   + "AND e.token_omie <> '' "
+				   + "AND e.secret_token_omie is not null "
+				   + "AND e.secret_token_omie <> '' ";
+		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("cnpj, tokenOmie, secretToken")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	
+	public JSONArray buscaTokensHOS(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql 	= "SELECT e.cnpj as cnpj, e.token_hos as token "
+								+ "FROM empresas e "
+								+ "WHERE e.token_hos is not null "
+								+ "AND e.token_hos <> '' ";
+		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("cnpj, token")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return null;
+}
+	
+	public JSONArray buscaIntegracaoParceiros(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT iro.id as id, iro.objeto_lancamento as objLanc "
+							 + "FROM integracao_erp_ottimizza iro "
+							 + "WHERE iro.importado = FALSE";
+		
+		try {
+			JSONArray retorno = db.sql(sql)
+								.setFields("id, objLanc")
+								.debug(logger)
+								.query();
+								
+			return retorno;
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR buscaCnpjContabilidade: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONObject buscaAutorizationTrio(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT oauth_client_details FROM partners WHERE name = 'trio' ";
+		
+		try {
+			JSONObject retorno = db.sql(sql)
+								  .setFields("oauth_client_details")
+								  .debug(logger)
+								  .queryUnique();
+								  
+			return retorno;
+			
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR GET TRIO AUTHORIZATION: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public JSONObject buscaCnpjPeloConnectionId(DBPostgreSQL db, String connectionId, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT cpf_cnpj, additional_information FROM partners_users WHERE partner_name = 'trio' AND additional_information like('%"+connectionId+"%')";
+		
+		try {
+			JSONObject retorno = db.sql(sql)
+								  .setFields("cpf_cnpj, additional_information")
+								  .debug(logger)
+								  .queryUnique();
+								  
+			
+			return retorno;
+			
+			
+		} catch (Exception e) {
+			logger.logDebug("ERROR GET CNPJ BY CONNECTION: "+e.getMessage());
+		}
+		return null;
+	} 
+	public JSONArray buscaWebhooks(DBPostgreSQL db, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT id, payload FROM webhooks WHERE partner = 'trio' AND read = false ";
+		
+		try {
+			JSONArray records = db.sql(sql)
+								  .setFields("id, payload")
+								  .debug(logger)
+								  .query();
+
+			return records;
+
+		} catch (Exception e) {
+			logger.logDebug("ERROR GET PAYLOAD WEBHOOK: "+e.getMessage());
+		}
+		return null;
+	}
+	
+	public String buscaAutorizationAsaasPorCnpj(DBPostgreSQL db, String cpfCnpj, InoutLogger logger) throws SQLException {
+
+		String sql = "SELECT e.token_assaas FROM empresas e WHERE e.cnpj = '"+cpfCnpj+"'";
+	
+		try {
+			String retorno = db.sql(sql)
+								  .setFields("token_assaas")
+								  .debug(logger)
+								  .queryUnique()
+								  .toString();			  
+			if (!retorno.equals("") && retorno.startsWith("{")) {
+				return new JSONObject(retorno).optString("token_assaas");
+			}
+			
+		} catch (Exception e) {
+			logger.logInfo("ERROR GET ASAAS AUTHORIZATION: "+e.getMessage());
+		}
+		return null;
+	}
+
+	public String buscaLinkBelvoPorExternalIdBanco(DBPostgreSQL db, String externalId, String banco, InoutLogger logger) throws SQLException {
+
+		try {
+			String sql = "SELECT link AS link FROM belvo_links WHERE external_id = '"+externalId+"' AND institution ILIKE '%"+banco+"%'"; 
+			String retorno = db.sql(sql)
+								.setFields("link")
+								.debug(logger)
+								.queryUnique()
+								.toString();
+								
+			if (!retorno.equals("") && retorno.startsWith("{")) {
+				return new JSONObject(retorno).optString("link");
+			}
+		}
+		catch(Exception exBelvo) {
+			logger.logInfo("error GET link Belvo "+ exBelvo.getMessage());
+		}
+		
+		return null;
+
+	}
+	
+	public String buscaExternalIdEmpresaOauth(DBPostgreSQL db, String cnpj, InoutLogger logger) throws SQLException {
+
+		try {
+			String sql = "SELECT o.external_id as externalId FROM organizations o where cnpj = '"+cnpj+"' and type = 2 "; 
+			String retorno = db.sql(sql)
+								.setFields("externalId")
+								.debug(logger)
+								.queryUnique()
+								.toString();
+								
+			if (!retorno.equals("") && retorno.startsWith("{")) {
+				return new JSONObject(retorno).optString("externalId");
+			}
+		}
+		catch(Exception exOauth) {
+			logger.logInfo("error GET empresa Oauth "+ exOauth.getMessage());
+		}
+		return null;
+	}
+}
+
+

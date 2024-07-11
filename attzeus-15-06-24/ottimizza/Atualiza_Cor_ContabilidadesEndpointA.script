@@ -1,0 +1,595 @@
+import javax.xml.namespace.QName;
+
+public JSONArray run(InoutLogger logger) throws Exception {
+
+    JSONArray records = new JSONArray();
+
+
+    try {
+
+
+        ////////////////////////////////////////////////////////////////////
+        // Obtem conexao no Salesforce /////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////
+
+        ConnectorConfig config = new ConnectorConfig();
+        config.setUsername("adm@ottimizza.com.br");
+        config.setPassword("oic@3333222YXZRHYLH8cxrchPu0rjyGH1j8");
+        config.setTraceMessage(true);
+        PartnerConnection connection = Connector.newConnection(config);
+
+
+        //String oauthToken = doLogin("adm@ottimizza.com.br", "ottimizza@123", "https://oauth.ottimizza.com.br", logger);
+        String oauthToken = doLogin("integracao@ottimizzaapptareffa.com.br", "12345", "https://oauth.ottimizza.com.br", logger);
+
+        // Token Exclusivo pra integracao com api-parceiros
+        String oauthTokenTareffa = "1bd99f10-d1ff-11ec-9d64-0242ac120002";
+
+
+        ////////////////////////////////////////////////////////////////////
+
+
+        // ATENCAO : ROTA QUE ATUALIZA CORES DO TAREFFA E DO INTEGRADOR
+
+
+
+        ////////////////////////////////////////////////////////////////////
+
+        // INICIANDO ATUALIZANDO CORES DO INTEGRADOR
+
+        try {
+
+
+            String sql2 = "SELECT Id, CNPJ__c, CNPJ_Numeros__c, Name, Nome_Resumido__c, Cor_Integrador__c , Cor_Tareffa__c , Faturamento_OTT_Online__c, Faturamento_Tareffa_Online__c, Deve_Ser_Amarelo__c, Deve_Ser_Amarelo_Tar__c , Serv_Baixado_Tareffa__c ,  Sem_Login_OIC_15_dias__c, Sem_Login_Tareffa_7_Dias__c, Processadas_ultimos_2_meses__c    FROM Contabilidade__c  WHERE Faturamento_OTT_Online__c > 0";
+
+            boolean leuEmpresa = false;
+
+
+            QueryResult qres2 = connection.query(sql2);
+
+            if (qres2 != null) {
+
+
+                for (int xx=0; xx<qres2.getSize(); xx++) {
+                    SObject sobj2 = qres2.getRecords()[xx];
+
+
+                    String idContabilidade = "";
+                    try { idContabilidade = sobj2.getField("Id").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                    if (idContabilidade.equals("")) try { idContabilidade = sobj2.getField("Id").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+
+                    if (!idContabilidade.equals("")) { 
+
+
+                        String OK_Faturar_Calculado  = "";
+                        String deveSerAmarelo = "";
+                        String semLoginTareffa = "";
+                        String semLoginOttimizza = "";
+                        double integrouEmpresa = 0;
+                        double servicosBaixados = 0;
+
+                        String corAnterior = "";
+                        String corNova = "";
+
+                        try { deveSerAmarelo = sobj2.getField("Deve_Ser_Amarelo__c").toString();} catch(Exception xx) {deveSerAmarelo = ""; } 
+
+
+                        try { semLoginOttimizza = sobj2.getField("Sem_Login_OIC_15_dias__c").toString();} catch(Exception xx) {semLoginOttimizza = ""; } 
+                        try { integrouEmpresa = DecimalUtil.toDecimal(sobj2.getField("Processadas_ultimos_2_meses__c").toString());} catch(Exception xx) {integrouEmpresa = 0; } 
+
+                        try { corAnterior = sobj2.getField("Cor_Integrador__c").toString();} catch(Exception xx) {corAnterior = ""; } 
+                        corNova = corAnterior;
+
+
+                        // Combinado que nao vamos trocar de amarelo para azul pelo motivo de o analista ainda precisar fazer reuniao com o dono
+                        // para fechar o projeto Amarelo e so entao migrar para o Azul
+
+                        // Validacao se troca de Amarelo para Branco
+                        if (corAnterior.equals("Amarelo") && deveSerAmarelo.toUpperCase().equals("FALSE")) corNova = "Branco";
+
+                        // Validacao se troca de Azul para Branco
+                        if (corAnterior.equals("Azul")  && integrouEmpresa == 0 ) corNova = "Branco";
+
+                        // Validacao se troca de Verde para Branco
+                        if (corAnterior.equals("Verde") && integrouEmpresa == 0) corNova = "Branco";
+
+                        // Validacao se troca de Branco para Azul
+                        if (corAnterior.equals("Branco") && integrouEmpresa > 0) corNova = "Azul";
+ 
+                        if (!corAnterior.equals(corNova)) {
+                            JSONObject registros = new JSONObject();
+                            registros.put("name",  DateUtil.dateToString(new Date(), "yyyy-MM-dd") +"-Integrador-" + idContabilidade);
+                            registros.put("data_mudanca", DateUtil.dateToString(new Date(), "yyyy-MM-dd")); 
+                            registros.put("Cor_Ottimizza__c", corNova); 
+                            registros.put("Cor_Anterior__c", corAnterior); 
+                            registros.put("Contabilidade_Produto__c", idContabilidade); 
+                            registros.put("Tipo_Cor__c", "Integrador"); 
+
+                            records.put(registros); 
+
+                            String cnpjCompleto = "";
+                            String razaoSocial = "";
+                            String CNPJ_Numeros = "";
+
+                            try {
+
+                                if (corNova.equals("Branco")) {
+
+
+                                    try { cnpjCompleto 	= sobj2.getField("CNPJ__c").toString(); } catch(Exception ex) {cnpjCompleto = ""; }
+                                    try { CNPJ_Numeros 	= sobj2.getField("CNPJ_Numeros__c").toString(); } catch(Exception ex) {CNPJ_Numeros = ""; }
+                                    try { razaoSocial   = sobj2.getField("Name").toString(); } catch(Exception ex) {razaoSocial = ""; }
+
+
+
+                                    // CRIA REGISTROS DE CADASTRO DE EMPRESAS NA CONTABILIDADE TAREFFA - PARA USO DA EQUIPE DE CLIENTES
+                                    try {
+                                        JSONObject tareffaBody = new JSONObject();
+                                        tareffaBody.put("cnpj", cnpjCompleto);
+                                        tareffaBody.put("razaoSocial", StringUtil.removeSpecialChars(razaoSocial));
+                                        tareffaBody.put("nomeFantasia", StringUtil.removeSpecialChars(razaoSocial));
+                                        tareffaBody.put("codigoERP", idContabilidade);
+                                        tareffaBody.put("inscricaoEstadual", "Isento");
+                                        tareffaBody.put("regimeTributario", 1);
+                                        tareffaBody.put("cnaePrimario", "69.20-6-01");
+                                        tareffaBody.put("situacao", 1);
+                                        tareffaBody.put("dataInicioRegime", DateUtil.dateToString(new Date(), "yyyy-MM-dd"));
+                                        //tareffaBody.put("caracteristicas", new JSONArray());
+  
+
+                                        tareffaBody.put("idQuestorZen", idContabilidade);
+                                        tareffaBody.put("codigoCopiaERP", "");
+                                        String urlEmpresas = "https://api-beta-tareffa-spring-full.herokuapp.com/api/integracao/empresas";
+
+
+                                        
+                                        genericPost(tareffaBody, urlEmpresas, oauthToken, logger);
+                                    }
+                                    catch(Exception ex) {
+                                        logger.logInfo("ERROR Ao Importar Empresas Tareffa -> "+ex.getMessage());
+                                    }
+
+                                    // CRIA SERVICOS AVULSOS PARA A EMPRESA - Tareffa
+                                    try {
+
+
+
+                                        String resultadoCriaServico =  geraServicoAvulso(oauthToken, CNPJ_Numeros, "ID_Integrador", oauthTokenTareffa, logger);
+                                        logger.logInfo("resultadoCriaServico OIC " + resultadoCriaServico);
+
+                                    }
+                                    catch(Exception ex) {
+                                        logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                                    }
+
+                                }
+
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                            }
+
+
+                        }
+
+                    }
+
+                }
+            }
+
+
+        } catch (Exception e) {
+            logger.logError(e);
+        }
+        // INICIANDO ATUALIZANDO CORES DO TAREFFA
+
+        try {
+
+
+            String sql2 = "SELECT Id, CNPJ__c, CNPJ_Numeros__c, Name, Nome_Resumido__c, Cor_Integrador__c , Cor_Tareffa__c , Faturamento_OTT_Online__c, Faturamento_Tareffa_Online__c, Deve_Ser_Amarelo__c, Deve_Ser_Amarelo_Tar__c , Serv_Baixado_Tareffa__c ,  Sem_Login_OIC_15_dias__c, Sem_Login_Tareffa_7_Dias__c, Processadas_ultimos_2_meses__c    FROM Contabilidade__c  WHERE Faturamento_Tareffa_Online__c   > 0";
+
+
+            boolean leuEmpresa = false;
+
+
+            QueryResult qres2 = connection.query(sql2);
+
+            if (qres2 != null) {
+
+
+                for (int xx=0; xx<qres2.getSize(); xx++) {
+                    SObject sobj2 = qres2.getRecords()[xx];
+
+
+                    String idContabilidade = "";
+                    try { idContabilidade = sobj2.getField("Id").toString();} catch(Exception xx) {idContabilidade = ""; } 
+                    if (idContabilidade.equals("")) try { idContabilidade = sobj2.getField("Id").toString();} catch(Exception xx) {idContabilidade = ""; } 
+
+
+                    if (!idContabilidade.equals("")) { 
+
+
+                        String OK_Faturar_Calculado  = "";
+                        String deveSerAmarelo = "";
+                        String semLoginTareffa = "";
+                        String semLoginOttimizza = "";
+                        double integrouEmpresa = 0;
+                        double servicosBaixados = 0;
+
+                        String corAnterior = "";
+                        String corNova = "";
+
+                        try { deveSerAmarelo = sobj2.getField("Deve_Ser_Amarelo_Tar__c").toString();} catch(Exception xx) {deveSerAmarelo = ""; } 
+                        try { semLoginTareffa = sobj2.getField("Sem_Login_Tareffa_7_Dias__c").toString();} catch(Exception xx) {semLoginTareffa = ""; } 
+
+
+                        try { semLoginOttimizza = sobj2.getField("Sem_Login_OIC_15_dias__c").toString();} catch(Exception xx) {semLoginOttimizza = ""; } 
+                        try { integrouEmpresa = DecimalUtil.toDecimal(sobj2.getField("Processadas_ultimos_2_meses__c").toString());} catch(Exception xx) {integrouEmpresa = 0; } 
+                        try { servicosBaixados = DecimalUtil.toDecimal(sobj2.getField("Serv_Baixado_Tareffa__c").toString());} catch(Exception xx) {servicosBaixados = 0; } 
+
+                        try { corAnterior = sobj2.getField("Cor_Tareffa__c").toString();} catch(Exception xx) {corAnterior = ""; } 
+                        corNova = corAnterior;
+
+
+                        // Combinado que nao vamos trocar de amarelo para azul pelo motivo de o analista ainda precisar fazer reuniao com o dono
+                        // para fechar o projeto Amarelo e so entao migrar para o Azul
+
+                        // Validacao se troca de Amarelo para Branco
+                        if (corAnterior.equals("Amarelo") && deveSerAmarelo.toUpperCase().equals("FALSE")) corNova = "Branco";
+
+                        // Validacao se troca de Azul para Branco
+                        if (corAnterior.equals("Azul")  && semLoginTareffa.toUpperCase().equals("TRUE") && servicosBaixados == 0 ) corNova = "Branco";
+
+                        // Validacao se troca de Verde para Branco
+                        if (corAnterior.equals("Verde")  && semLoginTareffa.toUpperCase().equals("TRUE") && servicosBaixados == 0) corNova = "Branco";
+
+                        // Validacao se troca de Branco para Azul
+                        if (corAnterior.equals("Branco")  && semLoginTareffa.toUpperCase().equals("FALSE") && servicosBaixados > 0) corNova = "Azul";
+
+
+
+                        if (!corAnterior.equals(corNova)) {
+
+                            JSONObject registros = new JSONObject();
+                            registros.put("name",  DateUtil.dateToString(new Date(), "yyyy-MM-dd") +"-Tareffa-" + idContabilidade);
+                            registros.put("data_mudanca", DateUtil.dateToString(new Date(), "yyyy-MM-dd")); 
+                            registros.put("Cor_Ottimizza__c", corNova); 
+                            registros.put("Cor_Anterior__c", corAnterior); 
+                            registros.put("Contabilidade_Produto__c", idContabilidade); 
+                            registros.put("Tipo_Cor__c", "Tareffa"); 
+
+                            records.put(registros); 
+
+                            String cnpjCompleto = "";
+                            String razaoSocial = "";
+                            String CNPJ_Numeros = "";
+
+
+                            try {
+
+                                if (corNova.equals("Branco")) {
+
+
+                                    try { cnpjCompleto 	= sobj2.getField("CNPJ__c").toString(); } catch(Exception ex) {cnpjCompleto = ""; }
+                                    try { CNPJ_Numeros 	= sobj2.getField("CNPJ_Numeros__c").toString(); } catch(Exception ex) {CNPJ_Numeros = ""; }
+                                    try { razaoSocial   = sobj2.getField("Name").toString(); } catch(Exception ex) {razaoSocial = ""; }
+
+
+
+                                    // CRIA REGISTROS DE CADASTRO DE EMPRESAS NA CONTABILIDADE TAREFFA - PARA USO DA EQUIPE DE CLIENTES
+                                    try {
+                                        JSONObject tareffaBody = new JSONObject();
+                                        tareffaBody.put("cnpj", cnpjCompleto);
+                                        tareffaBody.put("razaoSocial", StringUtil.removeSpecialChars(razaoSocial));
+                                        tareffaBody.put("nomeFantasia", StringUtil.removeSpecialChars(razaoSocial));
+                                        tareffaBody.put("codigoERP", idContabilidade);
+                                        tareffaBody.put("inscricaoEstadual", "Isento");
+                                        tareffaBody.put("regimeTributario", 1);
+                                        tareffaBody.put("cnaePrimario", "69.20-6-01");
+                                        tareffaBody.put("situacao", 1);
+                                        tareffaBody.put("dataInicioRegime", DateUtil.dateToString(new Date(), "yyyy-MM-dd"));
+                                        //tareffaBody.put("caracteristicas", new JSONArray());
+                                        
+                                        logger.logInfo("tareffaBody " + tareffaBody.toString());
+                                        
+
+
+                                        tareffaBody.put("idQuestorZen", idContabilidade);
+                                        tareffaBody.put("codigoCopiaERP", "");
+                                        String urlEmpresas = "https://api-beta-tareffa-spring-full.herokuapp.com/api/integracao/empresas";
+
+
+
+                                        genericPost(tareffaBody, urlEmpresas, oauthToken, logger);
+                                    }
+                                    catch(Exception ex) {
+                                        logger.logInfo("ERROR Ao Importar Empresas Tareffa -> "+ex.getMessage());
+                                    }
+
+                                    // CRIA SERVICOS AVULSOS PARA A EMPRESA - Tareffa
+                                    try {
+
+                                        String resultadoCriaServico =  geraServicoAvulso(oauthToken, CNPJ_Numeros, "ID_GestaoServicos", oauthTokenTareffa, logger);
+                                        logger.logInfo("resultadoCriaServico Tareffa " + resultadoCriaServico);
+
+                                    }
+                                    catch(Exception ex) {
+                                        logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                                    }
+
+                                }
+
+                            }
+                            catch(Exception ex) {
+                                logger.logInfo("ERROR Ao Criar servivo avulso Tareffa -> "+ex.getMessage());
+                            }
+
+                        }
+
+                    }
+
+                }
+            }
+
+
+        } catch (Exception e) {
+            logger.logError(e);
+        }
+
+
+
+
+    } catch (Exception e) {
+        logger.logError(e);
+    }
+
+
+
+    return records;
+}
+
+
+public void enviaEmailGeral(String assunto,
+                            String destinatarioNome,
+                            String destinatarioEmail,
+                            StringBuilder mensagem,
+                            InoutLogger logger) throws Exception { 
+
+    for (int ff=0;ff<900000000;ff++) {
+
+    }
+
+    String subject = assunto;
+    String sendToName = destinatarioNome;
+    StringBuilder msg = mensagem;
+    enviaEmail(subject, destinatarioEmail, sendToName, msg.toString(), null, logger);
+}
+
+
+public void enviaEmail(String subject,
+                       String sendTo,
+                       String sendToName, 
+                       String mensagem,
+                       String filename,
+                       InoutLogger logger) throws Exception {
+
+
+
+    EmailStruct emailStruct = new EmailStruct();
+    emailStruct.setSmtpServer("mail.ottimizza.com.br");
+    emailStruct.setSmtpPort("26");
+    emailStruct.setSmtpUser("suporte@ottimizza.com.br");
+    emailStruct.setSmtpPassword("suporte@123");
+    emailStruct.setSubject(subject);   
+    emailStruct.setMessage(mensagem);
+    emailStruct.setFrom("suporte@ottimizza.com.br");
+    emailStruct.setSendTo(sendTo);
+    emailStruct.setName(sendToName);
+    if (filename != null) {
+        emailStruct.addAttachedFilename(filename);
+    }
+    emailStruct.setMessageType(InoutConstants.MESSAGE_TYPE_HTML);
+    //logger.logInfo(">> EmailStruct:\n" + emailStruct.toJSONObject());
+    SendEmail se = new SendEmail(null);
+    se.send(emailStruct);
+    logger.logInfo(">> Email Enviado!!" + subject + "---" + sendTo);
+    for (int ff=0;ff<900000000;ff++) {
+
+    }
+}
+
+
+
+public JSONObject genericPost(JSONObject body, String url, String authorization, InoutLogger logger) throws Exception {
+    StringBuilder responseRaw = new StringBuilder();
+    java.net.URL serviceURL = new java.net.URL(url);
+    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+    connection.setDoOutput(true); // indicates a post
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Authorization", "Bearer " + authorization);
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("Accept", "application/json");
+    try {
+        java.io.OutputStream os = connection.getOutputStream();
+        os.write(body.toString().getBytes());
+        os.flush();
+        os.close();
+    } catch (Exception ex1) {
+        logger.logInfo("Algo deu errado escrevendo Request Body.");
+        logger.logInfo(ex1.getMessage());
+    }
+    // Writes the Response Body...
+    try {
+        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            responseRaw.append(line);
+        }
+        reader.close();
+    } catch (Exception ex2) {
+        logger.logInfo("Algo deu errado escrevendo Response Body.");
+        logger.logInfo(ex2.getMessage());
+    }
+    return new JSONObject(responseRaw.toString());
+}
+
+
+public JSONObject genericSimplePost(JSONObject body, String url, String authorization, InoutLogger logger) throws Exception {
+    StringBuilder responseRaw = new StringBuilder();
+    java.net.URL serviceURL = new java.net.URL(url);
+    java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+    connection.setDoOutput(true); // indicates a post
+    connection.setRequestMethod("POST");
+    connection.setRequestProperty("Authorization", authorization);
+    connection.setRequestProperty("Content-Type", "application/json");
+    connection.setRequestProperty("Accept", "application/json");
+    try {
+        java.io.OutputStream os = connection.getOutputStream();
+        os.write(body.toString().getBytes());
+        os.flush();
+        os.close();
+    } catch (Exception ex1) {
+        logger.logInfo("Algo deu errado escrevendo Request Body.");
+        logger.logInfo(ex1.getMessage());
+    }
+    // Writes the Response Body...
+    try {
+        java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            responseRaw.append(line);
+        }
+        reader.close();
+    } catch (Exception ex2) {
+        logger.logInfo("Algo deu errado escrevendo Response Body.");
+        logger.logInfo(ex2.getMessage());
+    }
+    return new JSONObject(responseRaw.toString());
+}
+public String doLogin(String username, String password, String server, InoutLogger logger) {
+    try {
+        String url = String.format(
+            "%s/oauth/token", server
+        );
+        StringBuilder responseRaw = new StringBuilder();
+        String token = "";
+        String form = String.format(
+            "username=%s&password=%s&grant_type=%s",
+            username, password, "password"
+        );
+
+        JSONObject data = new JSONObject();
+        data.put("grant_type", "password").put("username", username).put("password", password);
+        java.net.URL serviceURL = new java.net.URL(url);
+        java.net.HttpURLConnection connection = (java.net.HttpURLConnection) serviceURL.openConnection();
+        connection.setDoOutput(true); // indicates a post
+        connection.setRequestMethod("POST");
+        String authorization = Base64.getEncoder().encodeToString("858f84ff24730d133a63:1e601be1748c753a77f38cb85d5da097e3c63ead".getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + authorization);
+        try {
+            java.io.OutputStream os = connection.getOutputStream();
+            os.write(form.getBytes());
+            os.flush();
+            os.close();
+        } catch (Exception ex1) {
+            logger.logInfo("Algo deu errado escrevendo Request Body.");
+            logger.logInfo(ex1.getMessage());
+        }
+        // Writes the Response Body...
+        try {
+            java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(connection.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseRaw.append(line);
+            }
+            reader.close();
+        } catch (Exception ex2) {
+            logger.logInfo("Algo deu errado escrevendo Response Body.");
+            logger.logInfo(ex2.getMessage());
+        }
+        if (responseRaw.toString().startsWith("{") && responseRaw.toString().endsWith("}")) {
+            JSONObject response = new JSONObject(responseRaw.toString());
+            if (response.has("access_token")) {
+                token = response.optString("access_token", "");
+            }
+        } else {
+            throw new Exception(responseRaw.toString());
+        }
+        return token;
+    } catch (Exception ex0) { }
+    return "";
+}
+
+
+public String geraServicoAvulso(String oauthToken, String cnpjContabilidade, String produtoIdPai, String oauthTokenTareffa, InoutLogger logger) {
+
+    String servDinamic = "";
+	try{
+		servDinamic = buscaServidor(logger).toLowerCase();
+		if(servDinamic.equals("")) servDinamic = "zeus";
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR - "+e.getMessage());
+        servDinamic = "zeus";
+	}
+
+    try {
+
+        JSONObject tareffaBody = new JSONObject();
+        tareffaBody.put("Authorization", oauthToken);
+        tareffaBody.put("cnpjEmpresa", cnpjContabilidade);
+        tareffaBody.put("observacao", "Criado por "+servDinamic+".ottimizza.Atualiza_Cor_Contabilidade");
+        tareffaBody.put("complemento", "");
+
+        String urlTareffaAvulso = "https://api-beta-parceiros.herokuapp.com/api/v1/questor/servico/avulso";
+        // String urlTareffaAvulso = "https://api-parceiros.herokuapp.com/api/v1/questor/servico/avulso";
+
+ 
+        Date dataVencimento = new Date();
+
+        if (produtoIdPai.equals("ID_GestaoServicos")) {
+
+
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +30); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas Tareffa
+            tareffaBody.put("relatorioID", "ACAO_TAREFFA_SERVICOS");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+            
+            logger.logInfo("Criando Tareffa " + tareffaBody.toString());
+            
+
+
+
+        }
+
+        if (produtoIdPai.equals("ID_Integrador")) {
+
+
+            Calendar cal = Calendar.getInstance();
+            cal = DateUtil.dateToCalendar(new Date());          
+            cal.add (Calendar.DATE, +30); 
+            dataVencimento  = cal.getTime();
+            tareffaBody.put("dataVencimento", DateUtil.dateToString(dataVencimento, "yyyy-MM-dd"));
+            // criando boas-vindas integrador
+            tareffaBody.put("relatorioID", "ACAO_MEU_INTEGRADOR");
+            genericSimplePost(tareffaBody, urlTareffaAvulso, oauthTokenTareffa, logger);
+
+
+
+        }
+
+    } catch (Exception ex0) { 
+        return ex0.toString();
+
+    }
+
+    return "ok";
+
+
+
+}
+
