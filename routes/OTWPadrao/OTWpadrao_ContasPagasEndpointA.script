@@ -590,7 +590,10 @@ public JSONArray run(InoutLogger logger) throws Exception {
 					// =======================  ========================   =======================
 					String dataAuxiliar = "";
 					String valuesDataMovimento = "";
-
+					String ano = "";
+					String diaMes = "";
+					String nomeFim = "";
+					boolean concatenar = false;
 
 					JSONObject objetoParametro = new JSONObject();
 
@@ -1122,11 +1125,12 @@ public JSONArray run(InoutLogger logger) throws Exception {
 										dataLote	  = getCampoDate(dataMovimento, "", "yyyy-MM");
 									}
 									
-									if (!tipoPlanilha.contains("OTTCARTAO")) {
+									if (!tipoPlanilha.contains("OTTCARTAO") || !tipoPlanilha.contains("MOVIMENT")) {
 										// #Fabrica(2019-05-20)
+									
 										try{
 											dataMovimento     = getDate(dataMovimento, idataMovimento, line, false, roteiroCRM.optString("dataMovimento").toUpperCase(), memFile, logger);
-											 
+											
 											dataLote		  = getCampoDate(dataMovimento, "", "yyyy-MM");
 										}catch(Exception e){
 											// dataMovimento   = "";
@@ -1134,6 +1138,30 @@ public JSONArray run(InoutLogger logger) throws Exception {
 										}
 									}
 									
+									if(tipoPlanilha.contains("MOVIMENT")){
+
+										if(line.contains("SALDO")) continue;
+
+										try{
+											//dataMovimento = getDate(dataMovimento, idataMovimento, line, false, roteiroCRM.optString("dataMovimento").toUpperCase(), memFile, logger);
+											
+											if(line.contains("PERIODO:")){
+												ano = cutString(memFile.getStringFieldRemoveEspCharsUpper(1), memFile.getStringFieldRemoveEspCharsUpper(1).lastIndexOf("/"));
+											}
+
+											
+											if (memFile.getStringFieldRemoveEspCharsUpper(0).matches("\\b\\d{2}/\\d{2}\\b")) {
+												String dataString = memFile.getStringFieldRemoveEspCharsUpper(0)+ano;
+												Date dt  = DateUtil.stringToDate(dataString, "dd/MM/yyyy");
+												dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+
+											}		
+											dataLote		  = getCampoDate(dataMovimento, "", "yyyy-MM");
+										}catch(Exception e){
+											dataMovimento   = "";
+											dataLote        = "";
+										}
+									}
 									 
 									if(templateUtil.validaPlanilhaPadrao(tipoLancamento, memFile)) break;
 									// logger.logDebug("TP -> "+tipoPlanilha+" - Empresa -> "+nomeEmpresa+" - DM -> "+line);
@@ -1170,6 +1198,21 @@ public JSONArray run(InoutLogger logger) throws Exception {
 									}
 									
 									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
+									
+									if(memFile.getFieldsSize() == 1 && tipoPlanilha.contains("MOVIMENT") && concatenar){
+										ttMovimentoPadrao ttMov4 = (ttMovimentoPadrao)mapaVariavel.get(chave + "-CTB");
+										if(ttMov4 != null){
+    									ttMov4.nomeOrigem += " " + memFile.getStringFieldRemoveEspCharsUpper(0);
+    									mapaVariavel.put(chave + "-CTB", ttMov4);
+    									continue;
+										}
+									}
+									
+									if(memFile.getStringFieldRemoveEspCharsUpper(0).matches("\\b\\d{2}/\\d{2}\\b") && tipoPlanilha.contains("MOVIMENT")){
+										concatenar = true;
+									}
+									if(memFile.getStringFieldRemoveEspCharsUpper(0).contains(")")) concatenar = false; 
+
 									nomeOrigem		= getCampoString(nomeOrigem, inomeOrigem, line, zerar, roteiroCRM.optString("fornecedor").toUpperCase(), memFile, logger);
 									documento		= getCampoString(documento, idocumento, line, zerar, roteiroCRM.optString("documentoNF").toUpperCase(), memFile, logger);
 
@@ -6255,16 +6298,16 @@ public JSONObject getRoteiro() {
     js.put("CnpjEmpresa", "12.024.938/0001-20");
     js.put("fornecedor", "1");
     js.put("dataMovimento", "0");
-    js.put("portador", "3");
-    js.put("documentoNF", "3");
+    js.put("portador", "#COLUNA A CONTEM(CONTA:)COLUNA B");
+    js.put("documentoNF", "2");
     js.put("valorDocumento", "2");
-    js.put("valorJuros", "-1");
-    js.put("valorDesconto", "-1");
-    js.put("valorMulta", "-1");
-    js.put("valorPagamento", "-1");
-    js.put("complemento01", "3");
-    js.put("complemento02", "3");
-    js.put("complemento03", "");
+    js.put("valorJuros", "");
+    js.put("valorDesconto", "");
+    js.put("valorMulta", "");
+    js.put("valorPagamento", "");
+    js.put("complemento01", "1");
+    js.put("complemento02", "4");
+    js.put("complemento03", "5");
     js.put("complemento04", "");
     js.put("complemento05", "");
     js.put("complemento06", "");
