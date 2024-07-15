@@ -1205,16 +1205,16 @@ public JSONArray run(InoutLogger logger) throws Exception {
 										}
 									}
 									
+									if(line.contains("PERIODO:")){
+										ano = cutString(memFile.getStringFieldRemoveEspCharsUpper(1), memFile.getStringFieldRemoveEspCharsUpper(1).lastIndexOf("/"));
+									}
 									if(tipoPlanilha.contains("AAASECUND_BANCODOBRASIL")){
 
 										if(line.contains("SALDO")) continue;
+										if(line.contains("TOTAL") && line.contains(":")) continue;
 
 										try{
 											//dataMovimento = getDate(dataMovimento, idataMovimento, line, false, roteiroCRM.optString("dataMovimento").toUpperCase(), memFile, logger);
-											
-											if(line.contains("PERIODO:")){
-												ano = cutString(memFile.getStringFieldRemoveEspCharsUpper(1), memFile.getStringFieldRemoveEspCharsUpper(1).lastIndexOf("/"));
-											}
 
 											
 											if (memFile.getStringFieldRemoveEspCharsUpper(0).matches("\\b\\d{2}/\\d{2}\\b")) {
@@ -1224,6 +1224,8 @@ public JSONArray run(InoutLogger logger) throws Exception {
 
 											}		
 											dataLote		  = getCampoDate(dataMovimento, "", "yyyy-MM");
+											logger.logInfo("DATALOTE----------------->" + dataLote);
+
 										}catch(Exception e){
 											dataMovimento   = "";
 											dataLote        = "";

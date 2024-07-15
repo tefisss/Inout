@@ -1203,17 +1203,16 @@ public JSONArray run(InoutLogger logger) throws Exception {
 											// dataLote        = "";
 										}
 									}
-									
+									if(line.contains("PERIODO:")){
+										ano = cutString(memFile.getStringFieldRemoveEspCharsUpper(1), memFile.getStringFieldRemoveEspCharsUpper(1).lastIndexOf("/"));
+									}
 									if(tipoPlanilha.contains("AAASECUND_BANCODOBRASIL")){
 
 										if(line.contains("SALDO")) continue;
+										if(line.contains("TOTAL") && line.contains(":")) continue;
 
 										try{
 											//dataMovimento = getDate(dataMovimento, idataMovimento, line, false, roteiroCRM.optString("dataMovimento").toUpperCase(), memFile, logger);
-											
-											if(line.contains("PERIODO:")){
-												ano = cutString(memFile.getStringFieldRemoveEspCharsUpper(1), memFile.getStringFieldRemoveEspCharsUpper(1).lastIndexOf("/"));
-											}
 
 											
 											if (memFile.getStringFieldRemoveEspCharsUpper(0).matches("\\b\\d{2}/\\d{2}\\b")) {
@@ -1223,12 +1222,13 @@ public JSONArray run(InoutLogger logger) throws Exception {
 
 											}		
 											dataLote		  = getCampoDate(dataMovimento, "", "yyyy-MM");
+											logger.logInfo("DATALOTE----------------->" + dataLote);
+
 										}catch(Exception e){
 											dataMovimento   = "";
 											dataLote        = "";
 										}
 									}
-									
 									 
 									if(templateUtil.validaPlanilhaPadrao(tipoLancamento, memFile)) break;
 									// logger.logDebug("TP -> "+tipoPlanilha+" - Empresa -> "+nomeEmpresa+" - DM -> "+line);
@@ -1265,7 +1265,6 @@ public JSONArray run(InoutLogger logger) throws Exception {
 									}
 									
 									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
-									
 									if(memFile.getFieldsSize() == 1 && tipoPlanilha.contains("AAASECUND_BANCODOBRASIL") && concatenar){
 										ttMovimentoPadrao ttMov4 = (ttMovimentoPadrao)mapaVariavel.get(chave + "-CTB");
 										if(ttMov4 != null){
