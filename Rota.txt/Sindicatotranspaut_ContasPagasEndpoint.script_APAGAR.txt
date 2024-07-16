@@ -1221,10 +1221,8 @@ public JSONArray run(InoutLogger logger) throws Exception {
 												String dataString = memFile.getStringFieldRemoveEspCharsUpper(0)+ano;
 												Date dt  = DateUtil.stringToDate(dataString, "dd/MM/yyyy");
 												dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
-
 											}		
 											dataLote		  = getCampoDate(dataMovimento, "", "yyyy-MM");
-											logger.logInfo("DATALOTE----------------->" + dataLote);
 
 										}catch(Exception e){
 											dataMovimento   = "";

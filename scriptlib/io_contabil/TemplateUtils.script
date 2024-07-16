@@ -280,7 +280,7 @@ public class TemplateUtils {
             arquivoCompleto.contains("GERAR EM ARQUIVO") && arquivoCompleto.contains("SIGLAS E ABREVIACOES")){
 			return true; //CEF MODELO 07
 		}
-		if ((arquivoCompleto.contains("NU PAGAMENTOS S.A.") || arquivoCompleto.contains("OUVIDORIA: SE VOCE NAO FICOU SATISFEITO COM A SOLUCAO DO NOSSO TIME DE ATENDIMENTO LIGUE PARA 0800 887 0463 EM DIAS UTEIS, DAS 09H AS 18H")) ||
+		if ((arquivoCompleto.contains("NU PAGAMENTOS S.A.") && arquivoCompleto.contains("OUVIDORIA: SE VOCE NAO FICOU SATISFEITO COM A SOLUCAO DO NOSSO TIME DE ATENDIMENTO LIGUE PARA 0800 887 0463 EM DIAS UTEIS, DAS 09H AS 18H")) ||
 				(arquivoCompleto.contains("NU FINANCEIRA") && arquivoCompleto.contains("18.236.120/0001-58"))) {
 			return true; //NUBANK
 		}
@@ -348,7 +348,7 @@ public class TemplateUtils {
 			arquivoCompleto.contains("CONTA CORRENTE") && arquivoCompleto.contains("CNPJ")) {
 			return true; //BTG
 		}
-		if (arquivoCompleto.contains("01. CONTA CORRENTE E APLICACOES REMUNERA")) {
+		if (arquivoCompleto.contains("01. CONTA CORRENTE E APLICACOES REMUNERA") || arquivoCompleto.contains("01. CONTA CORRENTE") && arquivoCompleto.contains("PERIODO DO EXTRATO:")) {
 			return true; //BTG2
 		}
 		if(arquivoCompleto.contains("BANCO DO ESTADO DO RIO GRANDE DO SUL")
@@ -632,6 +632,9 @@ public class TemplateUtils {
 				return true;
 			}
 			if(tipoPlanilha.contains("AACARTAO_VERO")){
+				return true;
+			}
+			if(tipoPlanilha.contains("CARTAO_CIELOPDF")){
 				return true;
 			}
 		}

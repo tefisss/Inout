@@ -1257,7 +1257,7 @@ public void putStatus(String dirName, String nomeArquivo, JSONObject jDados, Ino
 	
     String diretorio = dirName + "/DePara";
 	
-	logger.logInfo("Log: util.putstatus - diretorio " + diretorio + " | "  + nomeArquivo);
+	// logger.logInfo("Log: util.putstatus - diretorio " + diretorio + " | "  + nomeArquivo);
     
 
     File file2 = new File(diretorio);
@@ -1328,23 +1328,21 @@ public String getCampoDate(String dataString, String patternIn){
 	
 }
 public String getCampoDate(String dataString, String patternIn, String patternOut){
-	/**
-	 * captura em casos de data serial considerando situacoes com minutos 
-	 */
+	
 	if(dataString.matches("^\\d{5}[.,].*") || dataString.length() == 5){
-		String dataStringSerial = dataString;
-		if(dataStringSerial.contains(",")) dataStringSerial = cutString(dataString, 0, ",");
-		if(dataStringSerial.contains(".")) dataStringSerial = cutString(dataString, 0, ".");
-		try {
-			Date dt = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
-			int datanum = Integer.parseInt(dataStringSerial);
-			Calendar calSerial = Calendar.getInstance();
-			calSerial.setTime(dt);
-			calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
-			dataStringSerial = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
-			return dataStringSerial;
-		}catch (Exception dt2) { }
-	}
+        String dataStringSerial = dataString;
+        if(dataStringSerial.contains(",")) dataStringSerial = cutString(dataString, 0, ",");
+        if(dataStringSerial.contains(".")) dataStringSerial = cutString(dataString, 0, ".");
+        try {
+            Date dt = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
+            int datanum = Integer.parseInt(dataStringSerial);
+            Calendar calSerial = Calendar.getInstance();
+            calSerial.setTime(dt);
+            calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
+            dataStringSerial = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
+            if (!dataStringSerial.equals("")) return dataStringSerial;
+        }catch (Exception dt2) { }
+    }
 	
 	String dataStringOriginal = dataString;
 	
@@ -2011,6 +2009,26 @@ public String getDate(String campo, int icampo, String line, boolean zerar, Stri
     // inicio padrao do template
     String dataString = getCampoString(campo, icampo, line, false, textoCRM, memFile, logger).trim();
 	
+	if(dataString.matches("^\\d{5}[.,].*") || dataString.length() == 5){
+        String dataStringSerial = dataString;
+        if(dataStringSerial.contains(",")) dataStringSerial = cutString(dataString, 0, ",");
+        if(dataStringSerial.contains(".")) dataStringSerial = cutString(dataString, 0, ".");
+        try {
+            Date dt = DateUtil.stringToDate("01/01/1900", "dd/MM/yyyy");
+            int datanum = Integer.parseInt(dataStringSerial);
+            Calendar calSerial = Calendar.getInstance();
+            calSerial.setTime(dt);
+            calSerial.add(Calendar.DAY_OF_YEAR, datanum -2);
+            dataStringSerial = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
+            if (!dataStringSerial.equals("")) return dataStringSerial;
+        }catch (Exception dt2) { }
+    //gui - 01/07/2024 - Tratativa para data no formato yyyyMMdd
+    }else if(dataString.trim().matches("^(\\d{4})(0[1-9]|1[0-2])(0[1-9]|[12]\\d|3[01])$")){ // data no formato yyyyDDmm
+        logger.logInfo("dtString: " + dataString);
+        dataMovimento = dataString.substring(6,8) + "/" + dataString.substring(4,6) + "/" + dataString.substring(0,4);
+        if(!dataMovimento.equals("")) return dataMovimento;
+    }
+	
 	if(dataString.contains("-Q") && dataString.length() == 10){ 
 		// logger.logDebug("Validou");
 		// logger.logDebug("I DS -> "+dataString.indexOf("-Q"));
@@ -2498,6 +2516,25 @@ public double capturaValor(String vdAux) throws Exception{
     throw new Exception("Valor invalido: " + vdAux);
 }
 
+public String buscaServidor(InoutLogger logger){
+	String conteudo = "";
+	try{
+		FileReader readerServidor = new FileReader("f:/ottimizza/servidor.txt");
+		try {
+			readerServidor.openFile();
+			conteudo = readerServidor.readAll();
+		} catch (IOException ioe) {
+			logger.logError(ioe);
+			return "";
+		} finally {
+			readerServidor.closeFile();
+		}
+	}catch(Exception e){
+		logger.logInfo("ERRO AO BUSCAR SERVIDOR = "+e.getMessage());
+		return "";
+	}
+	return conteudo.replace("\r", "").replace("\n", "");
+}
 
 
 

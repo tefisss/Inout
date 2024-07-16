@@ -4031,7 +4031,7 @@ public JSONArray getExtratosEmpresa(String codEmpresa, DataBase dbIOCont, InoutL
         return null;
     }
 	
-	//logger.logInfo("LEUEXT " + codEmpresa + " | " + extratoEmpresa.toString());
+	logger.logInfo("LEUEXT " + codEmpresa + " | " + extratoEmpresa.toString());
 
     return extratoEmpresa;
 }
@@ -4125,7 +4125,8 @@ public boolean readOFXDefault(MemoryFile memFile, JSONObject jDados, DataBase db
 			line = stringNormalizer(line, true);
 			// logger.logDebug("Line -> "+line);
 			
-			if(line.length() > 150) return readOFXOneLine(line, jDados, dbIOCont, logger);
+			if(!memFile.hasNextLine() && line.contains("<OFX>")) return readOFXOneLine(line, jDados, dbIOCont, logger);
+
 			
             // Limpa todas as variaveis
             if (line.contains("<STMTTRN>")) {
@@ -4392,14 +4393,12 @@ public boolean readOFXOneLine(String line, JSONObject jDados, DataBase dbIOCont,
     if(jDados.has("CHECKNUM"))     leDocumento = true;
     if(jDados.has("FITID"))     leDocumentoFitId = true;
 
-    String[] ofxInLine = line.split("><");
+    line = line.replaceAll("<", "\n<");
+    String[] ofxInLine = line.split("\n");
 
     for(String line : ofxInLine){
 
         contadorDelinhas++;
-
-        line = "<"+line+">";
-        logger.logInfo("RESS: " + line);
 
         try {
 			// logger.logInfo("LINHA 1 | = "+line);
