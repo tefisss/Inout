@@ -30804,7 +30804,7 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
     if(jDados.has("NOMEARQUIVO"))  nomeArquivo  = jDados.optString("NOMEARQUIVO");
     if(jDados.has("TIPOEXTRATO"))  tipoExtrato  = jDados.optString("TIPOEXTRATO");
 	if(jDados.has("TIPOLANCAMENTO")) tipoLancamento = jDados.optString("TIPOLANCAMENTO");
-	
+	logger.logInfo("TIPO------>" + tipoExtrato);
 	
 	if(tipoExtrato.equals("001")){
 		//nomePortador = "EXTRATO CRESOL - "+nomePortador;
@@ -30817,6 +30817,8 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 	}
 	
 	boolean naoLeMais = false;
+	String agencia = "";
+	String contaC= "";
 
     while (memFile.hasNextLine()) {
         String line = memFile.nextLine();
@@ -30833,11 +30835,22 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 		ivalorDocumento	= 3;
 		// logger.logInfo("TIPOEXTRATO ->> " + tipoExtrato);
 		
-		if(tipoExtrato.equals("002")){
+		if(tipoExtrato.equals("002") || tipoExtrato.equals("003")){
 			idataMovimento	= 0;
 			inomeOrigem		= 1;
 			ivalorDocumento	= 2;
 		}
+		
+		if(tipoExtrato.equals("003")){
+			if(line.contains("AGENCIA:")){
+				agencia = cutString(memFile.getStringFieldRemoveEspCharsUpper(0), memFile.getStringFieldRemoveEspCharsUpper(0).lastIndexOf(":")+1).trim();
+			}
+			if(line.contains("CONTA:")){
+				contaC = cutString(memFile.getStringFieldRemoveEspCharsUpper(0), memFile.getStringFieldRemoveEspCharsUpper(0).lastIndexOf(":")+1).trim();
+			}
+			nomePortador = agencia + " " + contaC;
+		}
+
 		
 		if (line.contains("SEGUNDO") && line.contains("TITULAR")) naoLeMais = true;
 		
@@ -30851,7 +30864,7 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 		}
 		
 		
-		if (naoLeMais) continue;
+		if (naoLeMais && !tipoExtrato.equals("003")) continue;
 		
 		// if (memFile.getFieldsSize() == 1) {
 			// logger.logInfo("DEU CERTO FOLHA " + nomeOrigem + " | " + memFile.getStringFieldRemoveEspCharsUpper(0));
@@ -30875,6 +30888,39 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 		
 		
 		try {
+
+			if(tipoExtrato.equals("003")){
+
+
+				if(memFile.getFieldsSize() < 3) continue;
+				
+				if(line.contains("SALDO DO DIA")) continue;
+				//if(line.contains("LANCAMENTOS FUTUROS")) naoLeMais = true;
+				
+				
+				try{
+					dataMovimento = getCampoDate(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+				}catch(Exception dt){};
+
+				if(dataMovimento.equals("")) continue;
+				
+				nomeOrigem = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
+				
+				try{
+					valorDocumento = Math.abs(memFile.getDoubleField(ivalorDocumento));
+				}catch(Exception e){
+					valorDocumento = 0;
+				}
+				if(valorDocumento==0) continue;
+				
+				if(memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("-")) {
+					debitoCredito = "EXTRATO-DEBITO";
+				}else{
+					debitoCredito = "EXTRATO-CREDITO";
+				}
+
+			}
+					
 			// #Fabrica(2019-05-20)
 			if(tipoExtrato.equals("001")){
 				

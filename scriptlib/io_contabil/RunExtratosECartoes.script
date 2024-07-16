@@ -4381,6 +4381,14 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			complemento02 = tipoExtrato;
 			variaveis.put("complemento02", complemento02);
 		}
+		if (arquivoCompleto.contains("CRESOL INTERNET BANKING") && arquivoCompleto.contains("INSTITUICAO FINANCEIRA") && 
+			arquivoCompleto.contains("CONFESOL.COM.BR")){
+			tipoExtrato = "003";
+			nomePortador2 = "CRESOL";
+			complemento02 = tipoExtrato;
+			variaveis.put("complemento02", complemento02);
+		} 
+
 		if (nomePortador2.contains("CRESOL")){
 			
 			JSONObject jDados = new JSONObject();
