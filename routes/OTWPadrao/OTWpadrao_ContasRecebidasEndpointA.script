@@ -30761,9 +30761,7 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 	
 	Extrato jdbcExtrato = new Extrato();
 	ExtratoModel extrato = null;
-	
-	// logger.logInfo("ENTROU EXTRATO CRESOL PDF");
- 
+
     // Inicializacao de Variaveis
     String codEmpresa        = "";
     String nomeArquivo       = "";
@@ -30827,13 +30825,17 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 		anoAux = cutString(nomePortador, 0, 4).trim();
 		nomePortador = cutString(nomePortador, nomePortador.indexOf("CRESOL"));
 	}
+
 	
 	boolean naoLeMais = false;
-
+	String agencia = "";
+	String contaC= "";
+	
     while (memFile.hasNextLine()) {
-        String line = memFile.nextLine();
+		String line = memFile.nextLine();
         line = StringUtil.removeSpecialCharsToUC(line);
-		if(quantityOf(line, ";") > 1){
+		
+		 if(quantityOf(line, ";") > 1){
 			memFile.setFieldSeparator(";");
 		}
 		
@@ -30851,17 +30853,35 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 			ivalorDocumento	= 2;
 		}
 		
-		if (line.contains("SEGUNDO") && line.contains("TITULAR")) naoLeMais = true;
+		if(tipoExtrato.equals("003")){
+			ivalorDocumento = 2;
+		}
+
 		
+		//NOME PORTADOR
+		if(tipoExtrato.equals("003")){
+			if(line.contains("AGENCIA:")){
+				agencia = cutString(memFile.getStringFieldRemoveEspCharsUpper(0), memFile.getStringFieldRemoveEspCharsUpper(0).lastIndexOf(":")+1).trim();
+			}
+			if(line.contains("CONTA:")){
+				contaC = cutString(memFile.getStringFieldRemoveEspCharsUpper(0), memFile.getStringFieldRemoveEspCharsUpper(0).lastIndexOf(":")+1).trim();
+			}
+			nomePortador = agencia + " " + contaC;
+		}
+		
+		if(tipoExtrato.equals("003") && line.contains("EXTRATO DE CONTA")) naoLeMais = true;
+		if(tipoExtrato.equals("003") && line.contains("AGENCIA:")) naoLeMais = false;
+
+		if (line.contains("SEGUNDO") && line.contains("TITULAR") && tipoExtrato.equals("001") || tipoExtrato.equals("002")) naoLeMais = true;
 		if(line.contains("PERIODO") && line.contains("/20") && line.contains(":") && tipoExtrato.equals("001")) naoLeMais = true;
-		
+
 		if(tipoExtrato.equals("001") && line.contains("LANCAMENTOS") && line.contains("FUTUROS") && line.contains("PENDENTES")) naoLeMais = true;
 		
-		if (line.contains("DATA") && line.contains("AMENTO") && line.contains("IDENTIFICA") && line.contains("VALOR")) {
+		if (line.contains("DATA") && line.contains("AMENTO") && line.contains("IDENTIFICA") && line.contains("VALOR") && 
+			tipoExtrato.equals("001") || tipoExtrato.equals("002")) {
 			naoLeMais = false;
 			continue;
 		}
-		
 		
 		if (naoLeMais) continue;
 		
@@ -30887,6 +30907,57 @@ public boolean readExtratoCresolPDF(MemoryFile memFile, String nomePortador, JSO
 		
 		
 		try {
+			
+			if(tipoExtrato.equals("003")){
+				
+				if(line.matches(".*\\b([01]?[0-9]|2[0-3]):[0-5][0-9]\\b.*")) continue; 
+
+				if(line.contains("EXTRATO DE")) naoLeMais = true;
+				if(line.contains("PERIODO DE")){
+					naoLeMais = false;
+					continue;	
+				} 
+
+				if(line.contains("LANCAMENTOS FUTUROS")){
+					naoLeMais = true;
+					continue;
+				}
+				
+				if(line.contains("HTTPS://")) continue;
+				if(line.contains("SALDO")) continue;
+				//if(line.contains("LANCAMENTOS FUTUROS")) naoLeMais = true;
+				
+				
+				//DATA OK
+				try{
+					dataMovimento = getCampoDate(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+				}catch(Exception dt){};
+
+				if(dataMovimento.isEmpty()) continue;
+				
+				//NOME ORIGEM OK
+				nomeOrigem = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
+				
+				//VALOR DOCUMENTO OK
+				try{
+					valorDocumento = Math.abs(memFile.getDoubleField(ivalorDocumento));
+				}catch(Exception e){
+					valorDocumento = 0;
+				}
+				
+				//DEBITOCREDITO OK
+				if(memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("-")) {
+					debitoCredito = "EXTRATO-DEBITO";
+				}else{
+					debitoCredito = "EXTRATO-CREDITO";
+				}
+
+			}
+			
+			logger.logInfo(dataMovimento + " | " + nomeOrigem + " | " + nomePortador + " | " +  valorDocumento + " | " + debitoCredito);
+			
+			
+			
 			// #Fabrica(2019-05-20)
 			if(tipoExtrato.equals("001")){
 				
