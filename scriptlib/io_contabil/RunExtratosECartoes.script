@@ -3835,7 +3835,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	}
 
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("FrancesinhaItau_PDF")) {
-		//logger.logInfo("Antees readFranc");
+		logger.logInfo("Antees readFranc");
 		if(variaveis.has("read") && variaveis.optString("read").equals("readExtratoItauPdfFrancesinha5")){
 			logger.logInfo("entrouread");
 			
@@ -4278,7 +4278,8 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// EXTRATO - EFI PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_PDF")) {
-		if (arquivoCompleto.toUpperCase().contains("EFI S.A") && arquivoCompleto.toUpperCase().contains("CNPJ: 09.089.356/0001-18")) {
+		if (cabecalhoPlanilha.contains("EFI S.A.") && cabecalhoPlanilha.contains("TIPO DE REGISTRO")
+		&& cabecalhoPlanilha.contains("EXTRATO FINANCEIRO") && cabecalhoPlanilha.contains("FILTROS DO")) {
 			nomePortador = cutString(cabecalhoPlanilha, "CONTA: ", "FILTROS DO");
 			JSONObject jDados = new JSONObject();
 			jDados.put("CODEMPRESA", codEmpresa);
@@ -4365,8 +4366,8 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			complemento02 = tipoExtrato;
 			variaveis.put("complemento02", complemento02);
 		}
-		if (arquivoCompleto.contains("CONSULTA POSICAO CONSOLIDADA") && arquivoCompleto.contains("SALDO EM CONTA") &&
-			arquivoCompleto.contains("LIMITE DE") && arquivoCompleto.contains("LANCAMENTOS") && arquivoCompleto.contains("AGENCIA")){
+		if (arquivoCompleto.contains("CONSULTA POSICAO CONSOLIDADA") && cabecalhoPlanilha.contains("SALDO EM CONTA") &&
+			cabecalhoPlanilha.contains("LIMITE DE") && cabecalhoPlanilha.contains("LANCAMENTOS") && cabecalhoPlanilha.contains("AGENCIA")){
 				
 			tipoExtrato = "002";
 			nomePortador2 = " CRESOL - " + cutString(cabecalhoPlanilha, "CONTA", cabecalhoPlanilha.indexOf("SALDO EM CONTA"));
@@ -4380,14 +4381,6 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			complemento02 = tipoExtrato;
 			variaveis.put("complemento02", complemento02);
 		}
-		if (arquivoCompleto.contains("CRESOL INTERNET BANKING") && arquivoCompleto.contains("INSTITUICAO FINANCEIRA") && 
-			arquivoCompleto.contains("CONFESOL.COM.BR")){
-			
-			tipoExtrato = "003";
-			nomePortador2 = "CRESOL";
-			complemento02 = tipoExtrato;
-			variaveis.put("complemento02", complemento02);
-		} 
 		if (nomePortador2.contains("CRESOL")){
 			
 			JSONObject jDados = new JSONObject();
@@ -4399,7 +4392,8 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			jDados.put("CODEMPRESA",     codEmpresa);
 			jDados.put("NOMEARQUIVO",    nomeArquivo);
 			jDados.put("TIPOPLANILHA",   "EXTRATO-CRESOL-PDF");
-
+			
+			
 			
 			readExtratoECartao("readExtratoCresolPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
 			variaveis.put("tipoRetorno", "break");
@@ -5545,8 +5539,7 @@ public String validacaoXlsxTxt(String anoData, String complemento01, String comp
 		
 		////// EXTRATO - EFI EXCEL //////////////////////////////////////////////////////////////////
 		if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_Excel")){
-			if(arquivoCompleto.toUpperCase().contains("TIPO") && arquivoCompleto.toUpperCase().contains("data") &&
-			arquivoCompleto.toUpperCase().contains("VALOR") && arquivoCompleto.toUpperCase().contains("PROTOCOLO")){
+			if(nomeArquivo.toUpperCase().contains("GERENCIANET")){
 				JSONObject jDados = new JSONObject();
 				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
