@@ -4278,8 +4278,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// EXTRATO - EFI PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_PDF")) {
-		if (cabecalhoPlanilha.contains("EFI S.A.") && cabecalhoPlanilha.contains("TIPO DE REGISTRO")
-		&& cabecalhoPlanilha.contains("EXTRATO FINANCEIRO") && cabecalhoPlanilha.contains("FILTROS DO")) {
+		if (arquivoCompleto.contains("EFI S.A.") && arquivoCompleto.contains("09.089.356/0001-18")) {
 			nomePortador = cutString(cabecalhoPlanilha, "CONTA: ", "FILTROS DO");
 			JSONObject jDados = new JSONObject();
 			jDados.put("CODEMPRESA", codEmpresa);
@@ -5547,7 +5546,7 @@ public String validacaoXlsxTxt(String anoData, String complemento01, String comp
 		
 		////// EXTRATO - EFI EXCEL //////////////////////////////////////////////////////////////////
 		if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_Excel")){
-			if(nomeArquivo.toUpperCase().contains("GERENCIANET")){
+			if(cabecalhoPlanilha.contains("TIPO|DATA|VALOR|PROTOCOLO") && line.toUpperCase().contains("SALDO DIARIO")){
 				JSONObject jDados = new JSONObject();
 				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
