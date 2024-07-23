@@ -4402,29 +4402,52 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	}
 	//#2309-014629
 	////// EXTRATO - OMIE CASH PDF //////////////////////////////////////////////////////////////////
-	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_OmieCash_PDF") && 
-		cabecalhoPlanilha.contains("OMIE.CASH") && cabecalhoPlanilha.contains("SITUACAO")) {
-		
-		tipoPlanilha = "EXTRATO-OMIECASH";
+	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_OmieCash_PDF")){
 		
 		if (cabecalhoPlanilha.contains("CONTA:") && cabecalhoPlanilha.contains("PERIODO DE") && cabecalhoPlanilha.contains("ATE")) {
 			nomePortador2 = cutString(cabecalhoPlanilha, "CONTA:", "PERIODO DE");
 			anoData = cutString(cabecalhoPlanilha, cabecalhoPlanilha.indexOf("PERIODO DE")+17, "ATE");	
 		}
-
-		JSONObject jDados = new JSONObject();
-		jDados.put("TIPOPLANILHA", tipoPlanilha);
-		jDados.put("CODEMPRESA", codEmpresa);
-		jDados.put("NOMEARQUIVO", nomeArquivo);
-		jDados.put("ANODATA", anoData);
-		if(variaveis.has("hasNewChave")){
-			if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+		
+		if(cabecalhoPlanilha.contains("OMIE.CASH") && cabecalhoPlanilha.contains("SITUACAO") && 
+		(arquivoCompleto.contains("CATEGORIA;ENTRADAS;SAIDAS;SALDO") || arquivoCompleto.contains("CATEGORIA|ENTRADAS|SAIDAS|SALDO"))) {
+			tipoPlanilha = "EXTRATO-OMIECASH";
+			JSONObject jDados = new JSONObject();
+			jDados.put("TIPOPLANILHA", tipoPlanilha);
+			jDados.put("CODEMPRESA", codEmpresa);
+			jDados.put("NOMEARQUIVO", nomeArquivo);
+			jDados.put("ANODATA", anoData);
+			jDados.put("TIPOEXTRATO", "002");
+			if(variaveis.has("hasNewChave")){
+				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+			}
+			jDados.put("LINE", line);
+			
+			readExtratoECartao("readExtratoOmieCashPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
+			variaveis.put("tipoRetorno", "break");
+			return variaveis.toString();
 		}
-		jDados.put("LINE", line);
 
-		readExtratoECartao("readExtratoOmieCashPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
-		variaveis.put("tipoRetorno", "break");
-		return variaveis.toString();
+
+		if(cabecalhoPlanilha.contains("OMIE.CASH") && cabecalhoPlanilha.contains("SITUACAO") && 
+		(arquivoCompleto.contains("CATEGORIA;VALOR;SALDO") || arquivoCompleto.contains("CATEGORIA|VALOR|SALDO"))) {
+			
+			tipoPlanilha = "EXTRATO-OMIECASH";
+			JSONObject jDados = new JSONObject();
+			jDados.put("TIPOPLANILHA", tipoPlanilha);
+			jDados.put("CODEMPRESA", codEmpresa);
+			jDados.put("NOMEARQUIVO", nomeArquivo);
+			jDados.put("ANODATA", anoData);
+			jDados.put("TIPOEXTRATO", "001");
+			if(variaveis.has("hasNewChave")){
+				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+			}
+			jDados.put("LINE", line);
+			
+			readExtratoECartao("readExtratoOmieCashPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
+			variaveis.put("tipoRetorno", "break");
+			return variaveis.toString();
+		}
 	}
 	
 	////// EXTRATO - TARGET PDF //////////////////////////////////////////////////////////////////
@@ -4612,7 +4635,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// FATURA CARTAO CREDITO ITAU PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_Itau_PDF")){
-		logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
+		//logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
 		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("FECHADA")){
 			String complemento09 = memFile.getStringFieldRemoveEspCharsUpper(1);
 			logger.logInfo("CP09 = "+complemento09);
