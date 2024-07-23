@@ -14882,6 +14882,7 @@ public boolean readExtratoBanesePDF(MemoryFile memFile, String nomePortador, JSO
 
 
 public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
+	
 	JSONObject extratoEmpresa = new JSONObject();
 	
 	Extrato jdbcExtrato = new Extrato();
@@ -14942,31 +14943,26 @@ public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, J
     // if(jDados.has("LINE"))  	   linha  		= jDados.optString("LINE");
     if(jDados.has("TIPOEXTRATO"))  tipoExtrato  = jDados.optString("TIPOEXTRATO");
 	if(jDados.has("TIPOLANCAMENTO")) tipoLancamento = jDados.optString("TIPOLANCAMENTO");
-	
-	// logger.logInfo("LINHA NORD -> " + linha);
    
 	
 
     while (memFile.hasNextLine()) {
         String line = memFile.nextLine();
         line = StringUtil.removeSpecialCharsToUC(line);
-
+		memFile.setFieldSeparator(";");
 		idataMovimento = 0;
 		inomeOrigem = 1;
 		idocumento = 2;
 		ivalorDocumento = 3;
-		
-		
+		//logger.logInfo("LINHA--->" + line);
 		if(memFile.getFieldsSize() == 1 && !line.contains("/") && !line.contains("SALDO") && !line.contains("DETALHAMENTO") && tipoExtrato.equals("001")){
 			nomeAntes = memFile.getStringFieldRemoveEspCharsUpper(0);
 			continue;
 		}
-		
 		if(memFile.getFieldsSize() == 1 && !line.contains("NAO CONSTAM") && (memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("PAGAMENTO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("PGTO") ||
 			memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("LIQUIDO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("TAR ") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("TARIFA") || 
 			memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("APLICACAO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("RECEBIMENTO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("TRANSF") || 
-			memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("RESG") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("DEBITO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("DEPOSITO") 
-			) ){
+			memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("RESG") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("DEBITO") || memFile.getStringFieldRemoveEspCharsUpper(0).startsWith("DEPOSITO") )){
 			nomeAntes = memFile.getStringFieldRemoveEspCharsUpper(0);
 			nomeAnterior = true;
 			continue;
@@ -14987,23 +14983,24 @@ public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, J
 				continue;
 		}
 		
-		
 		try {
 			// #Fabrica(2019-05-20)
 			try{
 				if(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento).matches("\\d{2}/\\d{2}/\\d{4}")){
-					dataMovimento = memFile.getStringFieldRemoveEspCharsUpper(idataMovimento);
+					dataMovimento = getCampoDate(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
 					dataLote	  = getCampoDate(dataMovimento, "", "yyyy-MM");
 					//logger.logInfo("LOG DATA MOVIMENTO - " + dataMovimento);					
 				}
 				else if(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento).matches("regex aqui")){
 					dataMovimento = memFile.getStringFieldRemoveEspCharsUpper(idataMovimento) + anoAux; // #27-09-2023 - Caso pare de vir ano junto de data, usar anoAux
 				}
+				//logger.logInfo(dataMovimento);
             }
 			catch(Exception e){
 				//exception
 			}
-			// logger.logInfo("DM "+idataMovimento+" -> "+dataMovimento+" MF DATA = "+memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+			//logger.logInfo("INDICE " + idataMovimento + " |  MEMFILE " + memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+			//logger.logInfo("INDICE 01 " + inomeOrigem + " |  MEMFILE " + memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem));
 			
 			if (dataMovimento.equals("")) continue;
 
@@ -15050,6 +15047,8 @@ public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, J
 				if ( memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("C")) debitoCredito = "EXTRATO-CREDITO";
 				if ( memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("D")) debitoCredito = "EXTRATO-DEBITO";
 			}
+
+			logger.logInfo(dataMovimento + " | " + nomePortador + " | " + nomeOrigem + " | " + documento + " | " + valorDocumento + " | " + debitoCredito);
  
 			extrato = new ExtratoModel();
 						
@@ -15074,17 +15073,16 @@ public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, J
 			extrato.setTipoLancamento(tipoLancamento);
 			//logger.logInfo("GET TL = "+extrato.getTipoLancamento());
 			extrato.setChave(memFile.getCurrentIndex());//ContLinhaExtrato
-			logger.logDebug("GET CHAVE = "+extrato.getChave());
+			//logger.logDebug("GET CHAVE = "+extrato.getChave());
 			
 			try{
 				jdbcExtrato.insereIOExtrato(extrato, dbIOCont, logger);				
 			}catch(Exception e){
 				logger.logError("Erro extrato abc" + e.getMessage());
 			}
-		} catch (Exception ex) {
-		}
-     }
-    return true;
+		} catch (Exception ex) { }
+     
+	} return true;
 }
 
 
