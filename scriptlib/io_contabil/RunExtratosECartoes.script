@@ -818,14 +818,14 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		}
 		
 	}*/
-	////// Extrato - NORDESTE PDF/////////////////////////////////////////////////////////// REFATORADO
+	////// Extrato - NORDESTE PDF/////////////////////////////////////////////////////////// REFATORAD
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Nordeste_PDF") &&
 		cabecalhoPlanilha.contains("PERIODO") && cabecalhoPlanilha.contains("TITULAR") 	&& 
 		//cabecalhoPlanilha.contains("SALDO ANTERIOR") && (cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO") || 
 		(cabecalhoPlanilha.contains("SALDO ANTERIOR") || (cabecalhoPlanilha.contains("CONTA CORRENTE:") && cabecalhoPlanilha.contains("PERIODO:"))) && (cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO") || 
 		!cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO"))) {
 			
-			// //logger.logInfoInfo("Cabe: "+cabecalhoPlanilha);
+			//logger.logInfo("Cabe: "+cabecalhoPlanilha);
 			
 		String tipoExtrato = "";	
 			
@@ -833,13 +833,13 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		if(!cabecalhoPlanilha.contains("CONTA CORRENTE:")) {
 			nomePortador = cutString(cabecalhoPlanilha, "CONTA:", "PERIODO:");
 			tipoExtrato = "002";
-			// //logger.logInfoInfo("Tipo: 002");
+			//logger.logInfo("Tipo: 002");
 		}
 		else if(cabecalhoPlanilha.contains("CONTA CORRENTE:")){
 			nomePortador = cutString(cabecalhoPlanilha, "CORRENTE:", "PERIODO:").replaceAll("\\;", ""); //
 			if(nomePortador.contains("SALDO ANTERIOR")) nomePortador = cutString(nomePortador, 0, "SALDO ANTERIOR");
 			tipoExtrato = "001";
-			// //logger.logInfoInfo("Tipo: 001");
+			//logger.logInfo("Tipo: 001");
 		}
 
 		JSONObject jDados = new JSONObject();
