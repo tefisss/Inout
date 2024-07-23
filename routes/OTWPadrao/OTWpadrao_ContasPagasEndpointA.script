@@ -14948,7 +14948,7 @@ public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, J
     while (memFile.hasNextLine()) {
         String line = memFile.nextLine();
         line = StringUtil.removeSpecialCharsToUC(line);
-
+		memFile.setFieldSeparator(";");
 		idataMovimento = 0;
 		inomeOrigem = 1;
 		idocumento = 2;
