@@ -1442,10 +1442,26 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		return variaveis.toString();
 		}
 	}
-	
 	////// Extrato - UNICRED PDF ///////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
-		if ((cabecalhoPlanilha.contains("COOPERATIVA") && cabecalhoPlanilha.contains("AGENCIA") &&
+		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
+			arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
+				JSONObject jDados = new JSONObject();
+				jDados.put("LINE", line);
+				jDados.put("NOMEPORTADOR", nomePortador);
+				jDados.put("CODEMPRESA", codEmpresa);
+				jDados.put("NOMEARQUIVO", nomeArquivo);
+				jDados.put("TIPOUNICRED", "004"); 
+				if(variaveis.has("hasNewChave")){
+					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+				}
+
+				readExtratoECartao("readExtratoUnicredPDF", memFile, jDados, dbIOCont, logger);
+				variaveis.put("tipoRetorno",   "break");
+				return variaveis.toString();
+			}
+
+			if ((cabecalhoPlanilha.contains("COOPERATIVA") && cabecalhoPlanilha.contains("AGENCIA") &&
 				cabecalhoPlanilha.contains("COOPERADO")   && cabecalhoPlanilha.contains("USUARIO") &&
 				(cabecalhoPlanilha.contains("NO DOC") || cabecalhoPlanilha.contains("N DOC")) &&
 				cabecalhoPlanilha.contains("LANCAMENTOS")) ||
@@ -1469,6 +1485,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				jDados.put("NOMEPORTADOR", nomePortador);
 				jDados.put("CODEMPRESA", codEmpresa);
 				jDados.put("NOMEARQUIVO", nomeArquivo);
+				jDados.put("TIPOUNICRED", "002"); 
 				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 				}
