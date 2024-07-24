@@ -423,6 +423,10 @@ public class TemplateUtils {
 			return true; //UNICRED 01 TIPO INTERNET BANKING
 		}
 		
+		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
+		arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
+			return true; // UNICRED TIPO 004
+		}
 
 		if(arquivoCompleto.contains("OUVIDORIA: 0800 591 5120") &&
 			arquivoCompleto.contains("COOPERATIVA DE CREDITO CREHNOR")){
