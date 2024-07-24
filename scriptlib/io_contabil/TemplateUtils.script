@@ -561,6 +561,14 @@ public class TemplateUtils {
 			arquivoCompleto.contains("NOSSO NUMERO") && arquivoCompleto.contains("AGENCIA/CONTA")){ //FRANCESINHASANTANDER 2
 			return true;
 		}
+
+		if (arquivoCompleto.contains("EMITIDO EM: ") && 
+			(arquivoCompleto.contains("DATA|OBSERVACAO|DOCUMENTO|VALOR|DETALHAMENTO") ||
+			arquivoCompleto.contains("DATA;OBSERVACAO;DOCUMENTO;VALOR;DETALHAMENTO")) &&
+			arquivoCompleto.contains("ALIAS:") &&
+			arquivoCompleto.contains("SALDO INICIAL")){
+				return true; // PENSEBANK
+			}
 		
 		if (arquivoCompleto.contains("INTERNET BANKING EMPRESARIAL") && arquivoCompleto.contains("AGENCIA") &&
 				arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("PERIODO") && arquivoCompleto.contains("0800 726 2125") &&
