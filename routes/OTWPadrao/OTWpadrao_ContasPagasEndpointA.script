@@ -25598,9 +25598,8 @@ public boolean readExtratoModoBankPDF(MemoryFile memFile, String nomePortador, J
 
 		if(line.contains("SALDO")) continue;
 
-		if(line.contains("- CONTA:")){
-			nomePortador = cutString(memFile.getStringFieldRemoveEspCharsUpper(inomePortador), memFile.getStringFieldRemoveEspCharsUpper(inomePortador).lastIndexOf(": ")+2);
-		}
+		nomePortador = cutString(memFile.getStringFieldRemoveEspCharsUpper(inomePortador), memFile.getStringFieldRemoveEspCharsUpper(inomePortador).lastIndexOf(": ")).trim();
+
         try {
 				Date dt = memFile.getDateField(idataMovimento, "dd/MM/yyyy");
 				dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
@@ -30704,7 +30703,6 @@ public boolean readExtratoAbcExcel(MemoryFile memFile, String nomePortador, JSON
 //####################################################################################################################################
 
 public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
-	logger.logInfo("ENTROU NO READ-------------------");
     JSONObject extratoEmpresa = new JSONObject();
 
     // Inicializacao de Variaveis
@@ -30779,7 +30777,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 			idataMovimento = 0;
 			inomeOrigem = 1;
 			ivalorDocumento = 2;
-			idocumento = 10;
+			idocumento = 10; //NÃO SERÁ UTILIZADO
 		}
 
         try {
