@@ -30709,7 +30709,7 @@ public boolean readExtratoAbcExcel(MemoryFile memFile, String nomePortador, JSON
 //####################################################################################################################################
 
 public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
-	
+	logger.logInfo("ENTROU NO READ-------------------");
     JSONObject extratoEmpresa = new JSONObject();
 
     // Inicializacao de Variaveis
@@ -30751,14 +30751,17 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 	int idataMovimento  = -1;
 	int ivalorDocumento = -1;
 	
+	String tipoExtrato = "";
+	
     if(jDados.has("CODEMPRESA"))   codEmpresa   = jDados.optString("CODEMPRESA");
     if(jDados.has("NOMEARQUIVO"))  nomeArquivo  = jDados.optString("NOMEARQUIVO");
 	if(jDados.has("NOMEPORTADOR")) nomePortador = jDados.optString("NOMEPORTADOR");
 	if(jDados.has("LINE"))  line = jDados.optString("LINE");
+	if(jDados.has("TIPOUNICRED")) tipoExtrato = jDados.optString("TIPOUNICRED");
 
     while (memFile.hasNextLine()) {
 		
-		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("DATA")){
+		if(!tipoExtrato.equals("004") && memFile.getStringFieldRemoveEspCharsUpper(0).contains("DATA")){
 			for(int i =0; i < memFile.getFieldsSize(); i++){
 				String campo = memFile.getStringFieldRemoveEspCharsUpper(i);
 				if(campo.contains("DATA")) idataMovimento = i;
@@ -30770,11 +30773,18 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 			}
 		}
 		
-        if(idataMovimento == -1 || inomeOrigem == -1 || idocumento == -1 || ivalorDocumento == -1){
+        if(!tipoExtrato.equals("004") && (idataMovimento == -1 || inomeOrigem == -1 || idocumento == -1 || ivalorDocumento == -1)){
 			idataMovimento = 0;
 			inomeOrigem = 2;
 			idocumento = 1;
 			ivalorDocumento = 3;
+		}
+	
+		if(tipoExtrato.equals("004")){
+			idataMovimento = 0;
+			inomeOrigem = 1;
+			ivalorDocumento = 2;
+			idocumento = 10;
 		}
 
         try {
@@ -30809,23 +30819,30 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 
             if (memFile.getStringField(0).equals("")) continue;
 			
+			if(!tipoExtrato.equals("004")){
+				try {
+					Date dt = memFile.getDateField(idataMovimento);
+					dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+					dataLote = DateUtil.dateToString(dt, "yyyy-MM");
+				} catch (Exception dateException01) {
+					try {
+						Date dt = memFile.getDateField(idataMovimento, "dd/MM/yyyy");    // --- VERIFICAR
+						dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+						dataLote = DateUtil.dateToString(dt, "yyyy-MM");
+					} catch (Exception dateException02) {
+						continue;
+					}
+				}
+			}
+			if(tipoExtrato.equals("004")){
+				dataMovimento = getCampoDate(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+
+				if(line.contains("CONTA:")){
+					nomePortador = cutString(memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem), memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem).lastIndexOf(":")+2);
+				}
+			}
+
 			
-            try {
-                Date dt = memFile.getDateField(idataMovimento);
-                dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
-                dataLote = DateUtil.dateToString(dt, "yyyy-MM");
-            } catch (Exception dateException01) {
-                try {
-                    Date dt = memFile.getDateField(idataMovimento, "dd/MM/yyyy");    // --- VERIFICAR
-                    dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
-                    dataLote = DateUtil.dateToString(dt, "yyyy-MM");
-                } catch (Exception dateException02) {
-                    continue;
-                }
-            }
-			
-			
-				
 			try {
 				valorDocumento = memFile.getDoubleField(ivalorDocumento);
 			} catch (Exception valorException01) {
@@ -30837,13 +30854,14 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
             if (valorDocumento > 0 ) debitoCredito = "EXTRATO-CREDITO";
             if (valorDocumento < 0 ) debitoCredito = "EXTRATO-DEBITO";
             if (valorDocumento == 0) continue;
-
+			
             valorDocumento = Math.abs(valorDocumento);
-
+			
             nomeOrigem = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
             complemento02 = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
 			documento		= memFile.getStringFieldRemoveEspCharsUpper(idocumento).replaceAll("\"","");	   
 			
+			logger.logInfo("PORTADOR-->" + nomePortador + "DATA--> " + dataMovimento + " ORIGEM--> "+ nomeOrigem + " VALOR--> " + valorDocumento + " OPERACAO--> " + debitoCredito);
 			if(nomeOrigem.contains("R$")){
 				continue;
 			}
@@ -30894,7 +30912,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
                 }
             }
         } catch (Exception readExtratoException) {
-            logger.logError("Erro de leitura de Extrato Padr㯠Sofisa", readExtratoException);
+            logger.logError("Erro de leitura de Extrato UNICRED", readExtratoException);
         }
     }
     return true;
