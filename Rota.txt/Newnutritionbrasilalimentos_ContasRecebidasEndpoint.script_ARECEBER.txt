@@ -1059,7 +1059,7 @@ public JSONArray run(InoutLogger logger) throws Exception {
 								}*/
 								
 								if (nomeArquivo.toUpperCase().contains(".PDF") && !nomeArquivo.toUpperCase().contains(".CSV")) {
-									if (TemplateUtils.verificaConversorNovoTipoPlanilha(tipoPlanilha) || processaPeloNovo) {
+									if (TemplateUtils.verificaConversorNovoTipoPlanilha(tipoPlanilha) || tipoPlanilha.contains("SECUND_SISTEMA")) {
 										// LancamentosApi apiWeb = new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);
 										String idConversor  = TemplateUtils.getIdLote(nomeArquivo);
 										// logger.logDebug("FOI PRO CONVERSOR1 " + nomeArquivo);
@@ -1072,7 +1072,7 @@ public JSONArray run(InoutLogger logger) throws Exception {
 											File []  arquivoParaConverter = file2.listFiles();
 											if (FileUtil.dirHasFiles(dirName)) {
 												for (File fl: arquivoParaConverter) {
-													if (fl.getName().toUpperCase().contains(".PDF")) {
+													if (nomeArquivo.toUpperCase().contains(".PDF")) {
 														try {
 															FileUtil.deleteFile(fl);
 														} catch (Exception XX) {}
@@ -1081,7 +1081,7 @@ public JSONArray run(InoutLogger logger) throws Exception {
 												}
 											}
 										}
-										continue;
+										break;
 									}
 								}
 								
@@ -1293,6 +1293,20 @@ public JSONArray run(InoutLogger logger) throws Exception {
 									}
 									
 									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
+									
+									if(line.contains("S A L D O D O D I A")) continue;
+
+									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
+									
+									if(memFile.getFieldsSize() == 1 && tipoPlanilha.contains("SECUND_SISTEMA") && concatenar){
+										ttMovimentoPadrao ttMov4 = (ttMovimentoPadrao)mapaVariavel.get(chave + "-CTB");
+										if(ttMov4 != null){
+    									ttMov4.nomeOrigem += " " + memFile.getStringFieldRemoveEspCharsUpper(0);
+    									mapaVariavel.put(chave + "-CTB", ttMov4);
+    									continue;
+										}
+									}
+									
 									nomeOrigem		= getCampoString(nomeOrigem, inomeOrigem, line, zerar, roteiroCRM.optString("fornecedor").toUpperCase(), memFile, logger);
 									documento		= getCampoString(documento, idocumento, line, zerar, roteiroCRM.optString("documentoNF").toUpperCase(), memFile, logger);
 
