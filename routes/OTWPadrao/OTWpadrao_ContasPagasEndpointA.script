@@ -30856,7 +30856,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 			
 			logger.logInfo("PORTADOR-->" + nomePortador + "DATA--> " + dataMovimento + " ORIGEM--> "+ nomeOrigem + " VALOR--> " + valorDocumento + " OPERACAO--> " + debitoCredito);
 			if(nomeOrigem.contains("R$")){
-				continue;
+				continue; 
 			}
 
             contLinhaExtrato = StringUtil.leftPad(String.valueOf(memFile.getCurrentIndex()), 05, "0");

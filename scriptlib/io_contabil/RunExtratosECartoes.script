@@ -1452,7 +1452,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				jDados.put("CODEMPRESA", codEmpresa);
 				jDados.put("NOMEARQUIVO", nomeArquivo);
 				jDados.put("TIPOUNICRED", "004"); 
-				if(variaveis.has("hasNewChave")){
+				if(variaveis.has("hasNewChave")){ 
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 				}
 
