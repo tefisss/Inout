@@ -6354,7 +6354,7 @@ public JSONObject getRoteiro() {
     js.put("lerAposPrincipal", "");
     js.put("campoLinhaPrincipal", "VALOR DOCUMENTO");
     js.put("nomeRelatorioRef", "PRINCIPAL");
-    js.put("Planilhas_Padroes", "Extrato_BSCASH_PDF; Extrato_STARBANK_PDF; Extrato_PinBank_PDF; Extrato_BancoBMG_PDF; Boticario_Excel; BySoft_i-Broker; Cartao_BenVisa_Excel; Cartao_Carrefour_Excel; Cartao_Cielo_Simples_Sem_Bandeira; Cartao_Credito_Santander; Cartao_Elavon_Excel; Cartao_Fidelidade_Excel; Cartao_Liv_PDF; Cartao_MagaLU_Excel; Cartao_Netshoes_Excel; Cartao_Nutricard_PDF; Cartao_Paguecom_CSV; Cartao_Redecard_TXT; Cartao_Sipag_Excel; Cartao_Ticket_Excel; Cartao_Ubereats_Excel; Citel_Software_frmRelCtpEncQuitados; ERP_DetalhamentosSispagItau_EXCEL; ERP_FolhaAlterdata_Progresso; ERP_FOLHADOMINIO_LELIS; ERP_FOLHAWK_RADAR; Extrato_Abc_Excel; Extrato_ABC_PDF; Extrato_AilosCivia_PDF; Extrato_Amazonia_PDF; Extrato_Amazonia_TXT; Extrato_ApliBB_PDF; Extrato_Arbi_Excel; Extrato_ASAAS_PDF; Extrato_BancoDaycoval_PDF; Extrato_BancoNordeste_Excel; Extrato_BancoPaulista_PDF; Extrato_Banese_Excel; Extrato_Banese_PDF; Extrato_Banestes_Excel; Extrato_Banpara_Excel; Extrato_Banpara_TXT; Extrato_Banrisul_PDF; Extrato_Banrisul_TXT; Extrato_BB_Excel; Extrato_BB_Financiamento; Extrato_BB_PDF; Extrato_BB_TXT; Extrato_BBM_PDF; Extrato_BBM_TXT; Extrato_BIB_PDF; Extrato_BKBank_PDF; Extrato_BMG_Excel; Extrato_BMG_PDF; Extrato_BMPMONEYPLUS_Excell; Extrato_Bradesco_Excel; Extrato_Bradesco_TXT; Extrato_Bradesco2_PDF; Extrato_Bradesco3_PDF; Extrato_Brasilia_Excel; Extrato_BRB_PDF; Extrato_BS2_PDF; Extrato_BTG_Excel; Extrato_Btg_PDF; Extrato_C6_Excel; Extrato_C6Bank_PDF; Extrato_Cef_Excel; Extrato_Cef_Html; Extrato_CEF_PDF; Extrato_CEF_TXT; Extrato_Civia_PDF; Extrato_ContaSimples_Excel; Extrato_ContaSimples_PDF; Extrato_Cora_Excel; Extrato_Cora_PDF; Extrato_Credisan_Excel; Extrato_Credisan_PDF; Extrato_Credisis_PDF; Extrato_Crehnor_PDF; Extrato_Cresol_Excel; Extrato_Cresol_PDF; Extrato_Daycoval_Excel; Extrato_Efi_Excel; Extrato_Efi_PDF; Extrato_Ewally_Excel; Extrato_Fibra_Excel; Extrato_Fibra_PDF; Extrato_Folha_Sage_Excel; Extrato_Grafeno_Excel; Extrato_Grafeno_PDF; Extrato_Guanabara_PDF; Extrato_HDT_Excel; Extrato_HSBC_Excel; Extrato_HSBC_PDF; Extrato_Industrial_Excel; Extrato_Infinitepay_PDF; Extrato_Inter_PDF; Extrato_Itau_Excel; Extrato_ITAU_PDF; Extrato_Itau_Txt; Extrato_ItauConsolidado_PDF; Extrato_Juno_Excel; Extrato_Linker_PDF; Extrato_MercadoPago_Excel; Extrato_MercadoPago_PDF; Extrato_Mercantil_PDF; Extrato_Movilepay_PDF; Extrato_NBC_PDF; Extrato_Next_PDF; Extrato_Nordeste_PDF; Extrato_Nubank_PDF; Extrato_OmieCash_PDF; Extrato_Original_Excel; Extrato_Original_PDF; Extrato_OTEROBANK_Excel; Extrato_Pagbank_PDF; Extrato_PagPixBank_PDF; Extrato_PagSeguro_Excel; Extrato_Paulista_Excel; Extrato_Paybrokers_PDF; Extrato_PinkPay_PDF; Extrato_Planner_PDF; Extrato_Poupecredi_PDF; Extrato_Safra_Excel; Extrato_Safra_PDF; Extrato_Santander_Excel; Extrato_Santander_PDF; Extrato_Sicoob; Extrato_Sicoob_PDF; Extrato_Sicoob_Txt; Extrato_SicoobCapital_PDF; Extrato_SicoobConvenios_PDF; Extrato_Sicredi_Excel; Extrato_Sicredi_PDF; Extrato_Sicredi_TXT; Extrato_Sisprime_Excel; Extrato_Sisprime_PDF; Extrato_Sofisa_Excel; Extrato_Sofisa_PDF; Extrato_Squid_Excel; Extrato_Squid_PDF; Extrato_Stone_Excel; Extrato_Stone_PDF; Extrato_Sulcredi_PDF; Extrato_Target_Excel; Extrato_Target_PDF; Extrato_Topazio_Excel; Extrato_Transfeera_PDF; Extrato_Tribanco_Excel; Extrato_Tribanco_PDF; Extrato_Tribanco2_PDF; Extrato_UBP_PDF; Extrato_Unicred_Excel; Extrato_Unicred_PDF; Extrato_Unicred_TXT; Extrato_Unicred2_PDF; Extrato_Uniprime_Excel; Extrato_Uniprime_PDF; Extrato_Uniprime_Txt; Extrato_Viacredi_Excel; Extrato_Viacredi_PDF; Extrato_Votorantim_Excel; Extrato_Votorantim_PDF; Extrato_Votorantim2_PDF; Extrato_XPInvestimentos_Excel; Extrato_XPInvestimentos_PDF; Extratos OFX; ExtratoUniprimeTxt; FaturaCartaoCredito_Banrisul_PDF; FaturaCartaoCredito_BB_PDF; FaturaCartaoCredito_Bradesco_PDF; FaturaCartaoCredito_Itau_EXCEL; FaturaCartaoCredito_Itau_PDF; FaturaCartaoCredito_Sicoob_PDF; Francesinha_Banrisul_TXT; Francesinha_BB_Excel; Francesinha_BB_PDF; Francesinha_Bradesco_Excel; Francesinha_Bradesco2_Excel; Francesinha_Cef_PDF; FrancesinhaBradesco_PDF; FrancesinhaCresol_PDF; FrancesinhagrupoAilos_PDF; FrancesinhaItau_CSV; FrancesinhaItau_Excel; FrancesinhaItau_PDF; FrancesinhaSafra_PDF; FrancesinhaSantander_PDF; FrancesinhaSicoob_PDF; FrancesinhaSicredi_Excel; FrancesinhaSicredi_PDF; FrancesinhaSisprime_Excel; FrancesinhaUnicredi_PDF; Interfoc_Genesys_mcp002; INVESTIMENTO_BRADESCO; Linx_AutoSystem; Linx_Softpharma_fcpa200; Notas_Corretagem_XP_PDF; Philips_Tasy; Prosyst; Santander_RET; Sicoob_Comprovantes_PDF; Sicredi_Comprovantes_PDF; Sindisoft_Relatorio_Movimentacao_Caixa; Sisjuri_BCS_Financeiro; Sisplan_Sistema_Planejamento; Systextil; Vision_System_Controller");
+    js.put("Planilhas_Padroes", "Extrato_BSCASH_PDF; Extrato_STARBANK_PDF; Extrato_PinBank_PDF; Extrato_BancoBMG_PDF; Boticario_Excel; BySoft_i-Broker; Cartao_BenVisa_Excel; Cartao_Carrefour_Excel; Cartao_Cielo_Simples_Sem_Bandeira; Cartao_Credito_Santander; Cartao_Elavon_Excel; Cartao_Fidelidade_Excel; Cartao_Liv_PDF; Cartao_MagaLU_Excel; Cartao_Netshoes_Excel; Cartao_Nutricard_PDF; Cartao_Paguecom_CSV; Cartao_Redecard_TXT; Cartao_Sipag_Excel; Cartao_Ticket_Excel; Cartao_Ubereats_Excel; Citel_Software_frmRelCtpEncQuitados; ERP_DetalhamentosSispagItau_EXCEL; ERP_FolhaAlterdata_Progresso; ERP_FOLHADOMINIO_LELIS; ERP_FOLHAWK_RADAR; Extrato_Abc_Excel; Extrato_ABC_PDF; Extrato_AilosCivia_PDF; Extrato_Amazonia_PDF; Extrato_Amazonia_TXT; Extrato_ApliBB_PDF; Extrato_Arbi_Excel; Extrato_ASAAS_PDF; Extrato_BancoDaycoval_PDF; Extrato_BancoNordeste_Excel; Extrato_BancoPaulista_PDF; Extrato_Banese_Excel; Extrato_Banese_PDF; Extrato_Banestes_Excel; Extrato_Banpara_Excel; Extrato_Banpara_TXT; Extrato_Banrisul_PDF; Extrato_Banrisul_TXT; Extrato_BB_Excel; Extrato_BB_Financiamento; Extrato_BB_PDF; Extrato_BB_TXT; Extrato_BBM_PDF; Extrato_BBM_TXT; Extrato_BIB_PDF; Extrato_BKBank_PDF; Extrato_BMG_Excel; Extrato_BMG_PDF; Extrato_BMPMONEYPLUS_Excell; Extrato_Bradesco_Excel; Extrato_Bradesco_TXT; Extrato_Bradesco2_PDF; Extrato_Bradesco3_PDF; Extrato_Brasilia_Excel; Extrato_BRB_PDF; Extrato_BS2_PDF; Extrato_BTG_Excel; Extrato_Btg_PDF; Extrato_C6_Excel; Extrato_C6Bank_PDF; Extrato_Cef_Excel; Extrato_Cef_Html; Extrato_CEF_PDF; Extrato_CEF_TXT; Extrato_Civia_PDF; Extrato_ContaSimples_Excel; Extrato_ContaSimples_PDF; Extrato_Cora_Excel; Extrato_Cora_PDF; Extrato_Credisan_Excel; Extrato_Credisan_PDF; Extrato_Credisis_PDF; Extrato_ModoBank_PDF; Extrato_Crehnor_PDF; Extrato_Cresol_Excel; Extrato_Cresol_PDF; Extrato_Daycoval_Excel; Extrato_Efi_Excel; Extrato_Efi_PDF; Extrato_Ewally_Excel; Extrato_Fibra_Excel; Extrato_Fibra_PDF; Extrato_Folha_Sage_Excel; Extrato_Grafeno_Excel; Extrato_Grafeno_PDF; Extrato_Guanabara_PDF; Extrato_HDT_Excel; Extrato_HSBC_Excel; Extrato_HSBC_PDF; Extrato_Industrial_Excel; Extrato_Infinitepay_PDF; Extrato_Inter_PDF; Extrato_Itau_Excel; Extrato_ITAU_PDF; Extrato_Itau_Txt; Extrato_ItauConsolidado_PDF; Extrato_Juno_Excel; Extrato_Linker_PDF; Extrato_MercadoPago_Excel; Extrato_MercadoPago_PDF; Extrato_Mercantil_PDF; Extrato_Movilepay_PDF; Extrato_NBC_PDF; Extrato_Next_PDF; Extrato_Nordeste_PDF; Extrato_Nubank_PDF; Extrato_OmieCash_PDF; Extrato_Original_Excel; Extrato_Original_PDF; Extrato_OTEROBANK_Excel; Extrato_Pagbank_PDF; Extrato_PagPixBank_PDF; Extrato_PagSeguro_Excel; Extrato_Paulista_Excel; Extrato_Paybrokers_PDF; Extrato_PinkPay_PDF; Extrato_Planner_PDF; Extrato_Poupecredi_PDF; Extrato_Safra_Excel; Extrato_Safra_PDF; Extrato_Santander_Excel; Extrato_Santander_PDF; Extrato_Sicoob; Extrato_Sicoob_PDF; Extrato_Sicoob_Txt; Extrato_SicoobCapital_PDF; Extrato_SicoobConvenios_PDF; Extrato_Sicredi_Excel; Extrato_Sicredi_PDF; Extrato_Sicredi_TXT; Extrato_Sisprime_Excel; Extrato_Sisprime_PDF; Extrato_Sofisa_Excel; Extrato_Sofisa_PDF; Extrato_Squid_Excel; Extrato_Squid_PDF; Extrato_Stone_Excel; Extrato_Stone_PDF; Extrato_Sulcredi_PDF; Extrato_Target_Excel; Extrato_Target_PDF; Extrato_Topazio_Excel; Extrato_Transfeera_PDF; Extrato_Tribanco_Excel; Extrato_Tribanco_PDF; Extrato_Tribanco2_PDF; Extrato_UBP_PDF; Extrato_Unicred_Excel; Extrato_Unicred_PDF; Extrato_Unicred_TXT; Extrato_Unicred2_PDF; Extrato_Uniprime_Excel; Extrato_Uniprime_PDF; Extrato_Uniprime_Txt; Extrato_Viacredi_Excel; Extrato_Viacredi_PDF; Extrato_Votorantim_Excel; Extrato_Votorantim_PDF; Extrato_Votorantim2_PDF; Extrato_XPInvestimentos_Excel; Extrato_XPInvestimentos_PDF; Extratos OFX; ExtratoUniprimeTxt; FaturaCartaoCredito_Banrisul_PDF; FaturaCartaoCredito_BB_PDF; FaturaCartaoCredito_Bradesco_PDF; FaturaCartaoCredito_Itau_EXCEL; FaturaCartaoCredito_Itau_PDF; FaturaCartaoCredito_Sicoob_PDF; Francesinha_Banrisul_TXT; Francesinha_BB_Excel; Francesinha_BB_PDF; Francesinha_Bradesco_Excel; Francesinha_Bradesco2_Excel; Francesinha_Cef_PDF; FrancesinhaBradesco_PDF; FrancesinhaCresol_PDF; FrancesinhagrupoAilos_PDF; FrancesinhaItau_CSV; FrancesinhaItau_Excel; FrancesinhaItau_PDF; FrancesinhaSafra_PDF; FrancesinhaSantander_PDF; FrancesinhaSicoob_PDF; FrancesinhaSicredi_Excel; FrancesinhaSicredi_PDF; FrancesinhaSisprime_Excel; FrancesinhaUnicredi_PDF; Interfoc_Genesys_mcp002; INVESTIMENTO_BRADESCO; Linx_AutoSystem; Linx_Softpharma_fcpa200; Notas_Corretagem_XP_PDF; Philips_Tasy; Prosyst; Santander_RET; Sicoob_Comprovantes_PDF; Sicredi_Comprovantes_PDF; Sindisoft_Relatorio_Movimentacao_Caixa; Sisjuri_BCS_Financeiro; Sisplan_Sistema_Planejamento; Systextil; Vision_System_Controller");
     js.put("statusRoteiro", "EM DESENVOLVIMENTO");
     js.put("tipoArquivo", ".XLSX - EXCEL");
     js.put("tipoIntegracao", "CONTAS PAGAS");
@@ -14878,7 +14878,148 @@ public boolean readExtratoBanesePDF(MemoryFile memFile, String nomePortador, JSO
     return true;
 }
 
+public boolean readExtratoModoBankPDF(MemoryFile memFile, String nomePortador, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
+	JSONObject extratoEmpresa = new JSONObject();
+	Extrato jdbcExtrato = new Extrato();
+	ExtratoModel extrato = null;
 
+    // Inicializacao de Variaveis
+    String codEmpresa        = "";
+    String nomeArquivo       = "";
+    String chaveExtrato      = "";
+	boolean hasNewChave = false; 
+    if(jDados.has("HASNEWCHAVE"))  hasNewChave  = jDados.optBoolean("HASNEWCHAVE"); 
+    String tipoLancamento    = "";
+
+    String documento         = "";
+    String nomeOrigem        = "";
+    String dataMovimento     = "";
+    String dataLote          = "";
+    String complemento01     = "";
+    String complemento02     = "";
+    String complemento03     = "";
+    String complemento04     = "";
+    String complemento05     = "";
+    String complemento06     = "";
+    String complemento07     = "";
+    String complemento08     = "";
+    String complemento09     = "";
+    String complemento10     = "";
+    String debitoCredito     = "";
+    String cpfCnpj           = "";
+    String historico         = "";
+    String debitoCreditoAux  = "";
+
+    String strValorDocumento = "";
+    String contLinhaExtrato  = "";
+	String anoData			 = "";
+	String dataString		 = "";
+	
+	boolean naoLeMais = false;
+
+    double valorDocumento    = 0.0;
+    double valorJuros        = 0.0;
+    double valorDesconto     = 0.0;
+    double valorMulta        = 0.0;
+    double valorPagamento    = 0.0;
+
+	int idataMovimento	= 5;
+	int icomplemento02  = 4;
+	int inomePortador	= -1;
+	int inomeOrigem		= 0;
+	int ivalorDocumento	= 1;
+
+
+    if(jDados.has("CODEMPRESA"))   codEmpresa   = jDados.optString("CODEMPRESA");
+    if(jDados.has("NOMEARQUIVO"))  nomeArquivo  = jDados.optString("NOMEARQUIVO");
+	if(jDados.has("TIPOLANCAMENTO")) tipoLancamento = jDados.optString("TIPOLANCAMENTO");
+
+    while (memFile.hasNextLine()) {
+        String line = memFile.nextLine();
+        line = StringUtil.removeSpecialCharsToUC(line);
+
+		if(line.contains("SALDO")) continue;
+
+        try {
+				Date dt = memFile.getDateField(idataMovimento, "dd/MM/yyyy");
+				dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+				dataLote = DateUtil.dateToString(dt, "yyyy-MM");
+			} catch (Exception dt1) {
+				try {
+					Date dt = memFile.getDateField(idataMovimento);
+					dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+					dataLote = DateUtil.dateToString(dt, "yyyy-MM");
+				} catch (Exception dt2) {
+					try {
+						dataString = memFile.getStringFieldRemoveEspCharsUpper(idataMovimento).replaceAll("\"","");
+						Date dt  = DateUtil.stringToDate(dataString, "dd/MM/yyyy");
+						dataMovimento = DateUtil.dateToString(dt, "dd/MM/yyyy");
+						dataLote = DateUtil.dateToString(dt, "yyyy-MM");
+					} catch (Exception dt2) { continue; }
+				}
+			}
+
+			try{
+				valorDocumento = Math.abs(memFile.getDoubleField(ivalorDocumento));
+				if(memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("-")){
+					debitoCredito = "EXTRATO-DEBITO";
+				}else{
+					debitoCredito = "EXTRATO-CREDITO";
+				}
+			}catch(Exception e){};
+			
+			if (valorDocumento == 0) continue;
+			if (dataMovimento.equals("")) continue;
+			
+			try{
+				nomeOrigem = (memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem));
+			}catch(Exception e){};
+
+			try{
+				complemento02 = (memFile.getStringFieldRemoveEspCharsUpper(icomplemento02));
+			}catch(Exception e){};
+			
+			logger.logInfo(dataMovimento + " | " + nomeOrigem + " | " + valorDocumento + " | " + debitoCredito + " | " + complemento02);
+		
+		try {
+            
+
+
+			extrato = new ExtratoModel();
+						
+			extrato.setCodEmpresa(codEmpresa);
+			//logger.logInfo("GET COD EMPRESA = "+extrato.getCodEmpresa());
+			extrato.setDataMovimento(dataMovimento);
+			//logger.logInfo("GET DATA EMPRESA = "+extrato.getDataMovimento());
+			extrato.setDocumento(documento);
+			//logger.logInfo("GET DOC EMPRESA = "+extrato.getDocumento());
+			extrato.setNomePortador(nomePortador);
+			//logger.logInfo("GET NP = "+extrato.getNomePortador());
+			extrato.setNomeOrigem(nomeOrigem);
+			//logger.logInfo("GET NOME ORIGEM = "+extrato.getNomeOrigem());
+			extrato.setLote(nomeArquivo.toUpperCase());
+			//logger.logInfo("GET LOTE = "+extrato.getLote());
+			extrato.setComplemento02(complemento02);
+			//logger.logInfo("GET CP02 = "+extrato.getComplemento02());
+			extrato.setValorDocumento(valorDocumento);
+			//logger.logInfo("GET VALOR = "+extrato.getValorDocumento());
+			extrato.setDebitoCredito(debitoCredito);
+			//logger.logInfo("GET DC = "+extrato.getDebitoCredito());
+			extrato.setTipoLancamento(tipoLancamento);
+			//logger.logInfo("GET TL = "+extrato.getTipoLancamento());
+			extrato.setChave(memFile.getCurrentIndex());//ContLinhaExtrato
+			//logger.logDebug("GET CHAVE = "+extrato.getChave());
+			
+			try{
+				jdbcExtrato.insereIOExtrato(extrato, dbIOCont, logger);				
+			}catch(Exception e){
+				logger.logError("Erro extrato" + e.getMessage());
+			}
+		} catch (Exception ex) {
+		}
+     }
+    return true;
+}
 
 
 public boolean readExtratoNordestePDF(MemoryFile memFile, String nomePortador, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {

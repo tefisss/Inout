@@ -4294,6 +4294,23 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			return variaveis.toString();
 		}
 	}
+		////// EXTRATO - MODOBANK PDF //////////////////////////////////////////////////////////////////
+		if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_ModoBank_PDF")) {
+			if (arquivoCompleto.contains("MODOBANK") && arquivoCompleto.contains("35.716.518/0001-00") //CNPJ DO BANCO
+			&& arquivoCompleto.contains("CLIENTE: ") && arquivoCompleto.contains("OUVIDORIA: ")) {
+				JSONObject jDados = new JSONObject();
+				jDados.put("CODEMPRESA", codEmpresa);
+				if(variaveis.has("hasNewChave")){
+					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+				}
+				jDados.put("NOMEEMPRESA",    nomeEmpresa);
+				jDados.put("NOMEARQUIVO",    nomeArquivo);
+				jDados.put("TIPOPLANILHA",    tipoPlanilha);
+				readExtratoECartao("readExtratoModoBankPDF", memFile, nomePortador, jDados, dbIOCont, logger);
+				variaveis.put("tipoRetorno", "break");
+				return variaveis.toString();
+			}
+		}
 	
 	////// EXTRATO - CRESOL PDF //////////////////////////////////////////////////////////////////
 	/*if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Cresol_PDF") && (nomeArquivo.toUpperCase().contains("PDF") || nomeArquivo.toUpperCase().contains("ANCORA"))){
