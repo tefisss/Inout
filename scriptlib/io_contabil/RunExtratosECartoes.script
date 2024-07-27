@@ -42,6 +42,9 @@ public boolean readExtratoECartao(String tipoARodar, MemoryFile memFile, String 
 		
 		// Get all Methods from superclass 'SC'.
 		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
+
+		// Valida de rodou por ".equals(tipoARodar"
+		Boolean invokerContainsBool = true;
 		
 		// ForEach Method from superclass.
 		for (java.lang.reflect.Method method : methods) {
@@ -49,18 +52,38 @@ public boolean readExtratoECartao(String tipoARodar, MemoryFile memFile, String 
 			
 			// logger.logInfo("METHODS = "+methodName);
 			
-			if (methodName.contains(tipoARodar)) {
+			if (methodName.equals(tipoARodar)) {
 				logger.logInfo(String.format("Invoking method %s...", methodName));
 				//logger.logInfoInfo(String.format("Invoking method %s...", methodName));
 				
 				response = (Boolean) method.invoke(scInstance, memFile, nomePortador, jDados, dbIOCont, logger);
 				//logger.logInfoDebug("RESPONSE -> " + response);
+
+				invokerContainsBool = false;
 				
 				break;
 			}
 		}
+
+		if(invokerContainsBool){
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName();
+				
+				// logger.logInfo("METHODS = "+methodName);
+				
+				if (methodName.contains(tipoARodar)) {
+					logger.logInfo(String.format("Invoking method %s... BY CONTAINS", methodName));
+					//logger.logInfoInfo(String.format("Invoking method %s...", methodName));
+					
+					response = (Boolean) method.invoke(scInstance, memFile, nomePortador, jDados, dbIOCont, logger);
+					//logger.logInfoDebug("RESPONSE -> " + response);
+					
+					break;
+				}
+			}	
+		}
 	} catch (Exception e2) {
-		logger.logInfo("Error trying to invoke method 'Extrato/Cartao Tipo01 boolean'." + e2);
+		logger.logError("Error trying to invoke method 'Extrato/Cartao Tipo01 boolean'.", e2);
 	}
 	return response;
 }
@@ -90,20 +113,40 @@ public boolean readExtratoECartao(String tipoARodar, MemoryFile memFile, JSONObj
 		// Get all Methods from superclass 'SC'.
 		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
 		
+		// Valida de rodou por ".equals(tipoARodar"
+		Boolean invokerContainsBool = true;
+
 		// ForEach Method from superclass.
 		for (java.lang.reflect.Method method : methods) {
 			String methodName = method.getName();
 			
-			if (methodName.contains(tipoARodar)) {
+			if (methodName.equals(tipoARodar)) {
 				logger.logInfo(String.format("Invoking method %s...", methodName));
 				
 				response = (Boolean) method.invoke(scInstance, memFile, jDados, dbIOCont, logger);
 				
+				invokerContainsBool = false;
+
 				break;
 			}
 		}
+
+		if(invokerContainsBool){
+			// ForEach Method from superclass.
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName();
+				
+				if (methodName.contains(tipoARodar)) {
+					logger.logInfo(String.format("Invoking method %s... BY CONTAINS", methodName));
+					
+					response = (Boolean) method.invoke(scInstance, memFile, jDados, dbIOCont, logger);
+					
+					break;
+				}
+			}
+		}
 	} catch (Exception e2) {
-		logger.logInfo("Error trying to invoke method 'Extrato/Cartao Tipo02 boolean'." + e2);
+		logger.logError("Error trying to invoke method 'Extrato/Cartao Tipo02 boolean'.", e2);
 	}
 	return response;
 }
@@ -129,20 +172,39 @@ public boolean readExtratoECartao(String tipoARodar, MemoryFile memFile, String 
 		// Get all Methods from superclass 'SC'.
 		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
 		
+		// Valida de rodou por ".equals(tipoARodar"
+		Boolean invokerContainsBool = true;
+
 		// ForEach Method from superclass.
 		for (java.lang.reflect.Method method : methods) {
 			String methodName = method.getName();
 			
-			if (methodName.contains(tipoARodar)) {
+			if (methodName.equals(tipoARodar)) {
 				logger.logInfo(String.format("Invoking method %s...", methodName));
 				
 				response = (Boolean) method.invoke(scInstance, memFile, anoData, tipoExtrato, nomePortador, jDados, dbIOCont, logger);
 				
+				invokerContainsBool = false;
+
 				break;
 			}
 		}
+		if(invokerContainsBool){
+			// ForEach Method from superclass.
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName();
+				
+				if (methodName.contains(tipoARodar)) {
+					logger.logInfo(String.format("Invoking method %s... BY CONTAINS", methodName));
+					
+					response = (Boolean) method.invoke(scInstance, memFile, anoData, tipoExtrato, nomePortador, jDados, dbIOCont, logger);
+					
+					break;
+				}
+			}
+		}
 	} catch (Exception e2) {
-		logger.logInfo("Error trying to invoke method 'Extrato/Cartao Tipo03 boolean'." + e2);
+		logger.logError("Error trying to invoke method 'Extrato/Cartao Tipo03 boolean'.", e2);
 	}
 	return response;
 }
@@ -217,20 +279,40 @@ public HashMap readExtratoECartao(String tipoARodar, MemoryFile memFile, JSONObj
 		// Get all Methods from superclass 'SC'.
 		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
 		
+		// Valida de rodou por ".equals(tipoARodar"
+		Boolean invokerContainsBool = true;
+
 		// ForEach Method from superclass.
 		for (java.lang.reflect.Method method : methods) {
 			String methodName = method.getName();
 			
-			if (methodName.contains(tipoARodar)) {
+			if (methodName.equals(tipoARodar)) {
 				logger.logInfo(String.format("Invoking method %s...", methodName));
 				
 				mapaVariavel = ((HashMap) method.invoke(scInstance, memFile, jDados, mapaVariavel, logger));
 				
+				invokerContainsBool = false;
+
 				break;
 			}
 		}
+
+		if(invokerContainsBool){
+			// ForEach Method from superclass.
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName();
+				
+				if (methodName.contains(tipoARodar)) {
+					logger.logInfo(String.format("Invoking method %s... BY CONTAINS", methodName));
+					
+					mapaVariavel = ((HashMap) method.invoke(scInstance, memFile, jDados, mapaVariavel, logger));
+					
+					break;
+				}
+			}
+		}
 	} catch (Exception e2) {
-		logger.logInfo("Error trying to invoke method 'Extrato/Cartao Tipo04 HashMap'." + e2);
+		logger.logError("Error trying to invoke method 'Extrato/Cartao Tipo04 HashMap'.", e2);
 	}
 	return mapaVariavel;
 }
@@ -254,20 +336,39 @@ public HashMap readExtratoECartao(String tipoARodar, String lineParam, MemoryFil
 		// Get all Methods from superclass 'SC'.
 		java.lang.reflect.Method[] methods = sc.getDeclaredMethods();
 		
+		// Valida de rodou por ".equals(tipoARodar"
+		Boolean invokerContainsBool = true;
+
 		// ForEach Method from superclass.
 		for (java.lang.reflect.Method method : methods) {
 			String methodName = method.getName();
 			
-			if (methodName.contains(tipoARodar)) {
-				//logger.logInfoInfo(String.format("Invoking method %s...", methodName));
+			if (methodName.equals(tipoARodar)) {
+				logger.logInfo(String.format("Invoking method %s...", methodName));
 				
 				mapaVariavel = ((HashMap) method.invoke(scInstance, lineParam, memFile, jDados, mapaVariavel, logger));
 				
+				invokerContainsBool = false;
+
 				break;
 			}
 		}
+
+		if(invokerContainsBool){
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName();
+				
+				if (methodName.contains(tipoARodar)) {
+					logger.logInfo(String.format("Invoking method %s... BY CONTAINS", methodName));
+					
+					mapaVariavel = ((HashMap) method.invoke(scInstance, lineParam, memFile, jDados, mapaVariavel, logger));
+
+					break;
+				}
+			}
+		}
 	} catch (Exception e2) {
-		//logger.logInfoError("Error trying to invoke method 'Extrato/Cartao Tipo05 HashMap'.", e2);
+		logger.logError("Error trying to invoke method 'Extrato/Cartao Tipo05 HashMap'.", e2);
 	}
 	return mapaVariavel;
 }
@@ -818,14 +919,14 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		}
 		
 	}*/
-	////// Extrato - NORDESTE PDF/////////////////////////////////////////////////////////// REFATORAD
+	////// Extrato - NORDESTE PDF/////////////////////////////////////////////////////////// REFATORADO
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Nordeste_PDF") &&
 		cabecalhoPlanilha.contains("PERIODO") && cabecalhoPlanilha.contains("TITULAR") 	&& 
 		//cabecalhoPlanilha.contains("SALDO ANTERIOR") && (cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO") || 
 		(cabecalhoPlanilha.contains("SALDO ANTERIOR") || (cabecalhoPlanilha.contains("CONTA CORRENTE:") && cabecalhoPlanilha.contains("PERIODO:"))) && (cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO") || 
 		!cabecalhoPlanilha.contains("DETALHAMENTO DO EXTRATO"))) {
 			
-			//logger.logInfo("Cabe: "+cabecalhoPlanilha);
+			// //logger.logInfoInfo("Cabe: "+cabecalhoPlanilha);
 			
 		String tipoExtrato = "";	
 			
@@ -833,13 +934,13 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		if(!cabecalhoPlanilha.contains("CONTA CORRENTE:")) {
 			nomePortador = cutString(cabecalhoPlanilha, "CONTA:", "PERIODO:");
 			tipoExtrato = "002";
-			//logger.logInfo("Tipo: 002");
+			// //logger.logInfoInfo("Tipo: 002");
 		}
 		else if(cabecalhoPlanilha.contains("CONTA CORRENTE:")){
 			nomePortador = cutString(cabecalhoPlanilha, "CORRENTE:", "PERIODO:").replaceAll("\\;", ""); //
 			if(nomePortador.contains("SALDO ANTERIOR")) nomePortador = cutString(nomePortador, 0, "SALDO ANTERIOR");
 			tipoExtrato = "001";
-			//logger.logInfo("Tipo: 001");
+			// //logger.logInfoInfo("Tipo: 001");
 		}
 
 		JSONObject jDados = new JSONObject();
@@ -1442,26 +1543,27 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		return variaveis.toString();
 		}
 	}
-////// Extrato - UNICRED PDF ///////////////////////////////////////////////////////////
+	
+	////// Extrato - UNICRED PDF ///////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
 			arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
+			
 				JSONObject jDados = new JSONObject();
 				jDados.put("LINE", line);
 				jDados.put("NOMEPORTADOR", nomePortador);
 				jDados.put("CODEMPRESA", codEmpresa);
 				jDados.put("NOMEARQUIVO", nomeArquivo);
 				jDados.put("TIPOUNICRED", "004"); 
-				if(variaveis.has("hasNewChave")){ 
+				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 				}
 
 				readExtratoECartao("readExtratoUnicredPDF", memFile, jDados, dbIOCont, logger);
 				variaveis.put("tipoRetorno",   "break");
 				return variaveis.toString();
-			}
-
-			if ((cabecalhoPlanilha.contains("COOPERATIVA") && cabecalhoPlanilha.contains("AGENCIA") &&
+		}
+		if ((cabecalhoPlanilha.contains("COOPERATIVA") && cabecalhoPlanilha.contains("AGENCIA") &&
 				cabecalhoPlanilha.contains("COOPERADO")   && cabecalhoPlanilha.contains("USUARIO") &&
 				(cabecalhoPlanilha.contains("NO DOC") || cabecalhoPlanilha.contains("N DOC")) &&
 				cabecalhoPlanilha.contains("LANCAMENTOS")) ||
@@ -1485,7 +1587,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				jDados.put("NOMEPORTADOR", nomePortador);
 				jDados.put("CODEMPRESA", codEmpresa);
 				jDados.put("NOMEARQUIVO", nomeArquivo);
-				jDados.put("TIPOUNICRED", "002"); 
+				jDados.put("TIPOUNICRED", "002");
 				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 				}
@@ -1503,7 +1605,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				variaveis.put("tipoRetorno",   "break");
 				return variaveis.toString();
 			}
-	}	
+	}
 
 	
 	////// EXTRATO - UNICRED2 PDF //////////////////////////////////////////////////////////////////
@@ -4295,8 +4397,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// EXTRATO - EFI PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_PDF")) {
-		if (cabecalhoPlanilha.contains("EFI S.A.") && cabecalhoPlanilha.contains("TIPO DE REGISTRO")
-		&& cabecalhoPlanilha.contains("EXTRATO FINANCEIRO") && cabecalhoPlanilha.contains("FILTROS DO")) {
+		if (arquivoCompleto.contains("EFI S.A.") && arquivoCompleto.contains("09.089.356/0001-18")) {
 			nomePortador = cutString(cabecalhoPlanilha, "CONTA: ", "FILTROS DO");
 			JSONObject jDados = new JSONObject();
 			jDados.put("CODEMPRESA", codEmpresa);
@@ -4311,23 +4412,6 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			return variaveis.toString();
 		}
 	}
-		////// EXTRATO - MODOBANK PDF //////////////////////////////////////////////////////////////////
-		if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_ModoBank_PDF")) {
-			if (arquivoCompleto.contains("MODOBANK") && arquivoCompleto.contains("35.716.518/0001-00") //CNPJ DO BANCO
-			&& arquivoCompleto.contains("CLIENTE: ") && arquivoCompleto.contains("OUVIDORIA: ")) {
-				JSONObject jDados = new JSONObject();
-				jDados.put("CODEMPRESA", codEmpresa);
-				if(variaveis.has("hasNewChave")){
-					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
-				}
-				jDados.put("NOMEEMPRESA",    nomeEmpresa);
-				jDados.put("NOMEARQUIVO",    nomeArquivo);
-				jDados.put("TIPOPLANILHA",    tipoPlanilha);
-				readExtratoECartao("readExtratoModoBankPDF", memFile, nomePortador, jDados, dbIOCont, logger);
-				variaveis.put("tipoRetorno", "break");
-				return variaveis.toString();
-			}
-		}
 	
 	////// EXTRATO - CRESOL PDF //////////////////////////////////////////////////////////////////
 	/*if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Cresol_PDF") && (nomeArquivo.toUpperCase().contains("PDF") || nomeArquivo.toUpperCase().contains("ANCORA"))){
@@ -4363,6 +4447,14 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			if (line.contains("AGENCIA") && line.contains("CONTA")) {
 				nomePortador = "CRESOL - " + cutString(line, "CONTA", line.length());
 			}
+		}
+		
+		if (arquivoCompleto.contains("CRESOL INTERNET BANKING") && arquivoCompleto.contains("INSTITUICAO FINANCEIRA") && 
+			arquivoCompleto.contains("CONFESOL.COM.BR")){
+			tipoExtrato = "003";
+			nomePortador2 = "CRESOL";
+			complemento02 = tipoExtrato;
+			variaveis.put("complemento02", complemento02);
 		}
 		
 		if(nomePortador.contains("CRESOL")){
@@ -4434,6 +4526,25 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			return variaveis.toString();
 		}
 	}
+	
+	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_ModoBank_PDF")) {
+		if (arquivoCompleto.contains("MODOBANK") && arquivoCompleto.contains("35.716.518/0001-00") //CNPJ DO BANCO
+		&& arquivoCompleto.contains("CLIENTE: ") && arquivoCompleto.contains("OUVIDORIA: ")) {
+			JSONObject jDados = new JSONObject();
+			jDados.put("CODEMPRESA", codEmpresa);
+			if(variaveis.has("hasNewChave")){
+				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+			}
+			jDados.put("NOMEEMPRESA",    nomeEmpresa);
+			jDados.put("NOMEARQUIVO",    nomeArquivo);
+			jDados.put("TIPOPLANILHA",    tipoPlanilha);
+			readExtratoECartao("readExtratoModoBankPDF", memFile, nomePortador, jDados, dbIOCont, logger);
+			variaveis.put("tipoRetorno", "break");
+			return variaveis.toString();
+		}
+	}
+		
+		
 	//#2309-014629
 	////// EXTRATO - OMIE CASH PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_OmieCash_PDF")){
@@ -4669,7 +4780,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// FATURA CARTAO CREDITO ITAU PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_Itau_PDF")){
-		//logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
+		logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
 		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("FECHADA")){
 			String complemento09 = memFile.getStringFieldRemoveEspCharsUpper(1);
 			logger.logInfo("CP09 = "+complemento09);
@@ -4684,8 +4795,8 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			return variaveis.toString();
 		}
 
-		if (cabecalhoPlanilha.contains("LANCAMENTOS NACIONAIS") && 
-			cabecalhoPlanilha.contains("LANCAMENTOS INTERNACIONAIS") && 
+		if ((cabecalhoPlanilha.contains("LANCAMENTOS NACIONAIS") || 
+			cabecalhoPlanilha.contains("LANCAMENTOS INTERNACIONAIS")) && 
 			cabecalhoPlanilha.contains("SALDO DA FATURA ANTERIOR")){
 
 			JSONObject jDados = new JSONObject();
@@ -5596,7 +5707,7 @@ public String validacaoXlsxTxt(String anoData, String complemento01, String comp
 		
 		////// EXTRATO - EFI EXCEL //////////////////////////////////////////////////////////////////
 		if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Efi_Excel")){
-			if(nomeArquivo.toUpperCase().contains("GERENCIANET")){
+			if(cabecalhoPlanilha.contains("TIPO|DATA|VALOR|PROTOCOLO") && line.toUpperCase().contains("SALDO DIARIO")){
 				JSONObject jDados = new JSONObject();
 				if(variaveis.has("hasNewChave")){
 					if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
