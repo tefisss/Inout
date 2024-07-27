@@ -1548,7 +1548,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
 			arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
-			
+			logger.logInfo("ENTROU NO TIPO 004*************************");
 				JSONObject jDados = new JSONObject();
 				jDados.put("LINE", line);
 				jDados.put("NOMEPORTADOR", nomePortador);
