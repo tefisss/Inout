@@ -27513,8 +27513,9 @@ public boolean readExtratoSicoobPDF(MemoryFile memFile, String nomePortador, JSO
 
 	
     while (memFile.hasNextLine()) {
-        String line = memFile.nextLine();
+		String line = memFile.nextLine();
         line = StringUtil.removeSpecialCharsToUC(line);
+		logger.logInfo("LINHA = "+ line);
 				
 		if (memFile.getStringFieldRemoveEspCharsUpper(3).equals("") || tipoLayout.equals("002")) inomeOrigem = 1;
 		else inomeOrigem = 2;
@@ -27532,8 +27533,7 @@ public boolean readExtratoSicoobPDF(MemoryFile memFile, String nomePortador, JSO
 			//if(line.toUpperCase().contains("SALDO DO DIA")){
 			//	auxDebitoCredito = false;
 			//}
-
-
+			
 		if (memFile.getStringFieldRemoveEspCharsUpper(0).contains("PERIODO:")) continue;
 		if (memFile.getStringFieldRemoveEspCharsUpper(0).contains("ABOUT") && memFile.getStringFieldRemoveEspCharsUpper(0).contains("BLANK")) continue;
 		if (line.toUpperCase().contains("PLATAFORMA DE SERVICOS FINANCEIROS")) continue;
@@ -27563,7 +27563,7 @@ public boolean readExtratoSicoobPDF(MemoryFile memFile, String nomePortador, JSO
 		if (line.toUpperCase().contains("VENCIMENTO CHEQUE")) continue;	
 		if (line.toUpperCase().contains("TAXA CHEQUE")) continue;	
 		if (line.toUpperCase().contains("EXTRATOS EMITIDOS")) continue;
-		if (line.contains("RESUMO")) return true;
+		if (line.contains("RESUMO")) naoLeMais = true;
 		if (line.toUpperCase().startsWith("MENSAGENS") || line.toUpperCase().contains("MENSAGENS"))naoLeMais = true;	
 		if (memFile.getFieldsSize() > 1) naoLeMais = false;
 		// 2310-019753 descomentado if abaixo
