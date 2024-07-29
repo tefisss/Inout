@@ -1393,112 +1393,111 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	}*/
 	//#2309-016021
 	////// Extrato - BANCO DO BRASIL - PDF //////////////////////////////////////////////////// REFATORADO
-	//#2309-016021
-	////// Extrato - BANCO DO BRASIL - PDF //////////////////////////////////////////////////// REFATORADO
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_BB_PDF")) {
-		// BB MOBILE
-		if (arquivoCompleto.contains("TOTAL APLICACOES FINANCEIRAS") && arquivoCompleto.contains("SALDOS POR DIA BASE") && 
-			arquivoCompleto.contains("SUJEITOS A CONFIRMACAO NO MOMENTO DA CONTRATACAO")) {
-			
-			nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilha, "CONTA:", cabecalhoPlanilha.indexOf("LANCAMENTOS"));
-			
-			JSONObject jDados = new JSONObject();
-			jDados.put("CODEMPRESA", codEmpresa);
-			jDados.put("NOMEARQUIVO", nomeArquivo);
-			if(variaveis.has("hasNewChave")){
-				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
-			}
-			jDados.put("TIPOPLANILHA", "EXTRATO-BB");
-			// //logger.logInfoInfo("NOME PORTADOR BB MOBILE -> "+ nomePortador2);
-			
-			readExtratoECartao("readExtratoBancoDoBrasil2PDF", memFile, nomePortador2, jDados, dbIOCont, logger);
-			variaveis.put("tipoRetorno", "break");
-			return variaveis.toString();
+	// BB MOBILE
+	if (arquivoCompleto.contains("TOTAL APLICACOES FINANCEIRAS") && arquivoCompleto.contains("SALDOS POR DIA BASE") && 
+		arquivoCompleto.contains("SUJEITOS A CONFIRMACAO NO MOMENTO DA CONTRATACAO")) {
+		
+		nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilha, "CONTA:", cabecalhoPlanilha.indexOf("LANCAMENTOS"));
+		
+		JSONObject jDados = new JSONObject();
+		jDados.put("CODEMPRESA", codEmpresa);
+		jDados.put("NOMEARQUIVO", nomeArquivo);
+		if(variaveis.has("hasNewChave")){
+			if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+		}
+		jDados.put("TIPOPLANILHA", "EXTRATO-BB");
+		// //logger.logInfoInfo("NOME PORTADOR BB MOBILE -> "+ nomePortador2);
+		
+		readExtratoECartao("readExtratoBancoDoBrasil2PDF", memFile, nomePortador2, jDados, dbIOCont, logger);
+		variaveis.put("tipoRetorno", "break");
+		return variaveis.toString();
+	}
+	
+	// Nome Portador  ->  "BANCO DO BRASIL {AGENCIA} {CONTA}"
+	// //logger.logInfoInfo("cabecalho == "+cabecalhoPlanilha);
+	if(((cabecalhoPlanilha.contains("CLIENTE - CONTA ATUAL") || cabecalhoPlanilha.contains("CLIENTE - CONTA ANTERIOR")) && 
+		(cabecalhoPlanilha.contains("DT. BALANCETE") || cabecalhoPlanilha.contains("DT.. BALANCETE") || cabecalhoPlanilha.contains("BALANCETE MOVIMENTO") || 
+		 cabecalhoPlanilha.contains("BALANCETE;MOVIMENTO") || cabecalhoPlanilha.contains("BALANCETE|MOVIMENTO"))) || // 2403-030954 - Nicholas - 12/03/2024
+		 (cabecalhoPlanilha.contains("CONTA CORRENTE") && (cabecalhoPlanilha.contains("PERA ODO") || cabecalhoPlanilha.contains("PERAO DO")) &&
+		 cabecalhoPlanilha.contains("HISTARICO") && cabecalhoPlanilha.contains("DT.MOVIMENTO"))) { // 2405-039806 - Thiago - 25/07/2024
+		
+		String cabecalhoPlanilhaAux = "";
+		
+		if(cabecalhoPlanilha.contains("CONTA ANTERIOR")){
+			cabecalhoPlanilhaAux = cutString(cabecalhoPlanilha, "CONTA ANTERIOR", "EXTRATO");
 		}
 		
-		// Nome Portador  ->  "BANCO DO BRASIL {AGENCIA} {CONTA}"
-		// //logger.logInfoInfo("cabecalho == "+cabecalhoPlanilha);
-		if ((cabecalhoPlanilha.contains("CLIENTE - CONTA ATUAL") || cabecalhoPlanilha.contains("CLIENTE - CONTA ANTERIOR")) && 
-			(cabecalhoPlanilha.contains("DT. BALANCETE") || cabecalhoPlanilha.contains("DT.. BALANCETE") || cabecalhoPlanilha.contains("BALANCETE MOVIMENTO") || 
-			 cabecalhoPlanilha.contains("BALANCETE;MOVIMENTO") || cabecalhoPlanilha.contains("BALANCETE|MOVIMENTO"))) {// 2403-030954 - Nicholas - 12/03/2024
-			////logger.logInfoInfo("CP - " + cabecalhoPlanilha);
-			
-			String cabecalhoPlanilhaAux = "";
-			
-			if(cabecalhoPlanilha.contains("CONTA ANTERIOR")){
-				cabecalhoPlanilhaAux = cutString(cabecalhoPlanilha, "CONTA ANTERIOR", "EXTRATO");
-			}
-			
-			if (cabecalhoPlanilha.contains("CONTA ATUAL")) {
-				cabecalhoPlanilhaAux = cutString(cabecalhoPlanilha, "CONTA ATUAL", "EXTRATO"); 
-			}
-			
-			if(cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO").contains("-")){
-				String npAux = cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO");
-				nomePortador2 = "BANCO DO BRASIL - " + cutString(npAux, 0, npAux.indexOf("-")+1);
-			}else{
-				nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO");				
-			}
-			
-			
-			JSONObject jDados = new JSONObject();
-			jDados.put("CODEMPRESA", codEmpresa);
-			jDados.put("NOMEARQUIVO", nomeArquivo);
-			if(variaveis.has("hasNewChave")){
-				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
-			}
-			jDados.put("TIPOPLANILHA", "EXTRATO-BB");
-			
-			// //logger.logInfoInfo("NOME PORTADOR BB EXTRATO -> "+ nomePortador2);
-			readExtratoECartao("readExtratoBancoDoBrasilPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
-			variaveis.put("tipoRetorno", "break");
-			return variaveis.toString();
+		if (cabecalhoPlanilha.contains("CONTA ATUAL")) {
+			cabecalhoPlanilhaAux = cutString(cabecalhoPlanilha, "CONTA ATUAL", "EXTRATO"); 
 		}
-		//2311-022683 - Padrao 3
-		if(cabecalhoPlanilha.contains("BANCO") && cabecalhoPlanilha.contains("BRASIL") && cabecalhoPlanilha.contains("SISBB") &&
-			cabecalhoPlanilha.contains("DOCUMENTO") && cabecalhoPlanilha.contains("DATA")){
-			nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilha, "AGENCIA", "CONTA").trim() +" "+ cutString(cabecalhoPlanilha, "CONTA", "CLIENTE").trim();
-			nomePortador2 = nomePortador2.replaceAll(":", "");
-
-			JSONObject jDados = new JSONObject();
-			jDados.put("CODEMPRESA", codEmpresa);
-			jDados.put("NOMEARQUIVO", nomeArquivo);
-			if(variaveis.has("hasNewChave")){
-				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
-			}
-			jDados.put("TIPOPLANILHA", "EXTRATO-BB");
-
-			readExtratoECartao("readExtratoBancoDoBrasil3PDF", memFile, nomePortador2, jDados, dbIOCont, logger);
-			variaveis.put("tipoRetorno", "break");
-			return variaveis.toString();
+		
+		if(cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO").contains("-")){
+			String npAux = cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO");
+			nomePortador2 = "BANCO DO BRASIL - " + cutString(npAux, 0, npAux.indexOf("-")+1);
+		}else{
+			nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilhaAux, "CONTA CORRENTE", "PERIODO");				
 		}
-		//#2401-027975
-		if(	arquivoCompleto.contains("SISBB") &&
-			arquivoCompleto.contains("SISTEMA DE INFORMACOES BANCO DO BRASIL") && 
-			arquivoCompleto.contains("AUTOATENDIMENTO BB") && 
-			arquivoCompleto.contains("DATA MOVIM.") && 
-			arquivoCompleto.contains("DEP. ORIGEM") && 
-			arquivoCompleto.contains("HISTORICO") ) {
-
-			// //logger.logInfoInfo("Entra na validacao do SISBB Pdf");
-
-			tipoPlanilha = "EXTRATO-SISBB";
-			JSONObject jDados = new JSONObject();
-
-			if(variaveis.has("hasNewChave")){
-				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
-			}
-			jDados.put("NOMEEMPRESA",    nomeEmpresa);
-			jDados.put("CODEMPRESA",     codEmpresa);
-			jDados.put("NOMEARQUIVO",    nomeArquivo);
-			jDados.put("TIPOPLANILHA",   tipoPlanilha);
-			jDados.put("LINE",   		 line);
-
-			readExtratoECartao("readExtratoSISBBPDF", memFile, jDados, dbIOCont, logger);
-			variaveis.put("tipoRetorno", "break");
-			return variaveis.toString();
+		
+		
+		JSONObject jDados = new JSONObject();
+		jDados.put("CODEMPRESA", codEmpresa);
+		jDados.put("NOMEARQUIVO", nomeArquivo);
+		if(variaveis.has("hasNewChave")){
+			if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 		}
+		jDados.put("TIPOPLANILHA", "EXTRATO-BB");
+		
+		// //logger.logInfoInfo("NOME PORTADOR BB EXTRATO -> "+ nomePortador2);
+		readExtratoECartao("readExtratoBancoDoBrasilPDF", memFile, nomePortador2, jDados, dbIOCont, logger);
+		variaveis.put("tipoRetorno", "break");
+		return variaveis.toString();
 	}
+	//2311-022683 - Padrao 3
+	if(cabecalhoPlanilha.contains("BANCO") && cabecalhoPlanilha.contains("BRASIL") && cabecalhoPlanilha.contains("SISBB") &&
+		cabecalhoPlanilha.contains("DOCUMENTO") && cabecalhoPlanilha.contains("DATA")){
+		nomePortador2 = "BANCO DO BRASIL - " + cutString(cabecalhoPlanilha, "AGENCIA", "CONTA").trim() +" "+ cutString(cabecalhoPlanilha, "CONTA", "CLIENTE").trim();
+		nomePortador2 = nomePortador2.replaceAll(":", "");
+
+		JSONObject jDados = new JSONObject();
+		jDados.put("CODEMPRESA", codEmpresa);
+		jDados.put("NOMEARQUIVO", nomeArquivo);
+		if(variaveis.has("hasNewChave")){
+			if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+		}
+		jDados.put("TIPOPLANILHA", "EXTRATO-BB");
+
+		readExtratoECartao("readExtratoBancoDoBrasil3PDF", memFile, nomePortador2, jDados, dbIOCont, logger);
+		variaveis.put("tipoRetorno", "break");
+		return variaveis.toString();
+	}
+	//#2401-027975
+	if(	arquivoCompleto.contains("SISBB") &&
+		arquivoCompleto.contains("SISTEMA DE INFORMACOES BANCO DO BRASIL") && 
+		arquivoCompleto.contains("AUTOATENDIMENTO BB") && 
+		arquivoCompleto.contains("DATA MOVIM.") && 
+		arquivoCompleto.contains("DEP. ORIGEM") && 
+		arquivoCompleto.contains("HISTORICO") ) {
+
+		// //logger.logInfoInfo("Entra na validacao do SISBB Pdf");
+
+		tipoPlanilha = "EXTRATO-SISBB";
+		JSONObject jDados = new JSONObject();
+
+		if(variaveis.has("hasNewChave")){
+			if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+		}
+		jDados.put("NOMEEMPRESA",    nomeEmpresa);
+		jDados.put("CODEMPRESA",     codEmpresa);
+		jDados.put("NOMEARQUIVO",    nomeArquivo);
+		jDados.put("TIPOPLANILHA",   tipoPlanilha);
+		jDados.put("LINE",   		 line);
+
+		readExtratoECartao("readExtratoSISBBPDF", memFile, jDados, dbIOCont, logger);
+		variaveis.put("tipoRetorno", "break");
+		return variaveis.toString();
+	}
+}
 	
 	//#2403-031659
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_ApliBB_PDF")){
@@ -1548,7 +1547,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
 			arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
-			logger.logInfo("ENTROU NO TIPO 004*************************");
+			
 				JSONObject jDados = new JSONObject();
 				jDados.put("LINE", line);
 				jDados.put("NOMEPORTADOR", nomePortador);
@@ -3954,7 +3953,6 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	}
 
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("FrancesinhaItau_PDF")) {
-		logger.logInfo("Antees readFranc");
 		if(variaveis.has("read") && variaveis.optString("read").equals("readExtratoItauPdfFrancesinha5")){
 			logger.logInfo("entrouread");
 			
@@ -4375,7 +4373,28 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			variaveis.put("tipoRetorno",   "break");
 			return variaveis.toString();
 		}
+
+		//2407-044527
+		if(cabecalhoPlanilha.contains("BANCO ITAU") && cabecalhoPlanilha.contains("EXTRATO") &&
+			cabecalhoPlanilha.contains("MULTILIMITE") && cabecalhoPlanilha.contains("AG/ORIGEM") &&
+			arquivoCompleto.contains("ITAU.COM.BR") && arquivoCompleto.contains("LANCAMENTOS FUTUROS") &&
+			arquivoCompleto.contains("ENCARGOS FUTUROS") && arquivoCompleto.contains("CHAT ITAU")){
+
+			nomePortador2 = "ITAU";
+
+			JSONObject jDados = new JSONObject();
+			jDados.put("CODEMPRESA", codEmpresa);
+			jDados.put("NOMEARQUIVO", nomeArquivo);
+			if(variaveis.has("hasNewChave")){
+				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
+			}
+
+			readExtratoECartao("readExtratoItauPdf5", memFile, nomePortador2, jDados, dbIOCont, logger);
+			variaveis.put("tipoRetorno",   "break");
+			return variaveis.toString();
+		}
 	}
+	
 	
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Linker_PDF")) {
 		if (cabecalhoPlanilha.contains("TOTAL ENTRADAS") && cabecalhoPlanilha.contains("EXTRATO CONTA LINKER")
@@ -4504,6 +4523,13 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				}
 			//logger.logInfoInfo("TE2 = "+tipoExtrato+" | CP02 = "+complemento02+" | NP = "+nomePortador2);
 			// //logger.logInfoInfo("NOME PORTADOR DE CRESOL PADRAO 2 -> "+ nomePortador);
+			complemento02 = tipoExtrato;
+			variaveis.put("complemento02", complemento02);
+		}
+		if (arquivoCompleto.contains("CRESOL INTERNET BANKING") && arquivoCompleto.contains("INSTITUICAO FINANCEIRA") && 
+			arquivoCompleto.contains("CONFESOL.COM.BR")){
+			tipoExtrato = "003";
+			nomePortador2 = "CRESOL";
 			complemento02 = tipoExtrato;
 			variaveis.put("complemento02", complemento02);
 		}
@@ -4780,7 +4806,6 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// FATURA CARTAO CREDITO ITAU PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_Itau_PDF")){
-		logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
 		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("FECHADA")){
 			String complemento09 = memFile.getStringFieldRemoveEspCharsUpper(1);
 			logger.logInfo("CP09 = "+complemento09);
@@ -4907,7 +4932,26 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			variaveis.put("tipoRetorno",   "break");
 			return variaveis.toString();
 		}
+		if(cabecalhoPlanilha.contains("NEGOCIOS & EMPRESAS MASTERCARD") && arquivoCompleto.contains("DEMONSTRATIVO DAS TRANSACOES") &&
+			arquivoCompleto.contains("MOEDA DE ORIGEM") && arquivoCompleto.contains("SANTANDER EMPRESARIAL")){
+
+			nomePortador = "FATURA CARTAO DE CREDITO SANTANDER";
+
+			JSONObject jDados = new JSONObject();
+
+			jDados.put("CODEMPRESA", codEmpresa);
+			jDados.put("NOMEARQUIVO", nomeArquivo);
+			jDados.put("TIPOPLANILHA", "FATURACARTAOCREDITOSANTANDER");
+			jDados.put("NOMEEMPRESA", nomeEmpresa);
+			jDados.put("NOMEPORTADOR", nomePortador);
+			jDados.put("TIPOLANCAMENTO", tipoLancamento);
+
+			mapaVariavel = readExtratoECartao("readFaturaCartaoCredito_Santander2PDF", memFile, jDados, mapaVariavel, logger);
+			variaveis.put("tipoRetorno",   "break");
+			return variaveis.toString();
+		}
 	}
+
 	
 	////// FATURA CARTAO CREDITO BANCO DO BRASIL PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_BB_PDF")){
@@ -5144,8 +5188,9 @@ if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Civia_PDF") ) {
 	
 	////// EXTRATO - BMG PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_BMG_PDF")) {
+		
 		if (arquivoCompleto.contains("DISPONIVEL	+	VINCULADO	+	BLOQUEADO") && arquivoCompleto.contains("SALDO	DISPONIVEL	(EM") && arquivoCompleto.contains("SALDO	TOTAL	(EM")){
-			////logger.logInfoInfo("Entra na validacao do BMG Pdf");
+			logger.logInfo("Entra na validacao do BMG Pdf");
 			JSONObject jDados = new JSONObject();
 			jDados.put("CODEMPRESA", codEmpresa);
 			if(variaveis.has("hasNewChave")){
@@ -5168,6 +5213,7 @@ if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Civia_PDF") ) {
 			if(variaveis.has("hasNewChave")){
 				if(variaveis.optBoolean("hasNewChave")) jDados.put("TIPOLANCAMENTO", tipoLancamento);
 			}
+			logger.logInfo("ENTROU NO RUN BMG PDF 2");
 			jDados.put("NOMEEMPRESA",    nomeEmpresa);
 			jDados.put("NOMEARQUIVO",    nomeArquivo);
 			jDados.put("TIPOPLANILHA",    tipoPlanilha);

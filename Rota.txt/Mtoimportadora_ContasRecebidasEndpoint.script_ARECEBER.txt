@@ -693,7 +693,7 @@ public JSONArray run(InoutLogger logger) throws Exception {
 
 					JSONObject objetoParametro = new JSONObject();
 
-					boolean concatenar = true;
+					boolean concatenar = false;
 
 					// #DOCUMENTACAO
 					// busca de indices da planilha principal
@@ -1329,34 +1329,26 @@ public JSONArray run(InoutLogger logger) throws Exception {
 									}
 									
 									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
-																	
-									String nomeOrigemAux = getCampoString(nomeOrigem, inomeOrigem, line, zerar, roteiroCRM.optString("fornecedor").toUpperCase(), memFile, roteiroCRM, logger);
-									logger.logInfo("NOME ORIGEM->" + nomeOrigemAux);
-									
+
+									if(memFile.getStringFieldRemoveEspCharsUpper(1).trim().equals("")) {
+										concatenar = true;								
+									}else{
+										concatenar = false; 								
+									} 
+
 									if(concatenar){
 										ttMovimentoPadrao ttMov4 = (ttMovimentoPadrao)mapaVariavel.get(chave + "-CTB");
 										if(ttMov4 != null){
-    									ttMov4.nomeOrigem += " " + nomeOrigemAux;
-    									mapaVariavel.put(chave + "-CTB", ttMov4);
-										logger.logInfo("ENTROU NO PRIMEIRO IFFFFFFFFFFFFFFFFFFFFFFFFFFF "  + nomeOrigem);
-    									continue;
+											ttMov4.nomeOrigem += memFile.getStringFieldRemoveEspCharsUpper(2);
+											mapaVariavel.put(chave + "-CTB", ttMov4);
+											continue;
+										}
 									}
-								}
-								if(!memFile.getStringFieldRemoveEspCharsUpper(0).equals("")){
-									logger.logInfo("LINHAAAA->>>>>> "+ line);
-								}
-
-								if(memFile.getStringFieldRemoveEspCharsUpper(0).equals("")) {
-									concatenar = true;
-									logger.logInfo("ENTROU NO SEGUNDO IFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-								}else{
-									concatenar = false; 
-									logger.logInfo("ENTROU NO TERCEIRO IFFFFFFFFFFFFFFFFFFFFFFFFFFF");
-								} 
 
 									nomeOrigem		= getCampoString(nomeOrigem, inomeOrigem, line, zerar, roteiroCRM.optString("fornecedor").toUpperCase(), memFile, logger);
+									
 									documento		= getCampoString(documento, idocumento, line, zerar, roteiroCRM.optString("documentoNF").toUpperCase(), memFile, logger);
-
+								
 									complemento01	= getCampoString(complemento01,	icomplemento01, line, zerar, roteiroCRM.optString("complemento01").toUpperCase(), memFile, logger);
 									complemento02	= getCampoString(complemento02,	icomplemento02, line, zerar, roteiroCRM.optString("complemento02").toUpperCase(), memFile, logger);
 									complemento03	= getCampoString(complemento03,	icomplemento03, line, zerar, roteiroCRM.optString("complemento03").toUpperCase(), memFile, logger);
@@ -1446,8 +1438,8 @@ public JSONArray run(InoutLogger logger) throws Exception {
 										}
 									}
 									
-									 // if(codEmpresa.contains("406")) logger.logInfo("TP = "+tipoPlanilha+" | IV = "+ivalorDocumento+" | V = "+valorDocumento+" | ID = "+idataMovimento+" | DT = "+dataMovimento+" | NO = "+nomeOrigem+" | NP = "+nomePortador);
-									logger.logInfo(dataMovimento + " | " + nomePortador + " | " + nomeOrigem + " | " + valorDocumento + " | " + debitoCredito);
+									// if(codEmpresa.contains("406")) logger.logInfo("TP = "+tipoPlanilha+" | IV = "+ivalorDocumento+" | V = "+valorDocumento+" | ID = "+idataMovimento+" | DT = "+dataMovimento+" | NO = "+nomeOrigem+" | NP = "+nomePortador);
+									//logger.logInfo(dataMovimento + " | " + nomePortador + " | " + nomeOrigem + " | " + valorDocumento + " | " + debitoCredito);
 									
 									if(logs && cont <= 200){
 										

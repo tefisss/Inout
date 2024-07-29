@@ -1,83 +1,338 @@
 public class TemplateUtils {
-    public static double lerValoresExtrasArquivoTxt(double valorDocumentoArray[], String line, JSONObject roteiroCRM, JSONObject futureObject) {
-        //O futureObject serve para possibilitar futuras alteracoes sem que a assinatura do metodo seja modificada
-        String [] indiceValores = roteiroCRM.optString("Colunas_de_Valores_Extras").split(";");
-        double valorSomaArray = 0;
+	public java.lang.reflect.Method[] ordenaGetContaMovimento(Class<?> classe) {
+        // Usando uma lista para armazenar métodos que correspondem ao critério
+        java.util.List movimentoMethodsList = new java.util.ArrayList();
 
-        for(int iv = 0; iv < indiceValores.length; iv++) {
-            double denomidador = 0; 
-            int indiceDenominador = -1;
-            String sinal = "";
-            boolean multiplica100 = false;
-            boolean divide100 = false;
-            
-            if (indiceValores[iv].contains("*100")) multiplica100 = true;
-            if (indiceValores[iv].contains("/100")) divide100 = true;
-            indiceValores[iv] = indiceValores[iv].replace("*100","").replace("/100","");
-            
-            if (indiceValores[iv].contains("*")) sinal = "*";
-            if (indiceValores[iv].contains("/")) sinal = "/";
-            if (indiceValores[iv].contains("+")) sinal = "+";
-            if (indiceValores[iv].contains("-")) sinal = "-";										
+        try {
+            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
 
-                                                    
-            if (!sinal.equals("") && indiceValores[iv].contains(sinal)) {
+            for (java.lang.reflect.Method method : methods) {
+                String methodName = method.getName().toUpperCase();
+                if (methodName.contains("GETCONTAMOVIMENTO")) {
+                    movimentoMethodsList.add(method);
+                    // logger.logInfo("method dps: " + methodName);
+                }
+            }
+
+            // Ordenando os métodos de maneira crescente
+            java.util.Collections.sort(movimentoMethodsList, new java.util.Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+                    return m1.getName().compareTo(m2.getName());
+                }
+            });
+
+            StringBuilder contaMovimentoMethodsLog = new StringBuilder("Movimento methods: ");
+            for (Object method : movimentoMethodsList) {
+                contaMovimentoMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+            }
+            // logger.logInfo("CTMOV ordenada: " + contaMovimentoMethodsLog.toString());
+
+            // Convertendo a lista de volta para um array
+            return (java.lang.reflect.Method[]) movimentoMethodsList.toArray(new java.lang.reflect.Method[0]);
+
+        } catch (Exception e) {
+            logger.logError("Erro ao instanciar a classe: ", e);
+            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+        }
+    }
+    //contaMovimento = templateUtils.invocaGetContaMovimento(templateUtils, contaMovimentoMethods, contaMovimento, ttMov, histobj);
+    public String invocaGetContaMovimento(Object scInstance, java.lang.reflect.Method[] movimentoMethods, String contaMovimento, ttMovimentoPadrao ttMov, JSONObject histobj) {
+        Class<?> sc = scInstance.getClass();
+
+        for (java.lang.reflect.Method movimentoMethod : movimentoMethods) {
+            if (movimentoMethod == null) continue;
+            // logger.logInfo("Invoking method: " + movimentoMethod.getName());
+            try {
+                Method method = sc.getDeclaredMethod(movimentoMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
                 try {
-                    if (!indiceValores[iv].contains("#")) {
-                        String iDenominador = OicUtils.cutString(indiceValores[iv], sinal);
-                        int iInicioDenominador = Integer.parseInt(OicUtils.cutString(iDenominador, "(", ","));
-                        int iFinalDenominador    = Integer.parseInt(OicUtils.cutString(iDenominador, ",", ")"));
+                    // Obtemos o método diretamente do array de métodos
+                    // Invocamos o método
+                    contaMovimento = (String) method.invoke(scInstance, contaMovimento, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+                    // logger.logInfo("conta: " + contaMovimento);
+                } catch (Exception e1) {
+                    logger.logError("ERRO INVOKING 1: ", e1);
+                }
+            }catch (Exception e2){
+                logger.logError("ERRO INVOKING 2: ", e2);
+            }
+        }
+        return contaMovimento;
+    }
 
-                        denomidador = Math.abs(DecimalUtil.toDecimal(OicUtils.cutString(line, iInicioDenominador, iFinalDenominador)));
-                    }
-                    else {
-                        denomidador = DecimalUtil.toDecimal(OicUtils.cutString(indiceValores[iv], "#"));
-                    }
-                } catch (Exception xx) {denomidador = 0;}
-                indiceValores[iv] = OicUtils.cutString(indiceValores[iv], 0, sinal);
-            } 
-                    
-            
-            try{
-                int iInicioValorExtra = Integer.parseInt(OicUtils.cutString(indiceValores[iv], "(", ","));
-                int iFinalValorExtra = Integer.parseInt(OicUtils.cutString(indiceValores[iv], ",", ")"));
+    public java.lang.reflect.Method[] ordenaGetContaPortador(Class<?> classe) {
+        // Usando uma lista para armazenar métodos que correspondem ao critério
+        java.util.List portadorMethodsList = new java.util.ArrayList();
+
+        try {
+            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+
+            for (java.lang.reflect.Method method : methods) {
+                String methodName = method.getName().toUpperCase();
+                if (methodName.contains("GETCONTAPORTADOR")) {
+                    portadorMethodsList.add(method);
+                    // logger.logInfo("method dps: " + methodName);
+                }
+            }
+
+            // Ordenando os métodos de maneira crescente
+            java.util.Collections.sort(portadorMethodsList, new java.util.Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+                    return m1.getName().compareTo(m2.getName());
+                }
+            });
+
+            StringBuilder contaPortadorMethodsLog = new StringBuilder("portador methods: ");
+            for (Object method : portadorMethodsList) {
+                contaPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+            }
+            // logger.logInfo("ctport ordenada: " + contaPortadorMethodsLog.toString());
+
+            // Convertendo a lista de volta para um array
+            return (java.lang.reflect.Method[]) portadorMethodsList.toArray(new java.lang.reflect.Method[0]);
+
+        } catch (Exception e) {
+            logger.logError("Erro ao instanciar a classe: ", e);
+            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+        }
+    }
+
+    public String invocaGetContaPortador(Object scInstance, java.lang.reflect.Method[] portadorMethods, String contaPortador, ttMovimentoPadrao ttMov, JSONObject histobj) {
+        Class<?> sc = scInstance.getClass();
+
+        for (java.lang.reflect.Method portadorMethod : portadorMethods) {
+            if (portadorMethod == null) continue;
+            // logger.logInfo("Invoking method: " + portadorMethod.getName());
+            try {
+                Method method = sc.getDeclaredMethod(portadorMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
+                try {
+                    // Obtemos o método diretamente do array de métodos
+                    // Invocamos o método
+                    contaPortador = (String) method.invoke(scInstance, contaPortador, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+                    // logger.logInfo("contaPort: " + contaPortador);
+                } catch (Exception e1) {
+                    logger.logError("ERRO INVOKING 1: ", e1);
+                }
+            }catch (Exception e2){
+                logger.logError("ERRO INVOKING 2: ", e2);
+            }
+        }
+        return contaPortador;
+    }
+
+    public java.lang.reflect.Method[] ordenaGetHistoricoRegra(Class<?> classe) {
+        // Usando uma lista para armazenar métodos que correspondem ao critério
+        java.util.List historicoRegraMethodsList = new java.util.ArrayList();
+
+        try {
+            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+
+            for (java.lang.reflect.Method method : methods) {
+                String methodName = method.getName().toUpperCase();
+                if (methodName.contains("GETHISTORICOREGRA")) {
+                    historicoRegraMethodsList.add(method);
+                    // logger.logInfo("method dps: " + methodName);
+                }
+            }
+
+            // Ordenando os métodos de maneira crescente
+            java.util.Collections.sort(historicoRegraMethodsList, new java.util.Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+                    return m1.getName().compareTo(m2.getName());
+                }
+            });
+
+            StringBuilder historicoRegraMethodsLog = new StringBuilder("historicoRegra methods: ");
+            for (Object method : historicoRegraMethodsList) {
+                historicoRegraMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+            }
+            // logger.logInfo("HISTREGRA ordenada: " + historicoRegraMethodsLog.toString());
+
+            // Convertendo a lista de volta para um array
+            return (java.lang.reflect.Method[]) historicoRegraMethodsList.toArray(new java.lang.reflect.Method[0]);
+
+        } catch (Exception e) {
+            logger.logError("Erro ao instanciar a classe: ", e);
+            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+        }
+    }
+
+    public String invocaGetHistoricoRegra(Object scInstance, java.lang.reflect.Method[] historicoRegraMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
+        Class<?> sc = scInstance.getClass();
+
+        for (java.lang.reflect.Method historicoRegraMethod : historicoRegraMethods) {
+            if (historicoRegraMethod == null) continue;
+            logger.logDebug("Invoking method: " + historicoRegraMethod.getName());
+            try {
+                Method method = sc.getDeclaredMethod(historicoRegraMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
+                try {
+                    // Obtemos o método diretamente do array de métodos
+                    // Invocamos o método
+                    historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+                    // logger.logInfo("historicoRegra: " + historico);
+                } catch (Exception e1) {
+                    logger.logError("ERRO INVOKING 1: ", e1);
+                }
+            }catch (Exception e2){
+                logger.logError("ERRO INVOKING 2: ", e2);
+            }
+        }
+        return historico;
+    }
+
+    public java.lang.reflect.Method[] ordenaGetHistoricoPortador(Class<?> classe) {
+        // Usando uma lista para armazenar métodos que correspondem ao critério
+        java.util.List historicoPortadorMethodsList = new java.util.ArrayList();
+
+        try {
+            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+
+            for (java.lang.reflect.Method method : methods) {
+                String methodName = method.getName().toUpperCase();
+                if (methodName.contains("GETHISTORICOPORTADOR")) {
+                    historicoPortadorMethodsList.add(method);
+                    // logger.logInfo("method dps: " + methodName);
+                }
+            }
+
+            // Ordenando os métodos de maneira crescente
+            java.util.Collections.sort(historicoPortadorMethodsList, new java.util.Comparator() {
+                @Override
+                public int compare(Object o1, Object o2) {
+                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+                    return m1.getName().compareTo(m2.getName());
+                }
+            });
+
+            StringBuilder historicoPortadorMethodsLog = new StringBuilder("historicoPORTADOR methods: ");
+            for (Object method : historicoPortadorMethodsList) {
+                historicoPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+            }
+            // logger.logInfo("HISTPORT ordenada: " + historicoPortadorMethodsLog.toString());
+
+            // Convertendo a lista de volta para um array
+            return (java.lang.reflect.Method[]) historicoPortadorMethodsList.toArray(new java.lang.reflect.Method[0]);
+
+        } catch (Exception e) {
+            logger.logError("Erro ao instanciar a classe: ", e);
+            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+        }
+    }
+
+    public String invocaGetHistoricoPortador(Object scInstance, java.lang.reflect.Method[] historicoPortadorMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
+        Class<?> sc = scInstance.getClass();
+
+        for (java.lang.reflect.Method historicoPortadorMethod : historicoPortadorMethods) {
+            if (historicoPortadorMethod == null) continue;
+            // logger.logInfo("Invoking method: " + historicoPortadorMethod.getName());
+            try {
+                Method method = sc.getDeclaredMethod(historicoPortadorMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
+                try {
+                    // Obtemos o método diretamente do array de métodos
+                    // Invocamos o método
+                    historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+                    logger.logInfo("historicoPORT: " + historico);
+                } catch (Exception e1) {
+                    logger.logError("ERRO INVOKING 1: ", e1);
+                }
+            }catch (Exception e2){
+                logger.logError("ERRO INVOKING 2: ", e2);
+            }
+        }
+        return historico;
+    }
+	public static double lerValoresExtrasArquivoTxt(double valorDocumentoArray[], String line, JSONObject roteiroCRM, JSONObject futureObject) {
+		//O futureObject serve para possibilitar futuras alteracoes sem que a assinatura do metodo seja modificada
+		String [] indiceValores = roteiroCRM.optString("Colunas_de_Valores_Extras").split(";");
+		double valorSomaArray = 0;
+
+		for(int iv = 0; iv < indiceValores.length; iv++) {
+			double denomidador = 0;
+			int indiceDenominador = -1;
+			String sinal = "";
+			boolean multiplica100 = false;
+			boolean divide100 = false;
+
+			if (indiceValores[iv].contains("*100")) multiplica100 = true;
+			if (indiceValores[iv].contains("/100")) divide100 = true;
+			indiceValores[iv] = indiceValores[iv].replace("*100","").replace("/100","");
+
+			if (indiceValores[iv].contains("*")) sinal = "*";
+			if (indiceValores[iv].contains("/")) sinal = "/";
+			if (indiceValores[iv].contains("+")) sinal = "+";
+			if (indiceValores[iv].contains("-")) sinal = "-";
+
+
+			if (!sinal.equals("") && indiceValores[iv].contains(sinal)) {
+				try {
+					if (!indiceValores[iv].contains("#")) {
+						String iDenominador = OicUtils.cutString(indiceValores[iv], sinal);
+						int iInicioDenominador = Integer.parseInt(OicUtils.cutString(iDenominador, "(", ","));
+						int iFinalDenominador    = Integer.parseInt(OicUtils.cutString(iDenominador, ",", ")"));
+
+						denomidador = Math.abs(DecimalUtil.toDecimal(OicUtils.cutString(line, iInicioDenominador, iFinalDenominador)));
+					}
+					else {
+						denomidador = DecimalUtil.toDecimal(OicUtils.cutString(indiceValores[iv], "#"));
+					}
+				} catch (Exception xx) {denomidador = 0;}
+				indiceValores[iv] = OicUtils.cutString(indiceValores[iv], 0, sinal);
+			}
+
+
+			try{
+				int iInicioValorExtra = Integer.parseInt(OicUtils.cutString(indiceValores[iv], "(", ","));
+				int iFinalValorExtra = Integer.parseInt(OicUtils.cutString(indiceValores[iv], ",", ")"));
 
 				if (iInicioValorExtra >= line.length()){
 					continue;
 				}
-			
+
 				String valorExtraAux = OicUtils.cutString(line, iInicioValorExtra, iFinalValorExtra);
 
-                //Trata a string do valor antes de converter para Double
-                valorExtraAux = valorExtraAux.replaceAll("\\,", "\\.");
-                valorExtraAux = valorExtraAux.replaceAll("[^0-9\\.]", "");
-                while (OicUtils.quantityOf(valorExtraAux, ".") > 1) {
-                    valorExtraAux = valorExtraAux.replaceFirst("\\.", "");
-                }
+				//Trata a string do valor antes de converter para Double
+				valorExtraAux = valorExtraAux.replaceAll("\\,", "\\.");
+				valorExtraAux = valorExtraAux.replaceAll("[^0-9\\.]", "");
+				while (OicUtils.quantityOf(valorExtraAux, ".") > 1) {
+					valorExtraAux = valorExtraAux.replaceFirst("\\.", "");
+				}
 
-                valorDocumentoArray[iv] = Math.abs(Double.valueOf(valorExtraAux));
+				valorDocumentoArray[iv] = Math.abs(Double.valueOf(valorExtraAux));
 
-                if (sinal.equals("*") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] * denomidador;
-                if (sinal.equals("/") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] / denomidador;
-                if (sinal.equals("+") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] + denomidador;
-                if (sinal.equals("-") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] - denomidador;
-                if (multiplica100) valorDocumentoArray[iv] = valorDocumentoArray[iv] * 100;
-                if (divide100)     valorDocumentoArray[iv] = valorDocumentoArray[iv] / 100;
-            }
-            catch (Exception vlrd) { 
-                valorDocumentoArray[iv] = 0; 
-            }
-            
-            if(valorDocumentoArray[iv] < 0){
-                valorDocumentoArray[iv] = 0;
-            } 
-            
-            valorSomaArray += valorDocumentoArray[iv];
-        }
-        
-        return valorSomaArray;
-    }
-	
+				if (sinal.equals("*") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] * denomidador;
+				if (sinal.equals("/") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] / denomidador;
+				if (sinal.equals("+") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] + denomidador;
+				if (sinal.equals("-") && denomidador > 0) valorDocumentoArray[iv] = valorDocumentoArray[iv] - denomidador;
+				if (multiplica100) valorDocumentoArray[iv] = valorDocumentoArray[iv] * 100;
+				if (divide100)     valorDocumentoArray[iv] = valorDocumentoArray[iv] / 100;
+			}
+			catch (Exception vlrd) {
+				valorDocumentoArray[iv] = 0;
+			}
+
+			if(valorDocumentoArray[iv] < 0){
+				valorDocumentoArray[iv] = 0;
+			}
+
+			valorSomaArray += valorDocumentoArray[iv];
+		}
+
+		return valorSomaArray;
+	}
+
 	public static int verificaAba(String nomeArquivo) {
 		int abaConvertida = 0;
 		if (nomeArquivo.toUpperCase().startsWith("ABA_")) {
@@ -85,15 +340,15 @@ public class TemplateUtils {
 		}
 		return abaConvertida;
 	}
-	
+
 	public static StringBuilder geraLinhaFiscalQuestor(JSONObject jDescricaoDupl) {
-		return  new StringBuilder(jDescricaoDupl.optString("USAFILIAL").toUpperCase().equals("TRUE") ? 
-					OicUtils.cutString(jDescricaoDupl.optString("CODEMPRESA"), "-") : jDescricaoDupl.optString("CODEMPRESA"))
+		return  new StringBuilder(jDescricaoDupl.optString("USAFILIAL").toUpperCase().equals("TRUE") ?
+				OicUtils.cutString(jDescricaoDupl.optString("CODEMPRESA"), "-") : jDescricaoDupl.optString("CODEMPRESA"))
 				.append(";1;")
 				.append(jDescricaoDupl.optString("CHAVEDUPLICATA")).append(";")
 				.append(jDescricaoDupl.optString("PARCELADOC")).append(";")
-				 // quando o formato da parcela deve ser igual ao duplicatas em aberto (questor) comentar linha acima e descomentar a linha abaixo
-				 //txtFiscal.append(jDescricaoDupl.optString("PARCELADOCORIGINAL")); 
+				// quando o formato da parcela deve ser igual ao duplicatas em aberto (questor) comentar linha acima e descomentar a linha abaixo
+				//txtFiscal.append(jDescricaoDupl.optString("PARCELADOCORIGINAL"));
 				.append(jDescricaoDupl.optString("DATAMOVIMENTO")).append(";")
 				.append(jDescricaoDupl.optString("DATAMOVIMENTO")).append(";")
 				.append(OicUtils.cutString(jDescricaoDupl.optString("DUPLICATA"), 0, "-")).append(";")
@@ -104,64 +359,64 @@ public class TemplateUtils {
 				.append(jDescricaoDupl.optString("VALORFINALDESCONTO").replaceAll("\\.", ",")).append(";")
 				.append(jDescricaoDupl.optString("VALORFINALMULTA").replaceAll("\\.", ",")).append("\r\n");
 	}
-	
+
 	public static StringBuilder geraLinhaFiscalCordilheira(JSONObject jDescricaoDupl, ttMovimentoPadrao ttMov, boolean geraCabecalhoCordilheira) {
-		
-		return new StringBuilder(geraCabecalhoCordilheira ? 
-			"DATA DE VENCIMENTO;DATA DO PAGAMENTO;CNPJ DO CLIENTE;DOCUMENTO;NOME/RAZAO;NUMERO DA PARCELA;VALOR ORIGINAL;VALOR PAGO;VALOR JUROS;VALOR DESCONTO;FORMA DE PAGAMENTO;NUMERO DA NOTA\r\n" : "")
-			.append(jDescricaoDupl.optString("DATAVENCIMENTO")).append(";")
-			.append(ttMov.dataMovimento).append(";")
-			.append(ttMov.cpfCnpj).append(";")
-			// quando o formato da parcela deve ser igual ao duplicatas em aberto (questor) comentar linha acima e descomentar a linha abaixo
-			//txtFiscal[0].append(jDescricaoDupl.optString("PARCELADOCORIGINAL")); 
-			.append(OicUtils.cutString(ttMov.documento, 0, "-")).append(";")
-			.append(ttMov.nomeOrigem).append(";")
-			.append(jDescricaoDupl.optString("PARCELADOC")).append(";")
-			.append(jDescricaoDupl.optString("VALORPARCELA").replaceAll("\\.",",")).append(";")
-			.append(String.format("%.2f", (ttMov.valorDocumento + ttMov.valorJuros - ttMov.valorDesconto)).replaceAll("\\.",",")).append(";")
-			.append(String.format("%.2f", ttMov.valorJuros).replaceAll("\\.",",")).append(";")
-			.append(String.format("%.2f",ttMov.valorDesconto).replaceAll("\\.",",")).append(";")
-			.append(jDescricaoDupl.optString("TABELACONTABIL")).append(";")
-			.append(ttMov.documento).append("\r\n");
+
+		return new StringBuilder(geraCabecalhoCordilheira ?
+				"DATA DE VENCIMENTO;DATA DO PAGAMENTO;CNPJ DO CLIENTE;DOCUMENTO;NOME/RAZAO;NUMERO DA PARCELA;VALOR ORIGINAL;VALOR PAGO;VALOR JUROS;VALOR DESCONTO;FORMA DE PAGAMENTO;NUMERO DA NOTA\r\n" : "")
+				.append(jDescricaoDupl.optString("DATAVENCIMENTO")).append(";")
+				.append(ttMov.dataMovimento).append(";")
+				.append(ttMov.cpfCnpj).append(";")
+				// quando o formato da parcela deve ser igual ao duplicatas em aberto (questor) comentar linha acima e descomentar a linha abaixo
+				//txtFiscal[0].append(jDescricaoDupl.optString("PARCELADOCORIGINAL"));
+				.append(OicUtils.cutString(ttMov.documento, 0, "-")).append(";")
+				.append(ttMov.nomeOrigem).append(";")
+				.append(jDescricaoDupl.optString("PARCELADOC")).append(";")
+				.append(jDescricaoDupl.optString("VALORPARCELA").replaceAll("\\.",",")).append(";")
+				.append(String.format("%.2f", (ttMov.valorDocumento + ttMov.valorJuros - ttMov.valorDesconto)).replaceAll("\\.",",")).append(";")
+				.append(String.format("%.2f", ttMov.valorJuros).replaceAll("\\.",",")).append(";")
+				.append(String.format("%.2f",ttMov.valorDesconto).replaceAll("\\.",",")).append(";")
+				.append(jDescricaoDupl.optString("TABELACONTABIL")).append(";")
+				.append(ttMov.documento).append("\r\n");
 	}
-	
+
 	public static StringBuilder geraLinhaFiscalContabit(JSONObject jDescricaoDupl, ttMovimentoPadrao ttMov) {
 		StringBuilder sb = new StringBuilder();
 		// int cont = 0;
 		// if(cont == 0){
-			// sb.append("CNPJ/CPF,DATA EMISSAO,DATA PAGAMENTO,VALOR MULTA,VALOR JUROS,VALOR DESCONTO,VALOR PAGO,DOCUMENTO,CAIXA/BANCO\r\n");
+		// sb.append("CNPJ/CPF,DATA EMISSAO,DATA PAGAMENTO,VALOR MULTA,VALOR JUROS,VALOR DESCONTO,VALOR PAGO,DOCUMENTO,CAIXA/BANCO\r\n");
 		// }
-		
-			sb.append(jDescricaoDupl.optString("CPFCNPJ")).append(",")
-			.append(jDescricaoDupl.optString("EMISSAO")).append(",")
-			.append(ttMov.dataMovimento).append(",")
-			.append(String.format("%.2f",ttMov.valorMulta)).append(",")
-			.append(String.format("%.2f", ttMov.valorJuros)).append(",")
-			.append(String.format("%.2f",ttMov.valorDesconto)).append(",")
-			.append(String.format("%.2f", ttMov.valorDocumento + ttMov.valorJuros - ttMov.valorDesconto)).append(",")
-			.append(jDescricaoDupl.optString("DUPLICATA")).append(",");
-			if(ttMov.tipoLancamento.contains("PAG")){
-				sb.append(ttMov.contaCredito).append("\r\n");
-			}
-			if(ttMov.tipoLancamento.contains("REC")){
-				sb.append(ttMov.contaDebito).append("\r\n");
-			}
-			
-		
-		
-		return sb;		
-				
+
+		sb.append(jDescricaoDupl.optString("CPFCNPJ")).append(",")
+				.append(jDescricaoDupl.optString("EMISSAO")).append(",")
+				.append(ttMov.dataMovimento).append(",")
+				.append(String.format("%.2f",ttMov.valorMulta)).append(",")
+				.append(String.format("%.2f", ttMov.valorJuros)).append(",")
+				.append(String.format("%.2f",ttMov.valorDesconto)).append(",")
+				.append(String.format("%.2f", ttMov.valorDocumento + ttMov.valorJuros - ttMov.valorDesconto)).append(",")
+				.append(jDescricaoDupl.optString("DUPLICATA")).append(",");
+		if(ttMov.tipoLancamento.contains("PAG")){
+			sb.append(ttMov.contaCredito).append("\r\n");
+		}
+		if(ttMov.tipoLancamento.contains("REC")){
+			sb.append(ttMov.contaDebito).append("\r\n");
+		}
+
+
+
+		return sb;
+
 	}
-	
-	
+
+
 	public JSONArray geraFiscalContabit(JSONObject roteiroCRMPrincipal, JSONObject jDadosAux, JSONArray jDescricaoDupl, DataBase dbIOCont, ttMovimentoPadrao ttMov, InoutLogger logger) throws Exception{
-		
+
 		JSONObject histobj = new JSONObject();
-		
+
 		JSONObject jDados = new JSONObject();
 		jDados.put("CODEMPRESA",     jDadosAux.optString("CODEMPRESA"));
-		
-		if (!roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("NAO USAR"))  jDados.put("DATAVENCIMENTO", jDadosAux.optString("DATAVENCTTMOV")); 
+
+		if (!roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("NAO USAR"))  jDados.put("DATAVENCIMENTO", jDadosAux.optString("DATAVENCTTMOV"));
 		jDados.put("RAZAOSOCIAL",    jDadosAux.optString("RAZAOSOCIAL"));
 		jDados.put("NOMEORIGEM",     ttMov.nomeOrigem);
 		jDados.put("DOCUMENTO",      ttMov.documento);
@@ -172,28 +427,28 @@ public class TemplateUtils {
 		jDados.put("VALORMULTA",     ttMov.valorMulta);
 		jDados.put("VALORDESCONTO",  ttMov.valorDesconto);
 		jDados.put("TABELACONTABIL", jDadosAux.optString("TABELACONTABIL"));
-		//2308-014199 Refatoracao do validaFornecedorFiscal 
+		//2308-014199 Refatoracao do validaFornecedorFiscal
 		if (!roteiroCRMPrincipal.optString("ValidaFornecedorFiscal").equals("")) {
 			jDados.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optString("ValidaFornecedorFiscal"));
 		}
-		
+
 		jDescricaoDupl    = buscarIODuplicataContabit(jDados, dbIOCont, logger);
-		
+
 		// logger.logInfo("BIDC " + jDescricaoDupl.toString());
 		return jDescricaoDupl;
 	}
-	
+
 	public JSONObject geraFiscalQuestor (JSONObject roteiroCRMPrincipal, JSONObject jDadosAux, JSONObject jDescricaoDupl, DataBase dbIOCont, ttMovimentoPadrao ttMov, InoutLogger logger) throws Exception{
-		
+
 		JSONObject histobj = new JSONObject();
-		
+
 		JSONObject jDados = new JSONObject();
 		jDados.put("CODEMPRESA",     jDadosAux.optString("CODEMPRESA"));
 
 		// usando a filial do questor em duplicatas em aberto
 		if (roteiroCRMPrincipal.optString("Usa_Filial_Questor").toUpperCase().equals("TRUE"))  jDados.put("CODEMPRESA",     jDadosAux.optString("CODEMPRESA") + "-%");
 
-		if (!roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("NAO USAR"))  jDados.put("DATAVENCIMENTO", jDadosAux.optString("DATAVENCTTMOV")); 
+		if (!roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("NAO USAR"))  jDados.put("DATAVENCIMENTO", jDadosAux.optString("DATAVENCTTMOV"));
 
 
 		jDados.put("RAZAOSOCIAL",    jDadosAux.optString("RAZAOSOCIAL"));
@@ -206,20 +461,21 @@ public class TemplateUtils {
 		jDados.put("VALORMULTA",     ttMov.valorMulta);
 		jDados.put("VALORDESCONTO",  ttMov.valorDesconto);
 		jDados.put("TABELACONTABIL", jDadosAux.optString("TABELACONTABIL"));
-		
-		//2308-014199 Refatoracao do validaFornecedorFiscal 
+
+		//2308-014199 Refatoracao do validaFornecedorFiscal
 		if (!roteiroCRMPrincipal.optString("ValidaFornecedorFiscal").equals("")) {
 			jDados.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optString("ValidaFornecedorFiscal"));
 		}
 
 
 		jDescricaoDupl    = buscarIODuplicata(jDados, dbIOCont, logger);
-		
+
 		if(roteiroCRMPrincipal.optString("idContabilidade").contains("a091C00002PHPi3")){
-			// logger.logInfo("SERGIo -> ANTES VALIDA DATA");
+			// logger.logInfo("NF: " + ttMov.documento);
+			// logger.logInfo("ANTES VALIDA DATA");
 			java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd/MM/yyyy");
 			try{
-				// logger.logDebug("dataArquivo _> " + dateFormat.parse(ttMov.dataMovimento) + " | dataDuplicata -> " + dateFormat.parse(jDescricaoDupl.optString("DATAVENCIMENTO")) + " SHR");
+				logger.logInfo("dataArquivo _> " + dateFormat.parse(ttMov.dataMovimento) + " | dataDuplicata -> " + dateFormat.parse(jDescricaoDupl.optString("DATAVENCIMENTO")) + " SHR");
 				if(dateFormat.parse(ttMov.dataMovimento).before(dateFormat.parse(jDescricaoDupl.optString("DATAVENCIMENTO")))){
 					// logger.logInfo("ENTROU BEFORE");
 					jDescricaoDupl.put("TIPO","FORNECEDOR");
@@ -233,7 +489,9 @@ public class TemplateUtils {
 		// #Fabrica(2019-05-20)
 		// Descomentar a proxima linha para testar a razaoSocial do movimento com a jDescricaoDupl.optString("RAZAOSOCIAL") que vem das duplicatas em aberto!
 		// if (jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, razaoSocial);      //IDENTIFICAMOS UMA FALHA LOGICA
-		// if (jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem); //USAR ESSE
+		logger.logInfo("tipo: " + jDescricaoDupl.optString("TIPO") + "|" + ttMov.nomeOrigem);
+
+		if (jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem); //USAR ESSE
 		// #Fabrica(2019-07-30)
 		// Descomentar a proxima linha para testar o codigo de filial do movimento com a jDescricaoDupl.optString("SITUACAO") que vem das duplicatas em aberto! OBS: Lembrando que deve existir regra de c?digo filial no CRM
 		// if(jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaBaixaPorFilial(jDescricaoDupl, ttMov.codFilial);
@@ -244,11 +502,11 @@ public class TemplateUtils {
 		// if (roteiroCRMPrincipal.has("validaFornecedorFiscal")) jDescricaoDupl.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optInt("validaFornecedorFiscal"));
 		// jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem);
 		// }
-		
-		//2308-014199 Retirado para refatoracao do validaFornecedorFiscal 
+
+		//2308-014199 Retirado para refatoracao do validaFornecedorFiscal
 		// if (jDescricaoDupl.optString("TIPO").equals("FISCAL") && !roteiroCRMPrincipal.optString("validaFornecedorFiscal").equals("")) {
-			// jDescricaoDupl.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optInt("validaFornecedorFiscal"));
-			// jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem);
+		// jDescricaoDupl.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optInt("validaFornecedorFiscal"));
+		// jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem);
 		// }
 
 		if (!roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("NAO USAR"))  {
@@ -257,7 +515,7 @@ public class TemplateUtils {
 
 		return jDescricaoDupl;
 	}
-	
+
 	public static boolean validaData(String data) {
 		if (data.matches("(0[1-9]|[1-2][0-9]|3[0-1])\\/(0[1-9]|1[0-2])\\/20[0-9]{2}")) {
 			return true;
@@ -266,18 +524,18 @@ public class TemplateUtils {
 	}
 	public static String verificaSegundoConversorNovo(String arquivoCompleto) {
 		if (arquivoCompleto.contains("BANCO ITAU S.A.") && arquivoCompleto.contains("MOVIMENTACAO DE TITULOS") &&
-			arquivoCompleto.contains("POSICAO ATE O MOMENTO") && arquivoCompleto.contains("RESUMO DAS DEDUCOES")) {
+				arquivoCompleto.contains("POSICAO ATE O MOMENTO") && arquivoCompleto.contains("RESUMO DAS DEDUCOES")) {
 			return "readExtratoItauPdfFrancesinha5";
 		}
-		
+
 		return "";
 	}
-	
+
 	public static boolean verificaConversorNovo(String arquivoCompleto) {
 		//2405-040179
-        if(arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("EXTRATO POR PERIODO") &&
-            arquivoCompleto.contains("DATA MOV.") && arquivoCompleto.contains("NR.") && arquivoCompleto.contains("DOC.") &&
-            arquivoCompleto.contains("GERAR EM ARQUIVO") && arquivoCompleto.contains("SIGLAS E ABREVIACOES")){
+		if(arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("EXTRATO POR PERIODO") &&
+				arquivoCompleto.contains("DATA MOV.") && arquivoCompleto.contains("NR.") && arquivoCompleto.contains("DOC.") &&
+				arquivoCompleto.contains("GERAR EM ARQUIVO") && arquivoCompleto.contains("SIGLAS E ABREVIACOES")){
 			return true; //CEF MODELO 07
 		}
 		if ((arquivoCompleto.contains("NU PAGAMENTOS S.A.") && arquivoCompleto.contains("OUVIDORIA: SE VOCE NAO FICOU SATISFEITO COM A SOLUCAO DO NOSSO TIME DE ATENDIMENTO LIGUE PARA 0800 887 0463 EM DIAS UTEIS, DAS 09H AS 18H")) ||
@@ -287,36 +545,36 @@ public class TemplateUtils {
 		if ((arquivoCompleto.contains("EXTRATO DE: AGENCIA:") || arquivoCompleto.contains("EXTRATO DE: AG:")) && arquivoCompleto.contains("DEMONSTRATIVO")) {
 			return true; //BRADESCO
 		}
-		if (arquivoCompleto.contains("BANCO SAFRA") && (arquivoCompleto.contains("EXTRATO DE MOVIMENTACAO") || (arquivoCompleto.contains("3175 8248")) || arquivoCompleto.contains("3175-8248")) && 
-      		arquivoCompleto.contains("CONTA:")) {
-            return true; //SAFRA
-        }
-		/* Chamado #2311-023023 - Condicao "(arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO") && arquivoCompleto.contains("S.A."))" 
+		if (arquivoCompleto.contains("BANCO SAFRA") && (arquivoCompleto.contains("EXTRATO DE MOVIMENTACAO") || (arquivoCompleto.contains("3175 8248")) || arquivoCompleto.contains("3175-8248")) &&
+				arquivoCompleto.contains("CONTA:")) {
+			return true; //SAFRA
+		}
+		/* Chamado #2311-023023 - Condicao "(arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO") && arquivoCompleto.contains("S.A."))"
            foi feita para validar "STONE INSTITUICAO DE PAGAMENTO S.A." quando ha quebra de linha no arquivo dos termos citados, deixando eles
            separados.*/
-        if (arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO S.A.") || (arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO") &&
-            arquivoCompleto.contains("S.A."))  && 
-            arquivoCompleto.contains("CONTRAPARTE") &&
-            arquivoCompleto.contains("PERIODO") && arquivoCompleto.contains("CONTA") &&
-            arquivoCompleto.contains("DATA") && arquivoCompleto.contains("TIPO") &&
-            arquivoCompleto.contains("DOCUMENTO") && arquivoCompleto.contains("AGENCIA")) {
-            return true; //STONE
-        }
+		if (arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO S.A.") || (arquivoCompleto.contains("STONE INSTITUICAO DE PAGAMENTO") &&
+				arquivoCompleto.contains("S.A."))  &&
+				arquivoCompleto.contains("CONTRAPARTE") &&
+				arquivoCompleto.contains("PERIODO") && arquivoCompleto.contains("CONTA") &&
+				arquivoCompleto.contains("DATA") && arquivoCompleto.contains("TIPO") &&
+				arquivoCompleto.contains("DOCUMENTO") && arquivoCompleto.contains("AGENCIA")) {
+			return true; //STONE
+		}
 		if (arquivoCompleto.contains("EXTRATO EMITIDO PELA CONTA SIMPLES - A CONTA FEITA PARA EMPREENDER")
-			&& arquivoCompleto.contains("CONTA NUMERO")) {
+				&& arquivoCompleto.contains("CONTA NUMERO")) {
 			return true; //CONTASIMPLES MODELOS 1 E 2
 		}
 		if (arquivoCompleto.contains("EMITIDO EM") && arquivoCompleto.contains("CARTEIRA DE COBRANCA COM REGISTRO") &&
-			arquivoCompleto.contains("PERIODO DE") && arquivoCompleto.contains("BENEFICIARIO") &&
-			arquivoCompleto.contains("SITUACAO") && arquivoCompleto.contains("PAGADOR") &&
-			arquivoCompleto.contains("CPF/CNPJ")) {
+				arquivoCompleto.contains("PERIODO DE") && arquivoCompleto.contains("BENEFICIARIO") &&
+				arquivoCompleto.contains("SITUACAO") && arquivoCompleto.contains("PAGADOR") &&
+				arquivoCompleto.contains("CPF/CNPJ")) {
 			return true; //FRANCESINHAGRUPOAILOS
 		}
 		if (arquivoCompleto.contains("CARTEIRA DE COBRANCA") && arquivoCompleto.contains("STATUS") && arquivoCompleto.contains("LIQUIDADO")){
 			return true; //FRANCESINHA CRESOL
 		}
 		if (arquivoCompleto.contains("INVESTIMENTOS BRADESCO") && arquivoCompleto.contains("CERTIFICADO") &&
-			arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("PERIODO DE:")) {
+				arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("PERIODO DE:")) {
 			return true; //INVESTIMENTOBRADESCO
 		}
 		if (arquivoCompleto.contains("ASAAS GESTAO FINANCEIRA INSTITUICAO DE PAGAMENTO")) {
@@ -331,69 +589,69 @@ public class TemplateUtils {
 			return true; // APLI BB
 		}
 		if (arquivoCompleto.contains("CC:")  && arquivoCompleto.contains("INFORMACOES ATUALIZADAS ATE A DATA E O HORARIO INDICADOS ACIMA E SUJEITAS A ALTERACOES") &&
-			arquivoCompleto.contains("O EXTRATO REFLETE O(S) VALOR(ES) DO SALDO EM CONTA, QUE CONTEMPLA O SALDO DA CONTA CORRENTE, SEM CONTABILIZAR") &&
-			arquivoCompleto.contains("VALORES BLOQUEADOS OU LIMITE, CASO EXISTAM")) {
+				arquivoCompleto.contains("O EXTRATO REFLETE O(S) VALOR(ES) DO SALDO EM CONTA, QUE CONTEMPLA O SALDO DA CONTA CORRENTE, SEM CONTABILIZAR") &&
+				arquivoCompleto.contains("VALORES BLOQUEADOS OU LIMITE, CASO EXISTAM")) {
 			return true; //VOTORANTIM
 		}
 		if (arquivoCompleto.contains("INSTITUICAO DE PAGAMENTO") && arquivoCompleto.contains("TITULAR DA CONTA DE PAGAMENTO") &&
-			arquivoCompleto.contains("DATA") && arquivoCompleto.contains("CREDITO/DEBITO") &&
-			arquivoCompleto.contains("STATUS") && arquivoCompleto.contains("IOF")) {
+				arquivoCompleto.contains("DATA") && arquivoCompleto.contains("CREDITO/DEBITO") &&
+				arquivoCompleto.contains("STATUS") && arquivoCompleto.contains("IOF")) {
 			return true; //VOTORANTIM2
 		}
 		if (arquivoCompleto.contains("EXTRATO DE CONTA VINCULADA") && arquivoCompleto.contains("O EXTRATO REFLETE") &&
-			arquivoCompleto.contains("CLIENTE:")) {
+				arquivoCompleto.contains("CLIENTE:")) {
 			return true; //VOTORANTIM3
 		}
 		if (arquivoCompleto.contains("BTG PACTUAL") && arquivoCompleto.contains("RAZAO SOCIAL") &&
-			arquivoCompleto.contains("CONTA CORRENTE") && arquivoCompleto.contains("CNPJ")) {
+				arquivoCompleto.contains("CONTA CORRENTE") && arquivoCompleto.contains("CNPJ")) {
 			return true; //BTG
 		}
 		if (arquivoCompleto.contains("01. CONTA CORRENTE E APLICACOES REMUNERA") || arquivoCompleto.contains("01. CONTA CORRENTE") && arquivoCompleto.contains("PERIODO DO EXTRATO:")) {
 			return true; //BTG2
 		}
 		if(arquivoCompleto.contains("BANCO DO ESTADO DO RIO GRANDE DO SUL")
-			&& arquivoCompleto.contains("OPERACOES PIX") && arquivoCompleto.contains("BANRISUL.COM.BR")){
+				&& arquivoCompleto.contains("OPERACOES PIX") && arquivoCompleto.contains("BANRISUL.COM.BR")){
 			return true;//BANRISUL
 		}
 		if(arquivoCompleto.contains("BANCO DO ESTADO DO RIO GRANDE DO SUL")
-			&& arquivoCompleto.contains("CONSULTA OPERACOES / EMITE RECIBOS") && arquivoCompleto.contains("BANRISUL")){
+				&& arquivoCompleto.contains("CONSULTA OPERACOES / EMITE RECIBOS") && arquivoCompleto.contains("BANRISUL")){
 			return true;//BANRISUL2
 		}
 		if (arquivoCompleto.contains("MEUS CARTOES DE CREDITO OU OFFICE BANKING")
-			&& arquivoCompleto.contains("BANRISUL S.A.") && arquivoCompleto.contains("ANUIDADE")){
+				&& arquivoCompleto.contains("BANRISUL S.A.") && arquivoCompleto.contains("ANUIDADE")){
 			return true;//CARTAO BANRISUL
 		}
-		
+
 		// gui - 2404-035964 -> NOVO PADRAO EXTRATO ITAU -> 22/04/2024
-        if (arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("ITAU") &&
-                arquivoCompleto.contains("LANCAMENTO") && !arquivoCompleto.contains("POSICAO DA CONTA CORRENTE")
-                && arquivoCompleto.contains("INTERNET") && arquivoCompleto.contains(".ITAU.COM.BR") && arquivoCompleto.contains("NOME: AGENCIA:")) {
-            return true; //ITAU PADRAO 6
-        }
-		
+		if (arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("ITAU") &&
+				arquivoCompleto.contains("LANCAMENTO") && !arquivoCompleto.contains("POSICAO DA CONTA CORRENTE")
+				&& arquivoCompleto.contains("INTERNET") && arquivoCompleto.contains(".ITAU.COM.BR") && arquivoCompleto.contains("NOME: AGENCIA:")) {
+			return true; //ITAU PADRAO 6
+		}
+
 		if (arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("WWW.ITAU.COM.BR") &&
-        arquivoCompleto.contains("LANCAMENTO") && !arquivoCompleto.contains("MENSAL") &&
-        !arquivoCompleto.contains("SALDO RESUMIDO") && !arquivoCompleto.contains("LIMITE DA CONTA UTILIZADO")) {
-            return true; //ITAUPADRAO3 TIPOEXTRATO4
-        }
+				arquivoCompleto.contains("LANCAMENTO") && !arquivoCompleto.contains("MENSAL") &&
+				!arquivoCompleto.contains("SALDO RESUMIDO") && !arquivoCompleto.contains("LIMITE DA CONTA UTILIZADO")) {
+			return true; //ITAUPADRAO3 TIPOEXTRATO4
+		}
 		if(arquivoCompleto.contains("DATA") && arquivoCompleto.contains("AG/ORIGEM") &&
-			/* && arquivoCompleto.contains("LIMITE DA CONTA CONTRATADO")*/ //2311-022345 comentado
-			(arquivoCompleto.contains("0800 728") && arquivoCompleto.contains("0728"))){
+				/* && arquivoCompleto.contains("LIMITE DA CONTA CONTRATADO")*/ //2311-022345 comentado
+				(arquivoCompleto.contains("0800 728") && arquivoCompleto.contains("0728"))){
 			return true; //ITAU 2
 		}
 		if(arquivoCompleto.contains("RELATORIO DE VENDAS") && arquivoCompleto.contains("INFINITEPAY") && arquivoCompleto.contains("0800 591 7207")){
 			return true; //INFINITE-PAY-CARTAO
 		}
 		if(arquivoCompleto.contains("XP INVESTIMENTOS") && arquivoCompleto.contains("NOTA DE CORRETAGEM")){
-            return true; //NOTAS DE CORRETAGEM
-        }
+			return true; //NOTAS DE CORRETAGEM
+		}
 		if(arquivoCompleto.contains("EMITIDO EM") && arquivoCompleto.contains("BANCO ITAU S/A") && arquivoCompleto.contains("MOVIMENTACAO")){
-            return true; //ITAUFRANCESINHA01
-        }
-		if(arquivoCompleto.contains("CART") && arquivoCompleto.contains("PAGADOR") && arquivoCompleto.contains("TIPO") && arquivoCompleto.contains("NOSSO|") && 
-			arquivoCompleto.contains("SEU|") && arquivoCompleto.contains("VENC.") && arquivoCompleto.contains("AGENCIA|") && arquivoCompleto.contains("INICIAL") && 
-			arquivoCompleto.contains("VALOR") && arquivoCompleto.contains("DESCRICAO DE OPERACOES") && arquivoCompleto.contains("OPERACOES|VALOR") && 
-			arquivoCompleto.contains("VALOR FINAL") && arquivoCompleto.contains("CONSULTAS, INFORMACOES E TRANSACOES, ACESSE") && arquivoCompleto.contains("ITAU.COM.BR")) {
+			return true; //ITAUFRANCESINHA01
+		}
+		if(arquivoCompleto.contains("CART") && arquivoCompleto.contains("PAGADOR") && arquivoCompleto.contains("TIPO") && arquivoCompleto.contains("NOSSO|") &&
+				arquivoCompleto.contains("SEU|") && arquivoCompleto.contains("VENC.") && arquivoCompleto.contains("AGENCIA|") && arquivoCompleto.contains("INICIAL") &&
+				arquivoCompleto.contains("VALOR") && arquivoCompleto.contains("DESCRICAO DE OPERACOES") && arquivoCompleto.contains("OPERACOES|VALOR") &&
+				arquivoCompleto.contains("VALOR FINAL") && arquivoCompleto.contains("CONSULTAS, INFORMACOES E TRANSACOES, ACESSE") && arquivoCompleto.contains("ITAU.COM.BR")) {
 			return true; //ITAUFRANCESINHA04
 		}
         /*if(arquivoCompleto.contains("NOME DO PAGADOR") && arquivoCompleto.contains("VCTO") &&
@@ -409,74 +667,70 @@ public class TemplateUtils {
 			&& !arquivoCompleto.contains("TELE ATENDIMENTO")){
 			return true; //UNICRED1
 		}*/
-			// gui - 13/05/2024 -> Ajuste feito para o padrão 01 ser lido pelo novo conversor.
+		// gui - 13/05/2024 -> Ajuste feito para o padrão 01 ser lido pelo novo conversor.
 		if(((arquivoCompleto.contains("EXTRATO DE CONTA CORRENTE") && arquivoCompleto.contains("OUVIDORIA") &&
 				arquivoCompleto.contains("0800 646 5151") && arquivoCompleto.contains("TELE ATENDIMENTO")) && !arquivoCompleto.contains("UNICRED VALE"))){
 			return true; //UNICRED 01 TIPO PADRAO
 		}
-		
+
 		/* gui - 28/05/2024 -> Ajuste para validar algumas diferenças de cabeçalho do padrao 01 do UNICRED;
 											Chamado -> 	2405-039580                                   */
 		if(arquivoCompleto.contains("UNICRED - INTERNET BANKING") && arquivoCompleto.contains("UNICRED.COM.BR") &&
-			!arquivoCompleto.contains("UNICRED VALE" /*padrao 3*/) && !arquivoCompleto.contains("UNICRED EVOLUCAO LTDA" /*padrao 2*/)){
-			
+				!arquivoCompleto.contains("UNICRED VALE" /*padrao 3*/) && !arquivoCompleto.contains("UNICRED EVOLUCAO LTDA" /*padrao 2*/)){
+
 			return true; //UNICRED 01 TIPO INTERNET BANKING
 		}
-		
-		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
-		arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
-			return true; // UNICRED TIPO 004
-		}
+
 
 		if(arquivoCompleto.contains("OUVIDORIA: 0800 591 5120") &&
-			arquivoCompleto.contains("COOPERATIVA DE CREDITO CREHNOR")){
+				arquivoCompleto.contains("COOPERATIVA DE CREDITO CREHNOR")){
 			return true; //CREHNOR
 		}
 		if (arquivoCompleto.contains("BANCO SAFRA S/A") && arquivoCompleto.contains("0800 770 1236")
 				&& arquivoCompleto.contains("ATENDIMENTO PERSONALIZADO") && arquivoCompleto.contains("CENTRAL DE SUPORTE A PESSOA JURIDICA")){
-			
+
 			return true;//FRANCESINHA SAFRA
 		}
-		if(arquivoCompleto.contains("SAC - 0800 647 2200") && 
-			arquivoCompleto.contains("OUVIDORIA - 0800 644 1100 ") && arquivoCompleto.contains("COOPERATIVA: CIVIA")){
-				return true;//AILOS CIVIA
+		if(arquivoCompleto.contains("SAC - 0800 647 2200") &&
+				arquivoCompleto.contains("OUVIDORIA - 0800 644 1100 ") && arquivoCompleto.contains("COOPERATIVA: CIVIA")){
+			return true;//AILOS CIVIA
 		}
-		if(arquivoCompleto.contains("BANCO INTER") && arquivoCompleto.contains("CPF/CNPJ") && arquivoCompleto.contains("0800 940 9999") && 
-		   arquivoCompleto.contains("FALE COM A GENTE") && arquivoCompleto.contains("SALDO POR")){
+		if(arquivoCompleto.contains("BANCO INTER") && arquivoCompleto.contains("CPF/CNPJ") && arquivoCompleto.contains("0800 940 9999") &&
+				arquivoCompleto.contains("FALE COM A GENTE") && arquivoCompleto.contains("SALDO POR")){
 			return true; //INTER PADRAO3
 		}
 		if(arquivoCompleto.contains("NEXT (237 - BANCO BRADESCO S.A.)")
-			&& arquivoCompleto.contains("SE NAO FICAR SATISFEITO COM A SOLUCAO APRESENTADA, CONTATE A OUVIDORIA") && arquivoCompleto.contains("CONSULTAS, INFORMACOES E SERVICOS TRANSACIONAIS")
-			&& arquivoCompleto.contains("SAC NEXT")){
-					return true;// NEXT
+				&& arquivoCompleto.contains("SE NAO FICAR SATISFEITO COM A SOLUCAO APRESENTADA, CONTATE A OUVIDORIA") && arquivoCompleto.contains("CONSULTAS, INFORMACOES E SERVICOS TRANSACIONAIS")
+				&& arquivoCompleto.contains("SAC NEXT")){
+			return true;// NEXT
 		}
-		if(arquivoCompleto.toUpperCase().contains("SALDO DO DIA") && arquivoCompleto.toUpperCase().contains("LIMITE") && 
-		   arquivoCompleto.toUpperCase().contains("CONSOLIDADA EM") && arquivoCompleto.toUpperCase().contains("SALDO ANTERIOR") && 
-		   arquivoCompleto.toUpperCase().contains("SALDO EM CONTA")){
+		if(arquivoCompleto.toUpperCase().contains("SALDO DO DIA") && arquivoCompleto.toUpperCase().contains("LIMITE") &&
+				arquivoCompleto.toUpperCase().contains("CONSOLIDADA EM") && arquivoCompleto.toUpperCase().contains("SALDO ANTERIOR") &&
+				arquivoCompleto.toUpperCase().contains("SALDO EM CONTA")){
 			return true; //CRESOL2
 		}
 		if(arquivoCompleto.contains("CREDISAN COOPERATIVA DE CREDITO")
-			&& arquivoCompleto.contains("EXTRATO PARA SIMPLES CONFERENCIA")){
+				&& arquivoCompleto.contains("EXTRATO PARA SIMPLES CONFERENCIA")){
 			return true;//CREDISAN
 		}
 		if(arquivoCompleto.toUpperCase().contains("SISTEMA DE COOPERATIVAS DE CREDITO DO BRASIL") &&
-           arquivoCompleto.toUpperCase().contains("SISBR") &&
-           arquivoCompleto.toUpperCase().contains("PLATAFORMA DE SERVICOS FINANCEIROS DO SICOOB -") &&
-           !arquivoCompleto.toUpperCase().contains("HORA:") &&
-           !arquivoCompleto.toUpperCase().contains("PERIODO:")){
-            return true; //SICOOB 3
-        }
+				arquivoCompleto.toUpperCase().contains("SISBR") &&
+				arquivoCompleto.toUpperCase().contains("PLATAFORMA DE SERVICOS FINANCEIROS DO SICOOB -") &&
+				!arquivoCompleto.toUpperCase().contains("HORA:") &&
+				!arquivoCompleto.toUpperCase().contains("PERIODO:")){
+			return true; //SICOOB 3
+		}
 		if(arquivoCompleto.contains("EXTRATO CONTA LINKER") && arquivoCompleto.contains("WWW.LINKER.COM.BR") &&
-		   arquivoCompleto.contains("TOTAL ENTRADAS")){
-           return true; //LINKER
-        }
+				arquivoCompleto.contains("TOTAL ENTRADAS")){
+			return true; //LINKER
+		}
 		if(arquivoCompleto.contains("XP INVESTIMENTOS CCTVM S/A") && arquivoCompleto.contains("NAO HA LANCAMENTOS FUTUROS") &&
-		   arquivoCompleto.contains("ATENDIMENTO AO CLIENTE") && arquivoCompleto.contains("TORRE SUL") ){
-            return true; //XP 2
-        }
+				arquivoCompleto.contains("ATENDIMENTO AO CLIENTE") && arquivoCompleto.contains("TORRE SUL") ){
+			return true; //XP 2
+		}
 		if (arquivoCompleto.contains("EFI S.A.") && arquivoCompleto.contains("TIPO DE REGISTRO")
-            && arquivoCompleto.contains("EXTRATO FINANCEIRO") && arquivoCompleto.contains("FILTROS DO") &&
-            arquivoCompleto.contains("EFI S.A. CNPJ: 09.089.356/0001-18")) {
+				&& arquivoCompleto.contains("EXTRATO FINANCEIRO") && arquivoCompleto.contains("FILTROS DO") &&
+				arquivoCompleto.contains("EFI S.A. CNPJ: 09.089.356/0001-18")) {
 			return true; //EFI
 		}
 		if(arquivoCompleto.contains("OUVIDORIA CREDISIS") && arquivoCompleto.contains("0800 648 00 20")){
@@ -488,43 +742,43 @@ public class TemplateUtils {
 		 return true; //BRADESCO
 		}*/
 		if(arquivoCompleto.contains("RELATORIO FINANCEIRO FRANCESINHA") && arquivoCompleto.contains("ASSOCIADO:") && arquivoCompleto.contains("COOPERATIVA") && arquivoCompleto.contains("CONTA CORRENTE")
-			&& arquivoCompleto.contains("BENEFICIARIO") && arquivoCompleto.contains("A TRANSACAO ACIMA FOI REALIZADA VIA SICREDI INTERNET")){
+				&& arquivoCompleto.contains("BENEFICIARIO") && arquivoCompleto.contains("A TRANSACAO ACIMA FOI REALIZADA VIA SICREDI INTERNET")){
 			return true;//FrancesinhaSicrediPdf tipo 001
 		}
 		//2312-024917 - Existem algumas quebras de linha no cliente/fornecedor, algumas dessas quebras de linhas são tratadas pelos conversores, no antigo
 		//nao coloca espacamento quando junta as partes da linha, enquanto no novo nao apresenta esse problema
 		if(arquivoCompleto.contains("CARTEIRA") && arquivoCompleto.contains("RELATORIO DE TITULOS") && arquivoCompleto.contains("VALOR TOTAL LIQUIDACAO")
-			&& arquivoCompleto.contains("BENEFICIARIO") && arquivoCompleto.contains("COOPERATIVA") && arquivoCompleto.contains("DADOS REFERENTES AO PERIODO DE")){
+				&& arquivoCompleto.contains("BENEFICIARIO") && arquivoCompleto.contains("COOPERATIVA") && arquivoCompleto.contains("DADOS REFERENTES AO PERIODO DE")){
 			return true; //FRANCESINHA SICREDI PDF TIPO 002
 		}
 		if (arquivoCompleto.contains("CARTAO:") && arquivoCompleto.contains("DETALHAMENTO DA SUA FATURA") &&
-			arquivoCompleto.contains("BB.COM.BR") && arquivoCompleto.contains("BANCO DO BRASIL")) {
+				arquivoCompleto.contains("BB.COM.BR") && arquivoCompleto.contains("BANCO DO BRASIL")) {
 			return true; //FATURA CARTAO CREDITO BANCO DO BRASIL
 		}
 		//#2311-023772 By Leal
 		if(arquivoCompleto.contains("RELATORIO  -  TITULOS POR PERIODO") && arquivoCompleto.contains("TIPO CONSULTA:") &&
-		   arquivoCompleto.contains("LIQUIDACAO - VIA COMPENSACAO") && arquivoCompleto.contains("CPF/CNPJ SACADO:") &&
-           arquivoCompleto.contains("VLR. OUTROS") && arquivoCompleto.contains("VERSAO:")){
+				arquivoCompleto.contains("LIQUIDACAO - VIA COMPENSACAO") && arquivoCompleto.contains("CPF/CNPJ SACADO:") &&
+				arquivoCompleto.contains("VLR. OUTROS") && arquivoCompleto.contains("VERSAO:")){
 
-            return true; //FRANCESINHA SICOOB
-        }
+			return true; //FRANCESINHA SICOOB
+		}
 		if(arquivoCompleto.contains("PAYBROKERS IP") && arquivoCompleto.contains("CONTAPAG") && arquivoCompleto.contains("FILTROS UTILIZADOS NO RELATORIO")){
-            return true; //PAYBROKERS
-        }
+			return true; //PAYBROKERS
+		}
 		if(arquivoCompleto.contains("EXTRATO CONTA DE PAGAMENTO/LANCAMENTOS") &&
-			arquivoCompleto.contains("ACESSOACONTA.COM.BR") &&
-			arquivoCompleto.contains("PINKPAY")){
-			
+				arquivoCompleto.contains("ACESSOACONTA.COM.BR") &&
+				arquivoCompleto.contains("PINKPAY")){
+
 			return true; //PINK PAY
 		}
 		//2311-022659
-		/*if(arquivoCompleto.contains("BANCO ITAU S.A.") && arquivoCompleto.contains("TITULOS") && arquivoCompleto.contains("MOVIMENTACAO") && 
+		/*if(arquivoCompleto.contains("BANCO ITAU S.A.") && arquivoCompleto.contains("TITULOS") && arquivoCompleto.contains("MOVIMENTACAO") &&
 			arquivoCompleto.contains("PAGADOR")  && arquivoCompleto.contains("OUTROS VALORES")){
 			return true; //ITAUFRANCESINHA03
 		}*/
 		//2311-023654
 		if(arquivoCompleto.contains("OUVIDORIA BB") && arquivoCompleto.contains("DEFICIENTES") && arquivoCompleto.contains("AUDITIVOS") &&
-			arquivoCompleto.contains("CONSULTAR") && arquivoCompleto.contains("BOLETOS") && arquivoCompleto.contains("INSTRUCOES")){
+				arquivoCompleto.contains("CONSULTAR") && arquivoCompleto.contains("BOLETOS") && arquivoCompleto.contains("INSTRUCOES")){
 			return true; //FRANCESINHABB
 		}
 		//2401-026435
@@ -532,88 +786,93 @@ public class TemplateUtils {
 			return true; //OMIECASH
 		}
 		if(arquivoCompleto.contains("EXTRATO DE CONTA CORRENTE") && arquivoCompleto.contains("TITULAR") && arquivoCompleto.contains("SALDO ANTERIOR") && arquivoCompleto.contains("SALDO ATUAL") &&
-			arquivoCompleto.contains("GERADO EM") && arquivoCompleto.contains("PERIODO:") && arquivoCompleto.contains("AGENCIA:")){
+				arquivoCompleto.contains("GERADO EM") && arquivoCompleto.contains("PERIODO:") && arquivoCompleto.contains("AGENCIA:")){
 			return true; //NORDESTE TIPO 2
 		}
 		//2402-028676
 		if(arquivoCompleto.contains("PAGSEGURO") && arquivoCompleto.contains("EXTRATO FINANCEIRO") && arquivoCompleto.contains("CONTA CORRENTE") && arquivoCompleto.contains("CNPJ")){
 			return true; //PAGBANK PADRAO 2
 		}
-		
+
 		if(arquivoCompleto.contains("SAC DAYCOVAL") && arquivoCompleto.contains("EXTRATO DETALHADO") && arquivoCompleto.contains("DAYCONNECT") && arquivoCompleto.contains("PROVISAO DE ENCARGOS")){
-			return true; //DAYCOVAL PADRAO 1 E 2 
+			return true; //DAYCOVAL PADRAO 1 E 2
 		}
-		if (arquivoCompleto.contains("XP INVESTIMENTOS") && 
-			arquivoCompleto.contains("ASSESSOR:") &&
-			arquivoCompleto.contains("WWW.XPI.COM.BR") &&
-			arquivoCompleto.contains("CORRETORA DE CAMBIO")) {
+		if (arquivoCompleto.contains("XP INVESTIMENTOS") &&
+				arquivoCompleto.contains("ASSESSOR:") &&
+				arquivoCompleto.contains("WWW.XPI.COM.BR") &&
+				arquivoCompleto.contains("CORRETORA DE CAMBIO")) {
 			return true; //XP Padrao 3
 		}
-		
+
 		if(	arquivoCompleto.contains("SISBB") &&
-				arquivoCompleto.contains("SISTEMA DE INFORMACOES BANCO DO BRASIL") && 
-				arquivoCompleto.contains("AUTOATENDIMENTO BB") && 
-				arquivoCompleto.contains("DATA MOVIM.") && 
-				arquivoCompleto.contains("DEP. ORIGEM") && 
+				arquivoCompleto.contains("SISTEMA DE INFORMACOES BANCO DO BRASIL") &&
+				arquivoCompleto.contains("AUTOATENDIMENTO BB") &&
+				arquivoCompleto.contains("DATA MOVIM.") &&
+				arquivoCompleto.contains("DEP. ORIGEM") &&
 				arquivoCompleto.contains("HISTORICO") ) {
-					
+
 			return true;// SISBB
-					
+
 		}
-		
+
 		if (arquivoCompleto.contains("CENTRAL DE ATENDIMENTO SANTANDER EMPRESARIAL") && arquivoCompleto.contains("0800 762 7777") &&
-			arquivoCompleto.contains("NOSSO NUMERO") && arquivoCompleto.contains("AGENCIA/CONTA")){ //FRANCESINHASANTANDER 2
+				arquivoCompleto.contains("NOSSO NUMERO") && arquivoCompleto.contains("AGENCIA/CONTA")){ //FRANCESINHASANTANDER 2
 			return true;
 		}
 
-		if (arquivoCompleto.contains("EMITIDO EM: ") && 
-			(arquivoCompleto.contains("DATA|OBSERVACAO|DOCUMENTO|VALOR|DETALHAMENTO") ||
-			arquivoCompleto.contains("DATA;OBSERVACAO;DOCUMENTO;VALOR;DETALHAMENTO")) &&
-			arquivoCompleto.contains("ALIAS:") &&
-			arquivoCompleto.contains("SALDO INICIAL")){
-				return true; // PENSEBANK
-			}
-		
 		if (arquivoCompleto.contains("INTERNET BANKING EMPRESARIAL") && arquivoCompleto.contains("AGENCIA") &&
 				arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("PERIODO") && arquivoCompleto.contains("0800 726 2125") &&
 				arquivoCompleto.contains("0800 723 5007") && arquivoCompleto.contains("0800 726 0322") && arquivoCompleto.contains("0800 771 0301") &&
 				!arquivoCompleto.contains("VALORES DEDUZIDOS DO SALDO DISPONIVEL PARA CONTAS SEM LIMITE")  && !arquivoCompleto.contains("VER EXTRATO 365 DIAS")){ // SANTANDER PADRAO 01
 			return true;
 		}
-		
+
 		if(	arquivoCompleto.contains("INTERNET BANKING EMPRESARIAL") &&
-				arquivoCompleto.contains("CONTA CORRENTE  >  EXTRATO  >") && 
-				arquivoCompleto.contains("OPCAO DE PESQUISA:") && 
-				arquivoCompleto.contains("CENTRAL DE ATENDIMENTO") && 
-				arquivoCompleto.contains("CAPITAIS E REGIOES METROPOLITANAS") && 
-				arquivoCompleto.contains("0800 762 7777") && 
+				arquivoCompleto.contains("CONTA CORRENTE  >  EXTRATO  >") &&
+				arquivoCompleto.contains("OPCAO DE PESQUISA:") &&
+				arquivoCompleto.contains("CENTRAL DE ATENDIMENTO") &&
+				arquivoCompleto.contains("CAPITAIS E REGIOES METROPOLITANAS") &&
+				arquivoCompleto.contains("0800 762 7777") &&
 				arquivoCompleto.contains("CENTRAL DE ATENDIMENTO SANTANDER EMPRESARIAL") ) {
 
 			return true;// SANTANDER PADRAO 01/001
 
 		}
-		
+
 		if (arquivoCompleto.contains("RELATORIO DE TITULOS") && arquivoCompleto.contains("BANCO/AGENCIA/CONTA") && arquivoCompleto.contains("CARTORIO") &&
-			arquivoCompleto.contains("QUANTIDADE:") && arquivoCompleto.contains("RESUMO PARCIAL:") && arquivoCompleto.contains("RESUMO GERAL:")) {
+				arquivoCompleto.contains("QUANTIDADE:") && arquivoCompleto.contains("RESUMO PARCIAL:") && arquivoCompleto.contains("RESUMO GERAL:")) {
 			return true; //FRANCESINHA UNICREDI
 		}
-		
+
 		/*if(arquivoCompleto.contains("SAC 0800 724 7220") && arquivoCompleto.contains("VALOR DO TITULO") &&
 			arquivoCompleto.contains("RAZAO SOCIAL DO BENEFICIARIO")){
 			return true; //COMPROVANTE SICREDI
 		}*/
-		
+
 		//2405-039500
 		if (arquivoCompleto.contains("CONTAMAX") && arquivoCompleto.contains("EMPRESARIAL") && arquivoCompleto.contains("EXTRATO") &&
-			arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("SANTANDER") && arquivoCompleto.contains("RENDIMENTO")) {
+				arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("SANTANDER") && arquivoCompleto.contains("RENDIMENTO")) {
 			return true; //Santander Contamax Empresarial
 		}
+		
+		if (arquivoCompleto.contains("EMITIDO EM: ") && 
+			(arquivoCompleto.contains("DATA|OBSERVACAO|DOCUMENTO|VALOR|DETALHAMENTO") ||
+			arquivoCompleto.contains("DATA;OBSERVACAO;DOCUMENTO;VALOR;DETALHAMENTO")) &&
+			arquivoCompleto.contains("ALIAS:") &&
+			arquivoCompleto.contains("SALDO INICIAL")){
+				return true; // PENSEBANK
+		}
+		
+		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
+		arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
+			return true; // UNICRED TIPO 004
+		}
 
-		if (arquivoCompleto.contains("%$&") || arquivoCompleto.contains("!%") || arquivoCompleto.contains("$!%&") || arquivoCompleto.contains("# $%") 
-			|| arquivoCompleto.contains("$*&-") || arquivoCompleto.contains("%$$&$$") || arquivoCompleto.contains("#$#%") || arquivoCompleto.contains("%&*") 
-			|| arquivoCompleto.contains("*##%%") || arquivoCompleto.contains("##$%#&") || arquivoCompleto.contains("!\"#\"") || arquivoCompleto.contains("[!\"") 
-			|| arquivoCompleto.contains("&<") || arquivoCompleto.contains("[!") || arquivoCompleto.contains(".%$$") || arquivoCompleto.contains("#!+")
-			|| arquivoCompleto.contains("++(0+0&") || arquivoCompleto.contains("*&+&")) {
+		if (arquivoCompleto.contains("%$&") || arquivoCompleto.contains("!%") || arquivoCompleto.contains("$!%&") || arquivoCompleto.contains("# $%")
+				|| arquivoCompleto.contains("$*&-") || arquivoCompleto.contains("%$$&$$") || arquivoCompleto.contains("#$#%") || arquivoCompleto.contains("%&*")
+				|| arquivoCompleto.contains("*##%%") || arquivoCompleto.contains("##$%#&") || arquivoCompleto.contains("!\"#\"") || arquivoCompleto.contains("[!\"")
+				|| arquivoCompleto.contains("&<") || arquivoCompleto.contains("[!") || arquivoCompleto.contains(".%$$") || arquivoCompleto.contains("#!+")
+				|| arquivoCompleto.contains("++(0+0&") || arquivoCompleto.contains("*&+&")) {
 			return true;
 		}
 		if (arquivoCompleto.equals("[]")) {
@@ -625,7 +884,7 @@ public class TemplateUtils {
 		if (arquivoCompleto.length() < 150) {
 			return true;
 		}
-		
+
 		/* gui - 05/06/2024 - Chamado: 2405-040560
 		Adicionando validação para solucionar a conversão errada do CONVERSOR ANTIGO do padrão 01 do UNICRED PDF
 		obs: caso quando o csv do ANTIGO ja vem direto na metade dos lançamentos (nao possuindo cabeçalho inicial).
@@ -634,10 +893,10 @@ public class TemplateUtils {
 		if(arquivoCompleto.split("\\|")[0].trim().matches("\\[\\d{2}/\\d{2}/\\d{4}")){
 			return true;
 		}
-        
+
 		return false;
 	}
-	
+
 	public static boolean verificaConversorNovoTipoPlanilha(String tipoPlanilha) {
 		if (tipoPlanilha.contains("OTTCARTAO")) {
 			if (tipoPlanilha.contains("BANRICOMPRASPDF")) {
@@ -652,47 +911,47 @@ public class TemplateUtils {
 		}
 		return false;
 	}
-	
-	
+
+
 	public static String getIdLote(String lote) {
 		String idLote = OicUtils.cutString(lote, "ott_oud", lote.indexOf("ott_oud") + 16);//202302-0025707
-		
+
 		if (lote.contains("_id")) {
 			if (lote.contains("ott_oud__id")) idLote = OicUtils.cutString(lote, "ott_oud__id", "_");//2308-011361
 			if (lote.contains("ott_oud_id")) idLote = OicUtils.cutString(lote, "ott_oud_id", "_");//2308-011361
 		} else {
 			idLote = "";
 		}
-		
+
 		return idLote;
 	}
 
 	public static boolean verificaConciliacao(String arquivoCompleto) {
 		if (arquivoCompleto.contains("CTA.C.PART") && arquivoCompleto.contains("LOTE") && arquivoCompleto.contains("DEBITO") &&
-			arquivoCompleto.contains("CREDITO") && arquivoCompleto.contains("SALDO-EXERCICIO") && arquivoCompleto.contains("TOTAL DA CONTA:")) {
+				arquivoCompleto.contains("CREDITO") && arquivoCompleto.contains("SALDO-EXERCICIO") && arquivoCompleto.contains("TOTAL DA CONTA:")) {
 			return true;
 		}
 		return false;
 	}
-	
+
 	public boolean validaPlanilhaPadrao(String tipoLancamento, MemoryFile memFile)throws Exception{
 		if (tipoLancamento.contains("PAGAR") && memFile.getStringFieldRemoveEspCharsUpper(0).contains("DATA RECEBIMENTO") && memFile.getStringFieldRemoveEspCharsUpper(1).contains("DOCUMENTO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(2).contains("CLIENTE /  DESCRICAO RECEITA") && memFile.getStringFieldRemoveEspCharsUpper(3).contains("DETALHES DO RECEBIMENTO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(4).contains("VALOR ORIGINAL") && memFile.getStringFieldRemoveEspCharsUpper(5).contains("VALOR RECEBIDO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(6).contains("BANCO (PORTADOR)") && memFile.getStringFieldRemoveEspCharsUpper(7).contains("CATEGORIA (RECEITA)")){
+				&& memFile.getStringFieldRemoveEspCharsUpper(2).contains("CLIENTE /  DESCRICAO RECEITA") && memFile.getStringFieldRemoveEspCharsUpper(3).contains("DETALHES DO RECEBIMENTO")
+				&& memFile.getStringFieldRemoveEspCharsUpper(4).contains("VALOR ORIGINAL") && memFile.getStringFieldRemoveEspCharsUpper(5).contains("VALOR RECEBIDO")
+				&& memFile.getStringFieldRemoveEspCharsUpper(6).contains("BANCO (PORTADOR)") && memFile.getStringFieldRemoveEspCharsUpper(7).contains("CATEGORIA (RECEITA)")){
 			// logger.logInfo("TP UTIL -> IF PAG PLANILHA PADRAO ");
 			return true;
 		}
 		if (tipoLancamento.contains("RECEBER")&& memFile.getStringFieldRemoveEspCharsUpper(0).contains("DATA PAGAMENTO") && memFile.getStringFieldRemoveEspCharsUpper(1).contains("DOCUMENTO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(2).contains("FORNECEDOR /  DESCRICAO PAGAMENTO") && memFile.getStringFieldRemoveEspCharsUpper(3).contains("DETALHES DO PAGAMENTO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(4).contains("VALOR ORIGINAL") && memFile.getStringFieldRemoveEspCharsUpper(5).contains("VALOR PAGO")
-			&& memFile.getStringFieldRemoveEspCharsUpper(6).contains("BANCO (PORTADOR)") && memFile.getStringFieldRemoveEspCharsUpper(7).contains("CATEGORIA (DESPESA)")){
+				&& memFile.getStringFieldRemoveEspCharsUpper(2).contains("FORNECEDOR /  DESCRICAO PAGAMENTO") && memFile.getStringFieldRemoveEspCharsUpper(3).contains("DETALHES DO PAGAMENTO")
+				&& memFile.getStringFieldRemoveEspCharsUpper(4).contains("VALOR ORIGINAL") && memFile.getStringFieldRemoveEspCharsUpper(5).contains("VALOR PAGO")
+				&& memFile.getStringFieldRemoveEspCharsUpper(6).contains("BANCO (PORTADOR)") && memFile.getStringFieldRemoveEspCharsUpper(7).contains("CATEGORIA (DESPESA)")){
 			// logger.logInfo("TP UTIL -> IF REC PLANILHA PADRAO ");
 			return true;
 		}
 		return false;
 	}
-	
+
 	public String validaComplementoVencimento(JSONObject roteiroCRM, JSONObject roteiroCRMPrincipal, String line, MemoryFile memFile, InoutLogger logger)throws Exception{
 		int icomplemento01 = -1;
 		int icomplemento02 = -1;
@@ -700,24 +959,24 @@ public class TemplateUtils {
 		int icomplemento04 = -1;
 		int icomplemento05 = -1;
 		int icomplemento06 = -1;
-		
+
 		String complemento01 = "";
 		String complemento02 = "";
 		String complemento03 = "";
 		String complemento04 = "";
 		String complemento05 = "";
 		String complemento06 = "";
-		
+
 		icomplemento01  = getIndice("complemento01", icomplemento01, roteiroCRM);
 		icomplemento02	= getIndice("complemento02", icomplemento02, roteiroCRM);
 		icomplemento03  = getIndice("complemento03", icomplemento03, roteiroCRM);
 		icomplemento04  = getIndice("complemento04", icomplemento04, roteiroCRM);
 		icomplemento05  = getIndice("complemento05", icomplemento05, roteiroCRM);
 		icomplemento06  = getIndice("complemento06", icomplemento06, roteiroCRM);
-		
+
 		// logger.logInfo("TPUTILS  getIndice ->  cpl03 -> " + icomplemento03 + " cpl04 -> " + icomplemento04);
-		
-		
+
+
 		if (roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("COMPLEMENTO01")) {
 			try{complemento01     = getDate(complemento01, icomplemento01, line, false, roteiroCRM.optString("complemento01").toUpperCase(), memFile, logger);}
 			catch(Exception e){}
@@ -742,7 +1001,7 @@ public class TemplateUtils {
 			try{complemento05     = getDate(complemento05, icomplemento05, line, false, roteiroCRM.optString("complemento05").toUpperCase(), memFile, logger);}
 			catch(Exception e){}
 			return complemento05;
-		} 
+		}
 		if (roteiroCRMPrincipal.optString("usarComplementoVencimento").toUpperCase().contains("COMPLEMENTO06")) {
 			try{complemento06     = getDate(complemento06, icomplemento06, line, false, roteiroCRM.optString("complemento06").toUpperCase(), memFile, logger);}
 			catch(Exception e){}
@@ -750,12 +1009,12 @@ public class TemplateUtils {
 		}
 		return "";
 	}
-	
+
 	public String getDataOttCartao(String dataPretendente, String tipoPlanilha, int idataMovimento, String line, String textoCRM, MemoryFile memFile, InoutLogger logger)throws Exception{
 		String dataMovimento = "";
 		logger.logInfo("ENTROU DT CART TP UTIL");
 		try{
-			
+
 			String auxMes 	  = getMonth(cutString(dataPretendente, " ", " "));
 			if(auxMes.length() == 2 && !auxMes.equals(cutString(dataPretendente, " ", " "))){
 				dataMovimento = dataPretendente.replaceAll(cutString(dataPretendente, " ", " "), auxMes).replaceAll(" ", "/");
@@ -782,7 +1041,7 @@ public class TemplateUtils {
 
 		return dataMovimento;
 	}
-	
+
 	public List<String> addBancoLidos (List<String> bancosLidos, String complemento08, String nomePortador){
 		try {
 			String banco = "";
@@ -808,10 +1067,10 @@ public class TemplateUtils {
 				arquivosLidosLista.add(nomeArquivo);
 			}
 		}catch(Exception Al){logger.logInfo("CATCH arquivosLidos metodo -> " + Al.getMessage());}
-		
+
 		return arquivosLidosLista;
 	}
-	
+
 	public String buscaClassificacao (double valorDesconto, double valorJuros, double valorMulta, int contador, String erpContabilidade, String tipoLancamento){
 		String classificacao = "";
 		if(tipoLancamento.contains("PAGAR")){
@@ -855,8 +1114,8 @@ public class TemplateUtils {
 				if (contador > 1 && classificacao.equals("C")) classificacao = "V";
 			}
 		}
-		
+
 		return classificacao;
 	}
-	
+
 }

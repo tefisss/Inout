@@ -9,7 +9,7 @@
 {import: io_contabil.OICUtils};
 {import: io_contabil.Classes.Extrato};
 
-
+import java.lang.reflect.Method;
 // TEMPLATE 25.06.2024
 // Colocado tipoPlanilha no Lote Encerrado
 // colocado para trocar XLSX por CSV se marcado no roteiro 
@@ -692,6 +692,7 @@ public JSONArray run(InoutLogger logger) throws Exception {
 
 					JSONObject objetoParametro = new JSONObject();
 
+					boolean concatenar = false;
 					// #DOCUMENTACAO
 					// busca de indices da planilha principal
 					if (tipoPlanilha.equals("MOVIMENTO")) {
@@ -1325,6 +1326,22 @@ public JSONArray run(InoutLogger logger) throws Exception {
 									}
 									
 									nomePortador	= getCampoString(nomePortador, inomePortador, line, zerar, roteiroCRM.optString("portador").toUpperCase(), memFile, logger);
+
+									if(memFile.getStringFieldRemoveEspCharsUpper(1).trim().equals("")) {
+										concatenar = true;								
+									}else{
+										concatenar = false; 								
+									} 
+
+									if(concatenar){
+										ttMovimentoPadrao ttMov4 = (ttMovimentoPadrao)mapaVariavel.get(chave + "-CTB");
+										if(ttMov4 != null){
+											ttMov4.nomeOrigem += memFile.getStringFieldRemoveEspCharsUpper(2);
+											mapaVariavel.put(chave + "-CTB", ttMov4);
+											continue;
+										}
+									}
+
 									nomeOrigem		= getCampoString(nomeOrigem, inomeOrigem, line, zerar, roteiroCRM.optString("fornecedor").toUpperCase(), memFile, logger);
 									documento		= getCampoString(documento, idocumento, line, zerar, roteiroCRM.optString("documentoNF").toUpperCase(), memFile, logger);
 
@@ -1624,7 +1641,6 @@ public JSONArray run(InoutLogger logger) throws Exception {
 								// #DOCUMENTACAO
 								// leitura de TXT
 								if (roteiroCRM.optString("tipoArquivo").toUpperCase().contains("ARQUIVO TEXTO") && roteiroCRM.optString("dataMovimento").replaceAll(" ", "").toUpperCase().startsWith("COLUNA(") && roteiroCRM.optString("dataMovimento").endsWith(")")) {
-									logger.logInfo("ENTROU NO TXT PAGAS-------------")
 									String dataString = getCampoString(dataMovimento, idataMovimento, line, false, roteiroCRM.optString("dataMovimento").toUpperCase(), memFile, roteiroCRM, logger).trim();
   
    
