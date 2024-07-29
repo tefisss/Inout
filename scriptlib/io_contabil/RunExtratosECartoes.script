@@ -3658,7 +3658,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	////// Extrato - SICOOB PDF PADRAO 1, 2, 3 E 4 ///////////////////////////////////////////////
 	// //logger.logInfoInfo("RUN LN = "+line);
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Sicoob_PDF")){ 
-		// //logger.logInfoInfo("NARQUIVO = "+nomeArquivo);
+		logger.logInfo("LINHA = "+ line);
 		if (	(cabecalhoPlanilha.contains("SICOOB") /*&& cabecalhoPlanilha.contains("SALDO")*/ && cabecalhoPlanilha.contains("CONTA:") && cabecalhoPlanilha.contains("VALOR") &&
 				(cabecalhoPlanilha.contains("SISTEMA DE COOPERATIVAS DE CREDITO DO BRASIL") || cabecalhoPlanilha.contains("SISTEMA DE COOPERATIVAS DE CRADITO DO BRASIL") || cabecalhoPlanilha.contains("SERVICOS FINANCEIROS DO SICOOB") ||
 				cabecalhoPlanilha.contains("SISTEMA|DE|COOPERATIVAS|DE|CREDITO|DO|BRASIL") || cabecalhoPlanilha.contains("SERVICOS|FINANCEIROS|DO|SICOOB")))
