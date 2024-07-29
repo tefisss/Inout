@@ -27568,7 +27568,7 @@ public boolean readExtratoSicoobPDF(MemoryFile memFile, String nomePortador, JSO
 		if (line.toUpperCase().contains("VENCIMENTO CHEQUE")) continue;	
 		if (line.toUpperCase().contains("TAXA CHEQUE")) continue;	
 		if (line.toUpperCase().contains("EXTRATOS EMITIDOS")) continue;
-		if (line.contains("RESUMO")) return true;
+		if (line.contains("RESUMO")) naoLeMais = true;
 		if (line.toUpperCase().startsWith("MENSAGENS") || line.toUpperCase().contains("MENSAGENS"))naoLeMais = true;	
 		if (memFile.getFieldsSize() > 1) naoLeMais = false;
 		// 2310-019753 descomentado if abaixo
