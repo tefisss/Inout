@@ -13742,21 +13742,14 @@ public boolean readExtratoSisprimePDF(MemoryFile memFile, String nomePortador, J
         line = StringUtil.removeSpecialCharsToUC(line);
 
         idataMovimento	= 0;
-        idocumento      = 1;
-        inomeOrigem		= 2;
-        ivalorDocumento	= 3;
-        isaldoAnterior  =  4;
-        isaldoAtual     =  4;
-
-        if(memFile.getFieldsSize() == 6 && line.contains("OS DADOS ACIMA")){
-            idocumento      = 2;
-            inomeOrigem		= 3;
-            ivalorDocumento	= 4;
-            isaldoAnterior  = 5;
-            isaldoAtual     = 5;
-        }
-
-        if(line.contains("SALDO ANTERIOR")){
+        idocumento      = memFile.getFieldsSize()-4 > 0 ? memFile.getFieldsSize()-4 : 1;
+        inomeOrigem		= memFile.getFieldsSize()-3 > 0 ? memFile.getFieldsSize()-3 : 1;
+		ivalorDocumento	= memFile.getFieldsSize()-2 > 0 ? memFile.getFieldsSize()-2 : 1;
+		isaldoAnterior  = memFile.getFieldsSize()-1 > 0 ? memFile.getFieldsSize()-1 : 1;
+		isaldoAtual     = memFile.getFieldsSize()-1 > 0 ? memFile.getFieldsSize()-1 : 1;
+        
+	
+		if(line.contains("SALDO ANTERIOR")){
             try{
 				//2401-026970 - Lia saldos negativos como se fossem positivos, o que fazia com que alguns pagamentos e recebimentos fossem confundidos
                 //saldoAnterior = Math.abs(memFile.getDoubleField(isaldoAnterior));
