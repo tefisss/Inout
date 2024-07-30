@@ -4562,7 +4562,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			}
 			jDados.put("NOMEEMPRESA",    nomeEmpresa);
 			jDados.put("NOMEARQUIVO",    nomeArquivo);
-			jDados.put("TIPOPLANILHA",    tipoPlanilha);
+			jDados.put("TIPOPLANILHA",   "EXTRATO-MODOBANK-PDF");
 			readExtratoECartao("readExtratoModoBankPDF", memFile, nomePortador, jDados, dbIOCont, logger);
 			variaveis.put("tipoRetorno", "break");
 			return variaveis.toString();
