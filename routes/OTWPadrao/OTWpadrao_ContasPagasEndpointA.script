@@ -9,7 +9,7 @@
 {import: io_contabil.OICUtils};
 {import: io_contabil.Classes.Extrato};
 
-
+import java.lang.reflect.Method;
 // TEMPLATE 15.03.2023
 // Colocado tipoPlanilha no Lote Encerrado
 // colocado para trocar XLSX por CSV se marcado no roteiro 
