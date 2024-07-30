@@ -13754,7 +13754,7 @@ public boolean readExtratoSisprimePDF(MemoryFile memFile, String nomePortador, J
             isaldoAnterior  = 5;
             isaldoAtual     = 5;
         }
-
+		logger.logInfo(idataMovimento + " | " + idocumento + " | " + inomeOrigem + " | " + ivalorDocumento + " | " + isaldoAnterior + " | " + isaldoAtual);
         if(line.contains("SALDO ANTERIOR")){
             try{
 				//2401-026970 - Lia saldos negativos como se fossem positivos, o que fazia com que alguns pagamentos e recebimentos fossem confundidos
@@ -13805,7 +13805,7 @@ public boolean readExtratoSisprimePDF(MemoryFile memFile, String nomePortador, J
 			documento      = "";
 			nomeOrigem		= memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem).replaceAll("\"","").replaceAll("\\?","").trim();
 			documento		= memFile.getStringFieldRemoveEspCharsUpper(idocumento).replaceAll("\"","").replaceAll("\\?","").trim();
-			
+			logger.logInfo("PORT-> " + nomePortador + "DATA-> " + dataMovimento + "ORIG-> " + nomeOrigem + "DOC-> " + documento + "VLR-> " + valorDocumento + "OP-> " + debitoCredito);
 			extrato = new ExtratoModel();
 						
 			extrato.setCodEmpresa(codEmpresa);
@@ -16708,8 +16708,6 @@ public HashMap readExtrato_ApliBB_PDF(MemoryFile memFile, JSONObject jDados, Has
 }
 
 public boolean readExtratoSISBBPDF(MemoryFile memFile, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
-
-	logger.logDebug("BB PDF 4 ---------------------------");
 
 
 	JSONObject extratoEmpresa = new JSONObject();
@@ -22989,8 +22987,6 @@ public boolean readExtratoUniprime2PDF(MemoryFile memFile, JSONObject jDados, Da
 
             // Inserir caso Chave nao encontrada.
             if (extratoEmpresa == null || !extratoEmpresa.has("CHAVE")) {
-		
-				logger.logInfo(debitoCredito + " | nomePortador:" + nomePortador + " | dataMovimento:" + dataMovimento + " | nomeOrigem:" + nomeOrigem + " | valorDocumento:" +  valorDocumento );	
 
                 try {
                     dbIOCont.insert("IO_EXTRATO")
