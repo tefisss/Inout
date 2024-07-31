@@ -3673,7 +3673,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				nomePortador2 = "SICOOB-PDF - "+cutString(cabecalhoPlanilha, "CORRENTE:", "EXTRATO").trim();
 				// logger.logInfo("1 NP2 = "+nomePortador2);
 			} else{
-				nomePortador2 = "SICOOB-PDF - " + cutString(cabecalhoPlanilha, "CONTA:", cabecalhoPlanilha.indexOf("CONTA:")+17);
+				nomePortador2 = "SICOOB-PDF - " + cutString(arquivoCompleto, "CONTA:", arquivoCompleto.indexOf("CONTA:")+17);
 				// logger.logInfo("2 NP2 = "+nomePortador2);
 			}
 			if (nomePortador2.contains("EXTRATO C") && cabecalhoPlanilha.contains("HORA:") && cabecalhoPlanilha.contains("DATA")){
