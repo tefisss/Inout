@@ -29331,7 +29331,6 @@ public HashMap readNotasCorretagemXP(MemoryFile memFile, JSONObject jDados, Hash
 public boolean readExtratBradesco2PDF(MemoryFile memFile, String nomePortador, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
     JSONObject extratoEmpresa = new JSONObject();
 	// logger.logInfo("ENTROU ARRRRR BRAD");
-	logger.logInfo("ENTROU BRADESCO");
 	
 	Extrato jdbcExtrato = new Extrato();
 	ExtratoModel extrato = new ExtratoModel();
@@ -29427,12 +29426,12 @@ public boolean readExtratBradesco2PDF(MemoryFile memFile, String nomePortador, J
  			
 			if(line.contains("DATA") && (line.contains("HISTORICO") || line.contains("LANCAMENTO")) && (line.contains("DOCTO") || line.contains("DCTO")) && line.contains("CREDITO") && line.contains("DEBITO") && tipoExtrato.contains("002")){
 				tipoPadrao = "002";
-				// logger.logInfo("ENTROU 002 bradesco pdf");
+				logger.logInfo("ENTROU 002 bradesco pdf");
 				// continue;
 			}	
 			
 			
-			// logger.logInfo("tipoPdrao -> " + tipoPadrao);
+			logger.logInfo("tipoPdrao -> " + tipoPadrao);
 			
 			if(!tipoPadrao.equals("002")){
 				
@@ -30063,6 +30062,144 @@ public boolean readExtratBradesco2PDF(MemoryFile memFile, String nomePortador, J
 			
         } catch (Exception ex) {
         }
+    }
+    return true;
+}
+			
+//JOGAR METODO AQ
+
+public boolean readExtratoBradesco3PDF(MemoryFile memFile, String nomePortador, JSONObject jDados, DataBase dbIOCont, InoutLogger logger) throws Exception {
+	JSONObject extratoEmpresa = new JSONObject();
+
+	//logger.logInfo("ENTROU READ BRADESCO 3");
+	Extrato jdbcExtrato = new Extrato();
+	ExtratoModel extrato = null;
+
+    // Inicializacao de Variaveis
+    String codEmpresa        = "";
+    String nomeArquivo       = "";
+    String chaveExtrato      = "";
+
+    String documento         = "";
+    String tipoLancamento    = "";
+    String tipoPlanilha      = "";
+    String nomeEmpresa	     = "";
+    String nomeOrigem        = "";
+    String dataMovimento     = "";
+    String dataLote          = "";
+    String complemento01     = "";
+    String complemento02     = "";
+    String complemento03     = "";
+    String complemento04     = "";
+    String complemento05     = "";
+    String complemento06     = "";
+    String complemento07     = "";
+    String complemento08     = "";
+    String complemento09     = "";
+    String complemento10     = "";
+    String debitoCredito     = "";
+    String cpfCnpj           = "";
+    String historico         = "";
+    String debitoCreditoAux  = "";
+
+    String strValorDocumento = "";
+    String contLinhaExtrato  = "";
+
+    double valorDocumento    = 0.0;
+    double valorJuros        = 0.0;
+    double valorDesconto     = 0.0;
+    double valorMulta        = 0.0;
+    double valorPagamento    = 0.0;
+    // 11/12/2019|0000|13013|807 ESTORNO DE D?BITO|23.068|285,50 C|0,00 C |  -> 7
+	int idataMovimento	= 0;
+	int inomeOrigem		= 1;
+	int idocumento      = 2;
+	int ivalorDocumento	= 3;
+
+    if(jDados.has("CODEMPRESA"))   codEmpresa   	  = jDados.optString("CODEMPRESA");
+    if(jDados.has("NOMEARQUIVO"))  nomeArquivo  	  = jDados.optString("NOMEARQUIVO");
+    if(jDados.has("TIPOLANCAMENTO"))  tipoLancamento  = jDados.optString("TIPOLANCAMENTO");
+    if(jDados.has("NOMEEMPRESA"))  nomeEmpresa		  = jDados.optString("NOMEEMPRESA");
+    if(jDados.has("TIPOPLANILHA"))  tipoPlanilha	  = jDados.optString("TIPOPLANILHA");
+	
+	boolean naoLeMais = false;
+
+    while (memFile.hasNextLine()) {
+        String line = memFile.nextLine();
+        line = StringUtil.removeSpecialCharsToUC(line);
+		// logger.logInfo("LINHAAAAAA " + line);
+		
+		ivalorDocumento = memFile.getFieldsSize()-2;
+		inomeOrigem = memFile.getFieldsSize()-3;
+		
+            try {
+
+				try{
+					dataMovimento = getCampoDate(memFile.getStringFieldRemoveEspCharsUpper(idataMovimento));
+				}catch(Exception e){
+					logger.logInfo("ERRO AO CAPTURAR DATA");
+				}
+
+				if(dataMovimento.equals("")) continue;
+
+				try{
+					valorDocumento = Math.abs(memFile.getDoubleField(ivalorDocumento));
+				}catch(Exception e){
+					valorDocumento = 0;
+					logger.logInfo("ERRO AO CAPTURAR VALOR");
+				}
+
+				if(valorDocumento == 0) continue;
+
+				nomeOrigem = memFile.getStringFieldRemoveEspCharsUpper(1);
+				documento = memFile.getStringFieldRemoveEspCharsUpper(idocumento);
+
+				debitoCredito = memFile.getStringFieldRemoveEspCharsUpper(ivalorDocumento).contains("-") ? "EXTRATO-DEBITO" : "EXTRATO-CREDITO";
+
+				// logger.logInfo("DOCUMENTO -> " + documento);
+				// logger.logInfo("NOME ORIGEM -> " + nomeOrigem);
+				// logger.logInfo("VALOR -> " + valorDocumento);
+				// logger.logInfo("DEB/CRED -> " + debitoCredito);
+				// logger.logInfo("DATA -> " + dataMovimento);
+				
+				extrato = new ExtratoModel();
+			
+				// logger.logInfo("CHEGOU = "+extrato.getChave());
+							
+				extrato.setCodEmpresa(codEmpresa);
+				// logger.logInfo("GET COD EMPRESA = "+extrato.getCodEmpresa());
+				extrato.setDataMovimento(dataMovimento);
+				// logger.logInfo("GET DATA EMPRESA = "+extrato.getDataMovimento());
+				extrato.setDocumento(documento);
+				// logger.logInfo("GET DOC EMPRESA = "+extrato.getDocumento());
+				extrato.setNomePortador(nomePortador);
+				// logger.logInfo("GET NP = "+extrato.getNomePortador());
+				extrato.setNomeOrigem(nomeOrigem);
+				// logger.logInfo("GET NOME ORIGEM = "+extrato.getNomeOrigem());
+				extrato.setLote(nomeArquivo.toUpperCase());
+				// logger.logInfo("GET LOTE = "+extrato.getLote());
+				extrato.setComplemento02(complemento02);
+				// logger.logInfo("GET CP02 = "+extrato.getComplemento02());
+				extrato.setValorDocumento(valorDocumento);
+				// logger.logInfo("GET VALOR = "+extrato.getValorDocumento());
+				extrato.setDebitoCredito(debitoCredito);
+				// logger.logInfo("GET DC = "+extrato.getDebitoCredito());
+				extrato.setTipoLancamento(tipoLancamento);
+				// logger.logInfo("GET TL = "+extrato.getTipoLancamento());
+				extrato.setChave(memFile.getCurrentIndex());//ContLinhaExtrato
+				// logger.logDebug("GET CHAVE = "+extrato.getChave());
+				
+				try{
+					jdbcExtrato.insereIOExtrato(extrato, dbIOCont, logger);				
+				}catch(Exception e){
+					logger.logError("Erro extrato abc" + e.getMessage());
+				}
+				
+				
+            } catch (Exception ex) {
+				logger.logInfo("ERRO AO TENTAR LER BRADESCO 3");
+            }
+        
     }
     return true;
 }

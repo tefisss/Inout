@@ -6575,7 +6575,406 @@ public void GeraArquivoContmatic2(JSONObject jDadosLote, InoutLogger logger) thr
     }
 }
 
+public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) throws Exception {
+    // Conectar na Base de Dados IO_CONTABIL.
+    DataBase dbIOCont = null;
 
+    String rn = "\r\n";
+
+    String nomeContabilidade = "";
+    String loteMovimento	= "";
+    String codEmpresa		= "";
+    String tipoMovimento	= "";
+    String dataMovimento	= "";
+    String contaDebito		= "";
+    String contaCredito		= "";
+    String classifica		= "";
+    String classificacao	= "";
+    String valorLiquidacao	= "";
+    String documento		= "";
+    String nomeOrigem		= "";
+    String cpfCnpj			= "";
+    String centroCusto		= "";
+    String valorJuros		= "";
+    String valorMulta		= "";
+    String valorDesconto	= "";
+    String historico		= "";
+    String naturezaContabil	= "";
+    String tipoLancamento	= "";
+    String nomeEmpresa		= "";
+    String ERP				= "";
+	HashMap mapaPlano		= new HashMap();
+
+    Date dtAgora			= new Date();
+
+    String contaCreditoPai	= "";
+    String contaDebitoPai	= "";
+
+    StringBuilder txt		= new StringBuilder();
+    StringBuilder sForce	= new StringBuilder();
+    StringBuilder ResumoTxt	= new StringBuilder();
+
+	JSONArray toCloud		= new JSONArray();	//#20210126	
+	//LancamentosApi apiWeb	= new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);	//#20210126 
+	LancamentosApi apiWeb	= new LancamentosApi();	//#20210126 
+	String loteId = "";
+	JSONObject objetoLancamento = new JSONObject();
+	JSONArray  lancamentosA     = new JSONArray();
+
+    try {
+        nomeContabilidade = jDadosLote.optString("NOMECONTABILIDADE");
+        codEmpresa = jDadosLote.optString("CODEMPRESA");
+        loteMovimento = jDadosLote.optString("LOTE");
+        nomeEmpresa = jDadosLote.optString("NOMEEMPRESA");
+
+        // Carrega as propriedades
+        SysProperties props = SysProperties.getInstance();
+        props.load("contabil/" + nomeContabilidade + "/contabil.properties");
+
+		JSONObject recAux = new JSONObject();	//#20210126
+		recAux.put("cnpjContabilidade",	props.get("CONTABILIDADE_CNPJ"));
+		recAux.put("cnpjEmpresa",		props.get(nomeEmpresa.toUpperCase()+"_CNPJ_EMPRESA"));
+		recAux.put("erpContabil",		props.get("ERP_CONTABILIDADE"));
+		recAux.put("lote",				loteMovimento);
+		recAux.put("codigoErp",			codEmpresa);
+		
+        ERP = props.get("ERP_CONTABILIDADE");
+        String versaoPlataforma = props.get("VERSAO_PLATAFORMA");
+
+        // Conectar na Base de Dados IO_CONTABIL.
+        if (dbIOCont == null) {
+            dbIOCont = connectIOContabil(props, logger);
+        }
+        String emailResponsavel = props.get(nomeEmpresa.toUpperCase() + "_EMAIL_RESPONSAVEL");
+        String emailCanal = props.get("EMAIL_CANAL");
+
+        int contador  = 0;
+        classifica = "";
+
+        try {
+            JSONArray records = findMovimentoPorEmpresa_Lote(dbIOCont, codEmpresa, loteMovimento);
+            ResumoTxt = new StringBuilder();
+            ResumoTxt.append("Data;CONTA DEBITO;DESCRICAO NO PLANO DE CONTAS;CONTA CREDITO;DESCRICAO NO PLANO DE CONTAS;VALOR;CODIGO HISTORICO;HISTORICO;CLIENTE/FORNECEDOR");
+            ResumoTxt.append(rn);
+
+            int totalRegistros = 0;
+            String anoMovimento = "";
+
+            for (int t=0; t<records.length(); t++) {
+                JSONObject recMov = records.optJSONObject(t);
+
+				if (!loteMovimento.contains("OTTIMIZZA") || loteMovimento.contains("OTTIMIZZAAUTOMACAO")) {	//#20210126
+					////toCloud.put(createItemsToCloud(recMov, recAux));
+					////toCloud = sendToCloud(toCloud, recAux, t, apiWeb, logger);
+				}
+				
+				tipoMovimento = recMov.optString("TIPOMOVIMENTO");
+                dataMovimento = recMov.optString("DATAMOVIMENTO");
+                contaDebito = recMov.optString("CONTADEBITO");
+                contaCredito = recMov.optString("CONTACREDITO");
+                valorLiquidacao = recMov.optString("VALORLIQUIDACAO");
+                cpfCnpj = recMov.optString("CPFCNPJ");
+                documento = recMov.optString("DOCUMENTO");
+                nomeOrigem = recMov.optString("NOMEORIGEM");
+                centroCusto = recMov.optString("CENTROCUSTO");
+                valorJuros = recMov.optString("VALORJUROS");
+                valorMulta = recMov.optString("VALORMULTA");
+                valorDesconto = recMov.optString("VALORDESCONTO");
+                historico = recMov.optString("HISTORICO");
+                naturezaContabil = recMov.optString("NATUREZACONTABIL");
+                tipoLancamento = recMov.optString("TIPOLANCAMENTO");
+                classificacao = recMov.optString("CLASSIFICACAO");
+
+                if (contaDebito.contains("INVERTE") || contaCredito.contains("INVERTE")) {
+                    String contaInvertida   = contaDebito.replaceAll("INVERTE","");
+                    contaDebito             = contaCredito.replaceAll("INVERTE","");
+                    contaCredito            = contaInvertida.replaceAll("INVERTE","");
+                }
+				
+				if (loteMovimento.toUpperCase().contains("_ID")) {
+				    // loteId = cutString(loteMovimento.toUpperCase(), "_ID", "_");
+					loteId = cutString(loteMovimento.toUpperCase(), loteMovimento.toUpperCase().lastIndexOf("_ID")+3, "_");
+				}
+				
+				
+				// cria o objeto padrao para envio dos lancamentos
+				if (!objetoLancamento.has("loteId") && !loteId.equals("")) {
+				
+					apiWeb	= new LancamentosApi(USER_OAUTH, PWD_OAUTH, SERVER_OAUTH, logger);	//#20210126 
+				
+					objetoLancamento.put("loteId", loteId);
+					objetoLancamento.put("parceiro", "CONTMATIC");
+					objetoLancamento.put("cnpjContabilidade", props.get("CONTABILIDADE_CNPJ"));
+					objetoLancamento.put("cnpjEmpresa", props.get(nomeEmpresa.toUpperCase()+"_CNPJ_EMPRESA"));
+					objetoLancamento.put("nomeArquivo", loteMovimento + ".csv");
+				}
+
+                for (int xy=0;xy<20;xy++) {historico       = historico.replaceAll("  "," ");}
+                contaDebito  = contaDebito.replaceAll("\\.","");
+                contaCredito = contaCredito.replaceAll("\\.","");
+                String dataMovimentoOriginal = dataMovimento;
+                if (dataMovimento.contains("/")) anoMovimento = dataMovimento.substring(dataMovimento.lastIndexOf("/")+3).trim();
+
+                if (!ERP.equals("")) dataMovimento = validaDataMovimento(dataMovimento, ERP, nomeContabilidade);        // <-----<
+
+                String contaDebitoOriginal = contaDebito;
+                String contaCreditoOriginal = contaCredito;
+
+                historico = historico.replaceAll(",","\\.").replaceAll(";","");
+				
+				String codigoCentroPort = "";
+                if (historico.contains("CENTROPORT:")) {
+                    codigoCentroPort = historico.substring(historico.indexOf("CENTROPORT:")+11).trim();
+                    historico       = historico.substring(0,historico.indexOf("CENTROPORT:")).trim();
+                }
+				
+                String codigoHistorico = "";
+                if (historico.contains("CodigoHistorico:")) {
+                    codigoHistorico = historico.substring(historico.indexOf("CodigoHistorico:")+16).trim();
+                    historico       = historico.substring(0,historico.indexOf("CodigoHistorico:")).trim();
+                }
+				
+				if (historico.contains("INVERTECONTA")) {
+					String contaInvertida = contaDebito;
+					contaDebito = contaCredito;
+					contaCredito = contaInvertida;
+					historico = historico.replaceAll("INVERTECONTA", "");
+				}
+
+                if (historico.endsWith("-")) historico = historico.substring(0,historico.lastIndexOf("-")).trim();
+                if (historico.endsWith("|")) historico = historico.substring(0,historico.lastIndexOf("|")).trim();
+                if(historico.startsWith("-") || historico.startsWith("|")) historico = historico.substring(1).trim();
+                if(historico.contains("- -")) historico = historico.replaceAll("- -","-").trim();
+                if(historico.contains("-.")) historico = historico.replaceAll("-\\.","\\.").trim();
+                if(historico.contains("..")) historico = historico.replaceAll("\\.\\.","\\.").trim();
+
+                if(contaDebito.contains("IGNOR"))  continue;
+                if(contaCredito.contains("IGNOR")) continue;
+
+                classificacao   = classificacao.substring(0,16).trim();
+
+                contaCredito = StringUtil.leftPad(contaCredito, 7, "0");
+                contaDebito  = StringUtil.leftPad(contaDebito, 7, "0");
+                if (!classifica.equals(classificacao)) {
+                    contador++;
+                    contaCreditoPai = StringUtil.leftPad(contaCredito, 7, "0");
+                    contaDebitoPai  = StringUtil.leftPad(contaDebito, 7, "0");
+
+					if (classificacao.startsWith("V") && Double.parseDouble(valorDesconto) > 0 && (Double.parseDouble(valorJuros) > 0 || Double.parseDouble(valorMulta) > 0)) {
+						double valorTotalMultipla = 0;
+						
+						if (tipoLancamento.equals("PAGAR")) {
+							if(naturezaContabil.equals("C")) valorTotalMultipla = Double.parseDouble(valorLiquidacao) + Double.parseDouble(valorDesconto);
+							else valorTotalMultipla = Double.parseDouble(valorLiquidacao) + Double.parseDouble(valorJuros) + Double.parseDouble(valorMulta);
+						}
+						if (tipoLancamento.equals("RECEBER")){
+							if(naturezaContabil.equals("D")) valorTotalMultipla = Double.parseDouble(valorLiquidacao) + Double.parseDouble(valorDesconto);
+							else valorTotalMultipla = Double.parseDouble(valorLiquidacao) + Double.parseDouble(valorJuros) + Double.parseDouble(valorMulta);
+						}						
+						
+						String valorMultipla = Double.toString(valorTotalMultipla);
+						txt.append(StringUtil.leftPad(String.valueOf(contador), 7, "0"));
+						txt.append(StringUtil.leftPad(dataMovimento, 5, ""));
+						txt.append(StringUtil.rightPad("M      ", 7, ""));
+						txt.append(StringUtil.rightPad("M      ", 7, ""));
+						txt.append(StringUtil.leftPad(valorMultipla, 17, "0"));
+						txt.append(rn);
+                    }
+					if (tipoLancamento.equals("PAGAR")) {	 // conceito de multiplos nao considera  PAGAR / RECEBER apenas se o multiplo e de 'C' ou 'D'
+                        if (classificacao.startsWith("C")) contaDebito   = "M      ";
+                        if (classificacao.startsWith("D")) contaCredito  = "M      ";
+                        // if (classificacao.startsWith("V")) contaDebito   = "M      ";
+                    }
+                    if (tipoLancamento.equals("RECEBER")) {	 // conceito de multiplos nao considera  PAGAR / RECEBER apenas se o multiplo e de 'C' ou 'D'
+                        if (classificacao.startsWith("C")) contaDebito   = "M      ";
+                        if (classificacao.startsWith("D")) contaCredito  = "M      ";
+                    }
+                    classifica = classificacao;
+
+                } else if (!contaCredito.equals("0000000") && !contaDebito.equals("0000000"))  contador++;
+				
+				if(classificacao.startsWith("V") && Double.parseDouble(valorDesconto) > 0 && (Double.parseDouble(valorJuros) > 0 || Double.parseDouble(valorMulta) > 0)){
+					if(contaCredito.equals("0000000")) contaCredito = "T      ";
+					if(contaDebito.equals("0000000"))  contaDebito  = "T      ";
+				}
+
+                if (contaDebito.equals("") || contaDebito.equals("0000000"))   contaDebito  = contaDebitoPai;
+                if (contaCredito.equals("") || contaCredito.equals("0000000")) contaCredito = contaCreditoPai;
+
+                String valorFinal = valorLiquidacao;
+
+                if (tipoMovimento.equals("CTBJUR")) valorFinal = valorJuros;
+                if (tipoMovimento.equals("CTBDES")) valorFinal = valorDesconto;
+                if (tipoMovimento.equals("CTBMUL")) valorFinal = valorMulta;
+
+                String participante = "";
+
+                txt.append(StringUtil.leftPad(String.valueOf(contador), 7, "0"));
+                txt.append(StringUtil.leftPad(dataMovimento, 5, ""));
+                txt.append(StringUtil.rightPad(contaDebito, 7, ""));
+                txt.append(StringUtil.rightPad(contaCredito, 7, ""));
+                txt.append(StringUtil.leftPad(valorFinal, 17, "0"));
+                txt.append(StringUtil.leftPad(codigoHistorico, 5, "0"));
+                txt.append(StringUtil.rightPad(historico, 200, " "));
+                if (tipoLancamento.equals("PAGAR")) {
+                        txt.append(StringUtil.rightPad(centroCusto, 41, " "));
+                        txt.append(StringUtil.rightPad(codigoCentroPort, 41, " "));
+                    }
+                if (tipoLancamento.equals("RECEBER")) {
+                        txt.append(StringUtil.rightPad(codigoCentroPort, 41, " "));
+                        txt.append(StringUtil.rightPad(centroCusto, 41, " "));
+                    }
+                txt.append(rn);
+
+                String descricaoDebito = "";
+                String descricaoCredito = "";
+
+               if (!tipoMovimento.contains("CC")) {
+				
+					ttPlanoConta ttP  = (ttPlanoConta)mapaPlano.get(contaDebitoOriginal);
+					if (ttP == null) {					
+						ttP  = new ttPlanoConta(); 
+						ttP.descricaoPlano = "";
+ 
+						JSONObject descricaoPlano = dbIOCont.sql("SELECT DESCRICAOPLANO FROM IO_PLANOCONTA WHERE CODEMPRESA = ? AND CONTACONTABIL = ?")
+						.fields("DESCRICAOPLANO")
+						.param(codEmpresa)
+						.param(contaDebitoOriginal)
+						.queryUnique();
+						if (descricaoPlano != null && descricaoPlano.has("DESCRICAOPLANO")) {
+							descricaoDebito = descricaoPlano.optString("DESCRICAOPLANO");
+							ttP.descricaoPlano = descricaoDebito;
+						}
+						ttP.contaContabil     = contaDebitoOriginal;
+						mapaPlano.put(contaDebitoOriginal,ttP);
+
+					}
+					descricaoDebito = ttP.descricaoPlano;
+
+					ttP  = (ttPlanoConta)mapaPlano.get(contaCreditoOriginal);
+					if (ttP == null) {					
+						ttP  = new ttPlanoConta(); 
+						ttP.descricaoPlano = "";
+ 
+						JSONObject descricaoPlano2 = dbIOCont.sql("SELECT DESCRICAOPLANO FROM IO_PLANOCONTA WHERE CODEMPRESA = ? AND CONTACONTABIL = ?")
+						.fields("DESCRICAOPLANO")
+						.param(codEmpresa)
+						.param(contaCreditoOriginal)
+						.queryUnique();
+						if (descricaoPlano2 != null && descricaoPlano2.has("DESCRICAOPLANO")) {
+							descricaoCredito = descricaoPlano2.optString("DESCRICAOPLANO");
+							ttP.descricaoPlano = descricaoCredito;
+						}
+						ttP.contaContabil     = contaCreditoOriginal;
+						mapaPlano.put(contaCreditoOriginal,ttP);
+					}
+					descricaoCredito = ttP.descricaoPlano;
+
+                    ResumoTxt.append(dataMovimentoOriginal + ";" + contaDebito + ";" + descricaoDebito + ";" + contaCredito + ";" + descricaoCredito + ";" + valorFinal + ";" + codigoHistorico + ";" + historico + ";" + nomeOrigem);
+                    ResumoTxt.append(rn);
+                }
+				
+				// prepara array para envio ao 4.0
+				if (!loteId.equals("")) {
+					JSONObject lancamentoO = new JSONObject();
+					lancamentoO.put("dataMovimento", dataMovimento);
+					lancamentoO.put("contaDebito", contaDebito);
+					lancamentoO.put("contaCredito", contaCredito);
+					lancamentoO.put("d_c", "D");
+					
+					if (tipoLancamento.equals("RECEBER")) lancamentoO.put("d_c", "C");
+						
+					lancamentoO.put("historico", historico.trim());
+					lancamentoO.put("codHistorico", codigoHistorico);
+					lancamentoO.put("valorLancamento", valorLiquidacao);
+
+
+					
+					lancamentoO.put("tipoMovimento", cutString(tipoLancamento, 0, 3));
+					lancamentosA.put(lancamentoO);
+				}
+
+                if(!tipoMovimento.contains("PORT")) totalRegistros++;
+            } //For arrayMov
+
+			if (!loteMovimento.contains("OTTIMIZZA") || loteMovimento.contains("OTTIMIZZAAUTOMACAO")) {	//#20210126
+				////toCloud = sendToCloud(toCloud, recAux, -1, apiWeb, logger);
+			}
+
+            // Gravacao do Arquivo TXT
+            if(totalRegistros > 0){
+
+                String dts = DateUtil.dateToString(dtAgora, "yyyyMMdd_HHmmss");
+                String filename = "";
+				// if(nomeContabilidade.toUpperCase().contains("CORPORECONTABILIDADE")){
+					filename = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/APELIDO_DO_SISTEMA_20" + anoMovimento + "_Lctos_" + codEmpresa + "_" + loteMovimento + ".txt";
+				// } else{
+					// filename = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/" + codEmpresa + "_" + loteMovimento + ".M" + anoMovimento;					
+				// }
+				FileWriter writer = new FileWriter(filename);
+                writer.writeNewFile(txt.toString());
+
+                String filenameRESUMO = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/" + "RESUMO_LOTE_" + loteMovimento + ".csv";
+
+                FileWriter writerResumo = new FileWriter(filenameRESUMO);
+                writerResumo.writeNewFile(ResumoTxt.toString());
+                enviaEmailLoteLiberadoComAnexo(codEmpresa, nomeEmpresa, loteMovimento, nomeContabilidade, emailResponsavel, filenameRESUMO, logger);
+
+                //*******************************************************
+                //************* ATUALIZA SALESFORCE *********************
+                //*******************************************************
+                if(!loteMovimento.toUpperCase().contains("OTTIMIZZA") &&
+                   !loteMovimento.toUpperCase().contains("ROTEIRO") &&
+                   !loteMovimento.toUpperCase().contains("TESTE")){
+
+                    sForce.append(nomeEmpresa+";"+totalRegistros+";"+codEmpresa + "_" + loteMovimento+";"+nomeContabilidade);
+                    sForce.append(rn);
+
+                    String fileSforce  = RouteEngine.INOUT_HOME + "/Contabil/SForce/" + loteMovimento + ".txt";
+
+                    FileWriter writerSforce = new FileWriter(fileSforce);
+                    writerSforce.writeNewFile(sForce.toString());
+                }
+				
+				try {
+					if (!loteId.equals("")) {
+						objetoLancamento.put("lancamentos", lancamentosA);
+						JSONArray toCloudArray = sendToMeuIntegrador(objetoLancamento, apiWeb, logger);
+					}
+				} catch (Exception eDel) {
+					logger.logError("EndpointB: ERROR sendToMeuIntegrador", eDel);
+				}
+            }
+
+            try {
+                if (dbIOCont == null) {
+                    dbIOCont = connectIOContabil(props, logger);
+                }
+
+                dbIOCont.delete("IO_MOVIMENTO")
+                .where("LOTE=?")
+                .param(loteMovimento)
+                .execute();
+            } catch (Exception eDel) {
+                logger.logError("EndpointB: ERROR DELETE IO_MOVIMENTO", eDel);
+            }
+
+            txt = new StringBuilder();
+
+        } catch (Exception eMov) {
+            logger.logError("EndpointB: ERROR SELECT IO_MOVIMENTO", eMov);
+        }
+
+    } catch (Exception e) {
+        logger.logError(e);
+    } finally {
+        if (dbIOCont != null) {
+            try {
+                dbIOCont.closeConnection();
+            } catch (Exception eedbIOCont) {}
+        }
+    }
+}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Implementa o metodo RUN dos ENDPOINTs B da rota GeraArquivoParaImportacao (@ENGENHO).       //
