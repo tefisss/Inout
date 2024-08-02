@@ -3658,6 +3658,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	////// Extrato - SICOOB PDF PADRAO 1, 2, 3 E 4 ///////////////////////////////////////////////
 	// //logger.logInfoInfo("RUN LN = "+line);
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Sicoob_PDF")){ 
+		// //logger.logInfoInfo("NARQUIVO = "+nomeArquivo);
 		if (	(cabecalhoPlanilha.contains("SICOOB") /*&& cabecalhoPlanilha.contains("SALDO")*/ && cabecalhoPlanilha.contains("CONTA:") && cabecalhoPlanilha.contains("VALOR") &&
 				(cabecalhoPlanilha.contains("SISTEMA DE COOPERATIVAS DE CREDITO DO BRASIL") || cabecalhoPlanilha.contains("SISTEMA DE COOPERATIVAS DE CRADITO DO BRASIL") || cabecalhoPlanilha.contains("SERVICOS FINANCEIROS DO SICOOB") ||
 				cabecalhoPlanilha.contains("SISTEMA|DE|COOPERATIVAS|DE|CREDITO|DO|BRASIL") || cabecalhoPlanilha.contains("SERVICOS|FINANCEIROS|DO|SICOOB")))
@@ -3673,7 +3674,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 				nomePortador2 = "SICOOB-PDF - "+cutString(cabecalhoPlanilha, "CORRENTE:", "EXTRATO").trim();
 				// logger.logInfo("1 NP2 = "+nomePortador2);
 			} else{
-				nomePortador2 = "SICOOB-PDF - " + cutString(arquivoCompleto, "CONTA:", arquivoCompleto.indexOf("CONTA:")+17);
+				nomePortador2 = "SICOOB-PDF - " + cutString(cabecalhoPlanilha, "CONTA:", cabecalhoPlanilha.indexOf("CONTA:")+17);
 				// logger.logInfo("2 NP2 = "+nomePortador2);
 			}
 			if (nomePortador2.contains("EXTRATO C") && cabecalhoPlanilha.contains("HORA:") && cabecalhoPlanilha.contains("DATA")){
@@ -3952,6 +3953,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	}
 
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("FrancesinhaItau_PDF")) {
+		logger.logInfo("Antees readFranc");
 		if(variaveis.has("read") && variaveis.optString("read").equals("readExtratoItauPdfFrancesinha5")){
 			logger.logInfo("entrouread");
 			
@@ -4020,6 +4022,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		//2311-022659 - ITAU FRANCESINHA 3
 		if(cabecalhoPlanilha.contains("BANCO ITAU S.A.") && cabecalhoPlanilha.contains("MOVIMENTACAO") && cabecalhoPlanilha.contains("TITULOS")
 			&& cabecalhoPlanilha.contains("AGENCIA") && cabecalhoPlanilha.contains("CONTA") && cabecalhoPlanilha.contains("CARTEIRA")){
+				logger.logInfo("ENTROU ITAUFRANC3");
 
 			if(memFile.getStringFieldRemoveEspCharsUpper(2).contains("CONTA") && memFile.getStringFieldRemoveEspCharsUpper(2).contains("AGENCIA")){
 				nomePortador2 = memFile.getStringFieldRemoveEspCharsUpper(3);
@@ -4562,7 +4565,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 			}
 			jDados.put("NOMEEMPRESA",    nomeEmpresa);
 			jDados.put("NOMEARQUIVO",    nomeArquivo);
-			jDados.put("TIPOPLANILHA",   "EXTRATO-MODOBANK-PDF");
+			jDados.put("TIPOPLANILHA",    "EXTRATO-MODOBANK");
 			readExtratoECartao("readExtratoModoBankPDF", memFile, nomePortador, jDados, dbIOCont, logger);
 			variaveis.put("tipoRetorno", "break");
 			return variaveis.toString();
@@ -4805,6 +4808,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// FATURA CARTAO CREDITO ITAU PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_Itau_PDF")){
+		logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
 		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("FECHADA")){
 			String complemento09 = memFile.getStringFieldRemoveEspCharsUpper(1);
 			logger.logInfo("CP09 = "+complemento09);
@@ -5188,7 +5192,9 @@ if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Civia_PDF") ) {
 	////// EXTRATO - BMG PDF //////////////////////////////////////////////////////////////////
 	if (roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_BMG_PDF")) {
 		
-		if (arquivoCompleto.contains("DISPONIVEL	+	VINCULADO	+	BLOQUEADO") && arquivoCompleto.contains("SALDO	DISPONIVEL	(EM") && arquivoCompleto.contains("SALDO	TOTAL	(EM")){
+		if ((arquivoCompleto.contains("DISPONIVEL	+	VINCULADO	+	BLOQUEADO") || arquivoCompleto.contains("DISPONIVEL + VINCULADO + BLOQUEADO")) && 
+			(arquivoCompleto.contains("SALDO	DISPONIVEL	(EM") || arquivoCompleto.contains("SALDO DISPONIVEL (EM")) && 
+			(arquivoCompleto.contains("SALDO	TOTAL	(EM") || arquivoCompleto.contains("SALDO TOTAL (EM"))){
 			logger.logInfo("Entra na validacao do BMG Pdf");
 			JSONObject jDados = new JSONObject();
 			jDados.put("CODEMPRESA", codEmpresa);

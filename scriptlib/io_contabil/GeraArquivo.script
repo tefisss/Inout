@@ -462,8 +462,13 @@ public void GeraArquivoPadrao(Object dataIn, InoutLogger logger) throws Exceptio
 				}
                 if (erpContabilidade.contains("CONTMATIC")) {
                     if (lcdpr.equals("TRUE")) GeraArquivoContmatic2(jDadosLote, logger); 
-                    else GeraArquivoContmatic(jDadosLote, logger);
-                    
+                    else{
+                        if(nomeContabilidade.contains("CONTABILARAPUA") || nomeContabilidade.contains("EMPTESTESUSTENTACAOQUATRO")){
+                            GeraArquivoContmaticExcel(jDadosLote, logger);
+                        } else{ 
+                            GeraArquivoContmatic(jDadosLote, logger);
+                        }
+                    }
                     continue;
                 }
 				
@@ -6575,7 +6580,12 @@ public void GeraArquivoContmatic2(JSONObject jDadosLote, InoutLogger logger) thr
     }
 }
 
-public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) throws Exception {
+//######################################################################################################################
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Implementa o metodo RUN dos ENDPOINTs B da rota GeraArquivoParaImportacao (@Contmatic).       //
+///////////////////////////////////////////////////////////////////////////////////////////////////
+public void GeraArquivoContmaticExcel(JSONObject jDadosLote, InoutLogger logger) throws Exception {
     // Conectar na Base de Dados IO_CONTABIL.
     DataBase dbIOCont = null;
 
@@ -6648,14 +6658,15 @@ public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) thr
         String emailResponsavel = props.get(nomeEmpresa.toUpperCase() + "_EMAIL_RESPONSAVEL");
         String emailCanal = props.get("EMAIL_CANAL");
 
+        ResumoTxt = new StringBuilder();
+        ResumoTxt.append("Data;CONTA DEBITO;DESCRICAO NO PLANO DE CONTAS;CONTA CREDITO;DESCRICAO NO PLANO DE CONTAS;VALOR;CODIGO HISTORICO;HISTORICO;CLIENTE/FORNECEDOR");
+        ResumoTxt.append(rn);
+
         int contador  = 0;
         classifica = "";
 
         try {
             JSONArray records = findMovimentoPorEmpresa_Lote(dbIOCont, codEmpresa, loteMovimento);
-            ResumoTxt = new StringBuilder();
-            ResumoTxt.append("Data;CONTA DEBITO;DESCRICAO NO PLANO DE CONTAS;CONTA CREDITO;DESCRICAO NO PLANO DE CONTAS;VALOR;CODIGO HISTORICO;HISTORICO;CLIENTE/FORNECEDOR");
-            ResumoTxt.append(rn);
 
             int totalRegistros = 0;
             String anoMovimento = "";
@@ -6663,6 +6674,13 @@ public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) thr
             for (int t=0; t<records.length(); t++) {
                 JSONObject recMov = records.optJSONObject(t);
 
+
+				if (!loteMovimento.contains("OTTIMIZZA") || loteMovimento.contains("OTTIMIZZAAUTOMACAO")) {	//#20210126
+					////toCloud.put(createItemsToCloud(recMov, recAux));
+					////toCloud = sendToCloud(toCloud, recAux, t, apiWeb, logger);
+				}
+				
+				
 				if (!loteMovimento.contains("OTTIMIZZA") || loteMovimento.contains("OTTIMIZZAAUTOMACAO")) {	//#20210126
 					////toCloud.put(createItemsToCloud(recMov, recAux));
 					////toCloud = sendToCloud(toCloud, recAux, t, apiWeb, logger);
@@ -6826,11 +6844,15 @@ public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) thr
                     }
                 txt.append(rn);
 
-                String descricaoDebito = "";
-                String descricaoCredito = "";
-
-               if (!tipoMovimento.contains("CC")) {
-				
+                
+                //pra gerar resumo
+                contaDebito	 = cutString(contaDebito, 0, ";");
+                contaCredito = cutString(contaCredito, 0, ";");
+                
+                if (!tipoMovimento.contains("CC")) {
+                    String descricaoCredito = "";
+                    String descricaoDebito = "";
+                    
 					ttPlanoConta ttP  = (ttPlanoConta)mapaPlano.get(contaDebitoOriginal);
 					if (ttP == null) {					
 						ttP  = new ttPlanoConta(); 
@@ -6901,16 +6923,12 @@ public void GeraArquivoContmatic3(JSONObject jDadosLote, InoutLogger logger) thr
 				////toCloud = sendToCloud(toCloud, recAux, -1, apiWeb, logger);
 			}
 
-            // Gravacao do Arquivo TXT
+            // Gravacao do Arquivo CSV
             if(totalRegistros > 0){
 
                 String dts = DateUtil.dateToString(dtAgora, "yyyyMMdd_HHmmss");
-                String filename = "";
-				// if(nomeContabilidade.toUpperCase().contains("CORPORECONTABILIDADE")){
-					filename = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/APELIDO_DO_SISTEMA_20" + anoMovimento + "_Lctos_" + codEmpresa + "_" + loteMovimento + ".txt";
-				// } else{
-					// filename = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/" + codEmpresa + "_" + loteMovimento + ".M" + anoMovimento;					
-				// }
+				String filename = RouteEngine.INOUT_HOME + "/Contabil/" + nomeContabilidade + "/Arquivos/APELIDO_DO_SISTEMA_20" + anoMovimento + "_Lctos_" + codEmpresa + "_" + loteMovimento + ".csv";
+
 				FileWriter writer = new FileWriter(filename);
                 writer.writeNewFile(txt.toString());
 

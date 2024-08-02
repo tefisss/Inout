@@ -1,259 +1,259 @@
 public class TemplateUtils {
 	public java.lang.reflect.Method[] ordenaGetContaMovimento(Class<?> classe) {
-        // Usando uma lista para armazenar métodos que correspondem ao critério
-        java.util.List movimentoMethodsList = new java.util.ArrayList();
+		// Usando uma lista para armazenar métodos que correspondem ao critério
+		java.util.List movimentoMethodsList = new java.util.ArrayList();
 
-        try {
-            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+		try {
+			java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
 
-            for (java.lang.reflect.Method method : methods) {
-                String methodName = method.getName().toUpperCase();
-                if (methodName.contains("GETCONTAMOVIMENTO")) {
-                    movimentoMethodsList.add(method);
-                    // logger.logInfo("method dps: " + methodName);
-                }
-            }
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName().toUpperCase();
+				if (methodName.contains("GETCONTAMOVIMENTO")) {
+					movimentoMethodsList.add(method);
+					// logger.logInfo("method dps: " + methodName);
+				}
+			}
 
-            // Ordenando os métodos de maneira crescente
-            java.util.Collections.sort(movimentoMethodsList, new java.util.Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
-                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
-                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
-                    return m1.getName().compareTo(m2.getName());
-                }
-            });
+			// Ordenando os métodos de maneira crescente
+			java.util.Collections.sort(movimentoMethodsList, new java.util.Comparator() {
+				@Override
+				public int compare(Object o1, Object o2) {
+					java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+					java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+					// logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+					return m1.getName().compareTo(m2.getName());
+				}
+			});
 
-            StringBuilder contaMovimentoMethodsLog = new StringBuilder("Movimento methods: ");
-            for (Object method : movimentoMethodsList) {
-                contaMovimentoMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
-            }
-            // logger.logInfo("CTMOV ordenada: " + contaMovimentoMethodsLog.toString());
+			StringBuilder contaMovimentoMethodsLog = new StringBuilder("Movimento methods: ");
+			for (Object method : movimentoMethodsList) {
+				contaMovimentoMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+			}
+			//logger.logInfo("CTMOV ordenada: " + contaMovimentoMethodsLog.toString());
 
-            // Convertendo a lista de volta para um array
-            return (java.lang.reflect.Method[]) movimentoMethodsList.toArray(new java.lang.reflect.Method[0]);
+			// Convertendo a lista de volta para um array
+			return (java.lang.reflect.Method[]) movimentoMethodsList.toArray(new java.lang.reflect.Method[0]);
 
-        } catch (Exception e) {
-            logger.logError("Erro ao instanciar a classe: ", e);
-            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
-        }
-    }
-    //contaMovimento = templateUtils.invocaGetContaMovimento(templateUtils, contaMovimentoMethods, contaMovimento, ttMov, histobj);
-    public String invocaGetContaMovimento(Object scInstance, java.lang.reflect.Method[] movimentoMethods, String contaMovimento, ttMovimentoPadrao ttMov, JSONObject histobj) {
-        Class<?> sc = scInstance.getClass();
+		} catch (Exception e) {
+			logger.logError("Erro ao instanciar a classe: ", e);
+			return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+		}
+	}
+	//contaMovimento = templateUtils.invocaGetContaMovimento(templateUtils, contaMovimentoMethods, contaMovimento, ttMov, histobj);
+	public String invocaGetContaMovimento(Object scInstance, java.lang.reflect.Method[] movimentoMethods, String contaMovimento, ttMovimentoPadrao ttMov, JSONObject histobj) {
+		Class<?> sc = scInstance.getClass();
 
-        for (java.lang.reflect.Method movimentoMethod : movimentoMethods) {
-            if (movimentoMethod == null) continue;
-            // logger.logInfo("Invoking method: " + movimentoMethod.getName());
-            try {
-                Method method = sc.getDeclaredMethod(movimentoMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
-                try {
-                    // Obtemos o método diretamente do array de métodos
-                    // Invocamos o método
-                    contaMovimento = (String) method.invoke(scInstance, contaMovimento, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
-                    // logger.logInfo("conta: " + contaMovimento);
-                } catch (Exception e1) {
-                    logger.logError("ERRO INVOKING 1: ", e1);
-                }
-            }catch (Exception e2){
-                logger.logError("ERRO INVOKING 2: ", e2);
-            }
-        }
-        return contaMovimento;
-    }
+		for (java.lang.reflect.Method movimentoMethod : movimentoMethods) {
+			if (movimentoMethod == null) continue;
+			// logger.logInfo("Invoking method: " + movimentoMethod.getName());
+			try {
+				Method method = sc.getDeclaredMethod(movimentoMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
+				try {
+					// Obtemos o método diretamente do array de métodos
+					// Invocamos o método
+					contaMovimento = (String) method.invoke(scInstance, contaMovimento, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+					// logger.logInfo("conta: " + contaMovimento);
+				} catch (Exception e1) {
+					logger.logError("ERRO INVOKING 1: ", e1);
+				}
+			}catch (Exception e2){
+				logger.logError("ERRO INVOKING 2: ", e2);
+			}
+		}
+		return contaMovimento;
+	}
 
-    public java.lang.reflect.Method[] ordenaGetContaPortador(Class<?> classe) {
-        // Usando uma lista para armazenar métodos que correspondem ao critério
-        java.util.List portadorMethodsList = new java.util.ArrayList();
+	public java.lang.reflect.Method[] ordenaGetContaPortador(Class<?> classe) {
+		// Usando uma lista para armazenar métodos que correspondem ao critério
+		java.util.List portadorMethodsList = new java.util.ArrayList();
 
-        try {
-            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+		try {
+			java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
 
-            for (java.lang.reflect.Method method : methods) {
-                String methodName = method.getName().toUpperCase();
-                if (methodName.contains("GETCONTAPORTADOR")) {
-                    portadorMethodsList.add(method);
-                    // logger.logInfo("method dps: " + methodName);
-                }
-            }
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName().toUpperCase();
+				if (methodName.contains("GETCONTAPORTADOR")) {
+					portadorMethodsList.add(method);
+					// logger.logInfo("method dps: " + methodName);
+				}
+			}
 
-            // Ordenando os métodos de maneira crescente
-            java.util.Collections.sort(portadorMethodsList, new java.util.Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
-                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
-                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
-                    return m1.getName().compareTo(m2.getName());
-                }
-            });
+			// Ordenando os métodos de maneira crescente
+			java.util.Collections.sort(portadorMethodsList, new java.util.Comparator() {
+				@Override
+				public int compare(Object o1, Object o2) {
+					java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+					java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+					// logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+					return m1.getName().compareTo(m2.getName());
+				}
+			});
 
-            StringBuilder contaPortadorMethodsLog = new StringBuilder("portador methods: ");
-            for (Object method : portadorMethodsList) {
-                contaPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
-            }
-            // logger.logInfo("ctport ordenada: " + contaPortadorMethodsLog.toString());
+			StringBuilder contaPortadorMethodsLog = new StringBuilder("portador methods: ");
+			for (Object method : portadorMethodsList) {
+				contaPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+			}
+			//logger.logInfo("ctport ordenada: " + contaPortadorMethodsLog.toString());
 
-            // Convertendo a lista de volta para um array
-            return (java.lang.reflect.Method[]) portadorMethodsList.toArray(new java.lang.reflect.Method[0]);
+			// Convertendo a lista de volta para um array
+			return (java.lang.reflect.Method[]) portadorMethodsList.toArray(new java.lang.reflect.Method[0]);
 
-        } catch (Exception e) {
-            logger.logError("Erro ao instanciar a classe: ", e);
-            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
-        }
-    }
+		} catch (Exception e) {
+			logger.logError("Erro ao instanciar a classe: ", e);
+			return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+		}
+	}
 
-    public String invocaGetContaPortador(Object scInstance, java.lang.reflect.Method[] portadorMethods, String contaPortador, ttMovimentoPadrao ttMov, JSONObject histobj) {
-        Class<?> sc = scInstance.getClass();
+	public String invocaGetContaPortador(Object scInstance, java.lang.reflect.Method[] portadorMethods, String contaPortador, ttMovimentoPadrao ttMov, JSONObject histobj) {
+		Class<?> sc = scInstance.getClass();
 
-        for (java.lang.reflect.Method portadorMethod : portadorMethods) {
-            if (portadorMethod == null) continue;
-            // logger.logInfo("Invoking method: " + portadorMethod.getName());
-            try {
-                Method method = sc.getDeclaredMethod(portadorMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
-                try {
-                    // Obtemos o método diretamente do array de métodos
-                    // Invocamos o método
-                    contaPortador = (String) method.invoke(scInstance, contaPortador, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
-                    // logger.logInfo("contaPort: " + contaPortador);
-                } catch (Exception e1) {
-                    logger.logError("ERRO INVOKING 1: ", e1);
-                }
-            }catch (Exception e2){
-                logger.logError("ERRO INVOKING 2: ", e2);
-            }
-        }
-        return contaPortador;
-    }
+		for (java.lang.reflect.Method portadorMethod : portadorMethods) {
+			if (portadorMethod == null) continue;
+			//logger.logInfo("Invoking method: " + portadorMethod.getName());
+			try {
+				Method method = sc.getDeclaredMethod(portadorMethod.getName(), String.class, String.class, String.class, String.class, JSONObject.class);
+				try {
+					// Obtemos o método diretamente do array de métodos
+					// Invocamos o método
+					contaPortador = (String) method.invoke(scInstance, contaPortador, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+					// logger.logInfo("contaPort: " + contaPortador);
+				} catch (Exception e1) {
+					logger.logError("ERRO INVOKING 1: ", e1);
+				}
+			}catch (Exception e2){
+				logger.logError("ERRO INVOKING 2: ", e2);
+			}
+		}
+		return contaPortador;
+	}
 
-    public java.lang.reflect.Method[] ordenaGetHistoricoRegra(Class<?> classe) {
-        // Usando uma lista para armazenar métodos que correspondem ao critério
-        java.util.List historicoRegraMethodsList = new java.util.ArrayList();
+	public java.lang.reflect.Method[] ordenaGetHistoricoRegra(Class<?> classe) {
+		// Usando uma lista para armazenar métodos que correspondem ao critério
+		java.util.List historicoRegraMethodsList = new java.util.ArrayList();
 
-        try {
-            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+		try {
+			java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
 
-            for (java.lang.reflect.Method method : methods) {
-                String methodName = method.getName().toUpperCase();
-                if (methodName.contains("GETHISTORICOREGRA")) {
-                    historicoRegraMethodsList.add(method);
-                    // logger.logInfo("method dps: " + methodName);
-                }
-            }
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName().toUpperCase();
+				if (methodName.contains("GETHISTORICOREGRA")) {
+					historicoRegraMethodsList.add(method);
+					// logger.logInfo("method dps: " + methodName);
+				}
+			}
 
-            // Ordenando os métodos de maneira crescente
-            java.util.Collections.sort(historicoRegraMethodsList, new java.util.Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
-                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
-                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
-                    return m1.getName().compareTo(m2.getName());
-                }
-            });
+			// Ordenando os métodos de maneira crescente
+			java.util.Collections.sort(historicoRegraMethodsList, new java.util.Comparator() {
+				@Override
+				public int compare(Object o1, Object o2) {
+					java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+					java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+					// logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+					return m1.getName().compareTo(m2.getName());
+				}
+			});
 
-            StringBuilder historicoRegraMethodsLog = new StringBuilder("historicoRegra methods: ");
-            for (Object method : historicoRegraMethodsList) {
-                historicoRegraMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
-            }
-            // logger.logInfo("HISTREGRA ordenada: " + historicoRegraMethodsLog.toString());
+			StringBuilder historicoRegraMethodsLog = new StringBuilder("historicoRegra methods: ");
+			for (Object method : historicoRegraMethodsList) {
+				historicoRegraMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+			}
+			//logger.logInfo("HISTREGRA ordenada: " + historicoRegraMethodsLog.toString());
 
-            // Convertendo a lista de volta para um array
-            return (java.lang.reflect.Method[]) historicoRegraMethodsList.toArray(new java.lang.reflect.Method[0]);
+			// Convertendo a lista de volta para um array
+			return (java.lang.reflect.Method[]) historicoRegraMethodsList.toArray(new java.lang.reflect.Method[0]);
 
-        } catch (Exception e) {
-            logger.logError("Erro ao instanciar a classe: ", e);
-            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
-        }
-    }
+		} catch (Exception e) {
+			logger.logError("Erro ao instanciar a classe: ", e);
+			return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+		}
+	}
 
-    public String invocaGetHistoricoRegra(Object scInstance, java.lang.reflect.Method[] historicoRegraMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
-        Class<?> sc = scInstance.getClass();
+	public String invocaGetHistoricoRegra(Object scInstance, java.lang.reflect.Method[] historicoRegraMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
+		Class<?> sc = scInstance.getClass();
 
-        for (java.lang.reflect.Method historicoRegraMethod : historicoRegraMethods) {
-            if (historicoRegraMethod == null) continue;
-            logger.logDebug("Invoking method: " + historicoRegraMethod.getName());
-            try {
-                Method method = sc.getDeclaredMethod(historicoRegraMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
-                try {
-                    // Obtemos o método diretamente do array de métodos
-                    // Invocamos o método
-                    historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
-                    // logger.logInfo("historicoRegra: " + historico);
-                } catch (Exception e1) {
-                    logger.logError("ERRO INVOKING 1: ", e1);
-                }
-            }catch (Exception e2){
-                logger.logError("ERRO INVOKING 2: ", e2);
-            }
-        }
-        return historico;
-    }
+		for (java.lang.reflect.Method historicoRegraMethod : historicoRegraMethods) {
+			if (historicoRegraMethod == null) continue;
+			logger.logDebug("Invoking method: " + historicoRegraMethod.getName());
+			try {
+				Method method = sc.getDeclaredMethod(historicoRegraMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
+				try {
+					// Obtemos o método diretamente do array de métodos
+					// Invocamos o método
+					historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+					// logger.logInfo("historicoRegra: " + historico);
+				} catch (Exception e1) {
+					logger.logError("ERRO INVOKING 1: ", e1);
+				}
+			}catch (Exception e2){
+				logger.logError("ERRO INVOKING 2: ", e2);
+			}
+		}
+		return historico;
+	}
 
-    public java.lang.reflect.Method[] ordenaGetHistoricoPortador(Class<?> classe) {
-        // Usando uma lista para armazenar métodos que correspondem ao critério
-        java.util.List historicoPortadorMethodsList = new java.util.ArrayList();
+	public java.lang.reflect.Method[] ordenaGetHistoricoPortador(Class<?> classe) {
+		// Usando uma lista para armazenar métodos que correspondem ao critério
+		java.util.List historicoPortadorMethodsList = new java.util.ArrayList();
 
-        try {
-            java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
+		try {
+			java.lang.reflect.Method[] methods = classe.getDeclaredMethods();
 
-            for (java.lang.reflect.Method method : methods) {
-                String methodName = method.getName().toUpperCase();
-                if (methodName.contains("GETHISTORICOPORTADOR")) {
-                    historicoPortadorMethodsList.add(method);
-                    // logger.logInfo("method dps: " + methodName);
-                }
-            }
+			for (java.lang.reflect.Method method : methods) {
+				String methodName = method.getName().toUpperCase();
+				if (methodName.contains("GETHISTORICOPORTADOR")) {
+					historicoPortadorMethodsList.add(method);
+					// logger.logInfo("method dps: " + methodName);
+				}
+			}
 
-            // Ordenando os métodos de maneira crescente
-            java.util.Collections.sort(historicoPortadorMethodsList, new java.util.Comparator() {
-                @Override
-                public int compare(Object o1, Object o2) {
-                    java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
-                    java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
-                    // logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
-                    return m1.getName().compareTo(m2.getName());
-                }
-            });
+			// Ordenando os métodos de maneira crescente
+			java.util.Collections.sort(historicoPortadorMethodsList, new java.util.Comparator() {
+				@Override
+				public int compare(Object o1, Object o2) {
+					java.lang.reflect.Method m1 = (java.lang.reflect.Method) o1;
+					java.lang.reflect.Method m2 = (java.lang.reflect.Method) o2;
+					// logger.logInfo("m1: " + m1.getName() + " m2: " +m2.getName());
+					return m1.getName().compareTo(m2.getName());
+				}
+			});
 
-            StringBuilder historicoPortadorMethodsLog = new StringBuilder("historicoPORTADOR methods: ");
-            for (Object method : historicoPortadorMethodsList) {
-                historicoPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
-            }
-            // logger.logInfo("HISTPORT ordenada: " + historicoPortadorMethodsLog.toString());
+			StringBuilder historicoPortadorMethodsLog = new StringBuilder("historicoPORTADOR methods: ");
+			for (Object method : historicoPortadorMethodsList) {
+				historicoPortadorMethodsLog.append(((java.lang.reflect.Method) method).getName()).append(", ");
+			}
+			//logger.logInfo("HISTPORT ordenada: " + historicoPortadorMethodsLog.toString());
 
-            // Convertendo a lista de volta para um array
-            return (java.lang.reflect.Method[]) historicoPortadorMethodsList.toArray(new java.lang.reflect.Method[0]);
+			// Convertendo a lista de volta para um array
+			return (java.lang.reflect.Method[]) historicoPortadorMethodsList.toArray(new java.lang.reflect.Method[0]);
 
-        } catch (Exception e) {
-            logger.logError("Erro ao instanciar a classe: ", e);
-            return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
-        }
-    }
+		} catch (Exception e) {
+			logger.logError("Erro ao instanciar a classe: ", e);
+			return new java.lang.reflect.Method[0]; // Retorna um array vazio em caso de erro
+		}
+	}
 
-    public String invocaGetHistoricoPortador(Object scInstance, java.lang.reflect.Method[] historicoPortadorMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
-        Class<?> sc = scInstance.getClass();
+	public String invocaGetHistoricoPortador(Object scInstance, java.lang.reflect.Method[] historicoPortadorMethods,String contaMovimento, String historico, ttMovimentoPadrao ttMov, JSONObject histobj) {
+		Class<?> sc = scInstance.getClass();
 
-        for (java.lang.reflect.Method historicoPortadorMethod : historicoPortadorMethods) {
-            if (historicoPortadorMethod == null) continue;
-            // logger.logInfo("Invoking method: " + historicoPortadorMethod.getName());
-            try {
-                Method method = sc.getDeclaredMethod(historicoPortadorMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
-                try {
-                    // Obtemos o método diretamente do array de métodos
-                    // Invocamos o método
-                    historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
-                    logger.logInfo("historicoPORT: " + historico);
-                } catch (Exception e1) {
-                    logger.logError("ERRO INVOKING 1: ", e1);
-                }
-            }catch (Exception e2){
-                logger.logError("ERRO INVOKING 2: ", e2);
-            }
-        }
-        return historico;
-    }
+		for (java.lang.reflect.Method historicoPortadorMethod : historicoPortadorMethods) {
+			if (historicoPortadorMethod == null) continue;
+			//logger.logInfo("Invoking method: " + historicoPortadorMethod.getName());
+			try {
+				Method method = sc.getDeclaredMethod(historicoPortadorMethod.getName(),String.class, String.class, String.class, String.class, String.class, JSONObject.class);
+				try {
+					// Obtemos o método diretamente do array de métodos
+					// Invocamos o método
+					historico = (String) method.invoke(scInstance,contaMovimento, historico, ttMov.tipoLancamento, ttMov.documento, ttMov.nomeOrigem, histobj);
+					//logger.logInfo("historicoPORT: " + historico);
+				} catch (Exception e1) {
+					logger.logError("ERRO INVOKING 1: ", e1);
+				}
+			}catch (Exception e2){
+				logger.logError("ERRO INVOKING 2: ", e2);
+			}
+		}
+		return historico;
+	}
 	public static double lerValoresExtrasArquivoTxt(double valorDocumentoArray[], String line, JSONObject roteiroCRM, JSONObject futureObject) {
 		//O futureObject serve para possibilitar futuras alteracoes sem que a assinatura do metodo seja modificada
 		String [] indiceValores = roteiroCRM.optString("Colunas_de_Valores_Extras").split(";");
@@ -464,6 +464,7 @@ public class TemplateUtils {
 
 		//2308-014199 Refatoracao do validaFornecedorFiscal
 		if (!roteiroCRMPrincipal.optString("ValidaFornecedorFiscal").equals("")) {
+			logger.logInfo("VALIDA FORNECEDOR FISCAAL");
 			jDados.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optString("ValidaFornecedorFiscal"));
 		}
 
@@ -471,7 +472,7 @@ public class TemplateUtils {
 		jDescricaoDupl    = buscarIODuplicata(jDados, dbIOCont, logger);
 
 		if(roteiroCRMPrincipal.optString("idContabilidade").contains("a091C00002PHPi3")){
-			// logger.logInfo("NF: " + ttMov.documento);
+			logger.logInfo("NF: " + ttMov.documento);
 			// logger.logInfo("ANTES VALIDA DATA");
 			java.text.SimpleDateFormat dateFormat = new java.text.SimpleDateFormat("dd/MM/yyyy");
 			try{
@@ -490,8 +491,14 @@ public class TemplateUtils {
 		// Descomentar a proxima linha para testar a razaoSocial do movimento com a jDescricaoDupl.optString("RAZAOSOCIAL") que vem das duplicatas em aberto!
 		// if (jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, razaoSocial);      //IDENTIFICAMOS UMA FALHA LOGICA
 		logger.logInfo("tipo: " + jDescricaoDupl.optString("TIPO") + "|" + ttMov.nomeOrigem);
-
-		if (jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem); //USAR ESSE
+		logger.logInfo("JDESCDUPL ANTES VRS: " + jDescricaoDupl.toString());
+		if(roteiroCRMPrincipal.has("ValidaFornecedorFiscal")){
+			if (jDescricaoDupl.optString("TIPO").equals("FISCAL") && !roteiroCRMPrincipal.optString("ValidaFornecedorFiscal").equals("") &&
+					!roteiroCRMPrincipal.optString("ValidaFornecedorFiscal").equals("0")) {
+				jDescricaoDupl.put("VALIDAFORNECEDORFISCAL", roteiroCRMPrincipal.optInt("ValidaFornecedorFiscal"));
+				jDescricaoDupl = validaRazaoSocial(jDescricaoDupl, ttMov.nomeOrigem); //USAR ESSE
+			}
+		}
 		// #Fabrica(2019-07-30)
 		// Descomentar a proxima linha para testar o codigo de filial do movimento com a jDescricaoDupl.optString("SITUACAO") que vem das duplicatas em aberto! OBS: Lembrando que deve existir regra de c?digo filial no CRM
 		// if(jDescricaoDupl.optString("TIPO").equals("FISCAL")) jDescricaoDupl = validaBaixaPorFilial(jDescricaoDupl, ttMov.codFilial);
@@ -645,9 +652,10 @@ public class TemplateUtils {
 		if(arquivoCompleto.contains("XP INVESTIMENTOS") && arquivoCompleto.contains("NOTA DE CORRETAGEM")){
 			return true; //NOTAS DE CORRETAGEM
 		}
-		if(arquivoCompleto.contains("EMITIDO EM") && arquivoCompleto.contains("BANCO ITAU S/A") && arquivoCompleto.contains("MOVIMENTACAO")){
-			return true; //ITAUFRANCESINHA01
-		}
+		if(arquivoCompleto.contains("EMITIDO EM") && (arquivoCompleto.contains("BANCO ITAU S/A") || arquivoCompleto.contains("BANCO ITAU S.A.")
+				&& arquivoCompleto.contains("NOME DO CLIENTE")) && arquivoCompleto.contains("MOVIMENTACAO")){
+            return true; //ITAUFRANCESINHA01
+        }
 		if(arquivoCompleto.contains("CART") && arquivoCompleto.contains("PAGADOR") && arquivoCompleto.contains("TIPO") && arquivoCompleto.contains("NOSSO|") &&
 				arquivoCompleto.contains("SEU|") && arquivoCompleto.contains("VENC.") && arquivoCompleto.contains("AGENCIA|") && arquivoCompleto.contains("INICIAL") &&
 				arquivoCompleto.contains("VALOR") && arquivoCompleto.contains("DESCRICAO DE OPERACOES") && arquivoCompleto.contains("OPERACOES|VALOR") &&
@@ -819,6 +827,10 @@ public class TemplateUtils {
 				arquivoCompleto.contains("NOSSO NUMERO") && arquivoCompleto.contains("AGENCIA/CONTA")){ //FRANCESINHASANTANDER 2
 			return true;
 		}
+		
+		if(arquivoCompleto.contains("DATA E HORA|ESTABELECIMENTO|BANDEIRA|FORMA DE PAGAMENTO|VALOR DA VENDA|STATUS") && arquivoCompleto.contains("MINHACONTA2.CIELO.COM.BR")){
+			return true; //CARTAO_CIELO_PDF
+		}
 
 		if (arquivoCompleto.contains("INTERNET BANKING EMPRESARIAL") && arquivoCompleto.contains("AGENCIA") &&
 				arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("PERIODO") && arquivoCompleto.contains("0800 726 2125") &&
@@ -854,17 +866,17 @@ public class TemplateUtils {
 				arquivoCompleto.contains("CORRENTE") && arquivoCompleto.contains("SANTANDER") && arquivoCompleto.contains("RENDIMENTO")) {
 			return true; //Santander Contamax Empresarial
 		}
-		
-		if (arquivoCompleto.contains("EMITIDO EM: ") && 
-			(arquivoCompleto.contains("DATA|OBSERVACAO|DOCUMENTO|VALOR|DETALHAMENTO") ||
-			arquivoCompleto.contains("DATA;OBSERVACAO;DOCUMENTO;VALOR;DETALHAMENTO")) &&
-			arquivoCompleto.contains("ALIAS:") &&
-			arquivoCompleto.contains("SALDO INICIAL")){
-				return true; // PENSEBANK
+
+		if (arquivoCompleto.contains("EMITIDO EM: ") &&
+				(arquivoCompleto.contains("DATA|OBSERVACAO|DOCUMENTO|VALOR|DETALHAMENTO") ||
+						arquivoCompleto.contains("DATA;OBSERVACAO;DOCUMENTO;VALOR;DETALHAMENTO")) &&
+				arquivoCompleto.contains("ALIAS:") &&
+				arquivoCompleto.contains("SALDO INICIAL")){
+			return true; // PENSEBANK
 		}
-		
+
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
-		arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
+				arquivoCompleto.contains("CENTRAL DE RELACIONAMENTO: CAPITAIS E REGIOES METROPOLITANAS:")){
 			return true; // UNICRED TIPO 004
 		}
 
