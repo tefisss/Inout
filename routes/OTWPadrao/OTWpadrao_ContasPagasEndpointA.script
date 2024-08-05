@@ -31174,9 +31174,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
     String debitoCredito     = "";
     String cpfCnpj           = "";
     String historico         = "";
-	boolean hasNewChave = false; 
-    if(jDados.has("HASNEWCHAVE"))  hasNewChave  = jDados.optBoolean("HASNEWCHAVE"); 
-    String tipoLancamento    = "";
+	String tipoLancamento    = "";
 
     String strValorDocumento = "";
     String contLinhaExtrato  = "";
@@ -31201,9 +31199,9 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 	if(jDados.has("TIPOLANCAMENTO")) tipoLancamento = jDados.optString("TIPOLANCAMENTO");
 	if(jDados.has("LINE"))  line = jDados.optString("LINE");
 	if(jDados.has("TIPOUNICRED")) tipoExtrato = jDados.optString("TIPOUNICRED");
-	logger.logInfo(tipoExtrato);
+
     while (memFile.hasNextLine()) {
-		logger.logInfo(line);
+		
 		if(!tipoExtrato.equals("004") && memFile.getStringFieldRemoveEspCharsUpper(0).contains("DATA")){
 			for(int i =0; i < memFile.getFieldsSize(); i++){
 				String campo = memFile.getStringFieldRemoveEspCharsUpper(i);
@@ -31338,7 +31336,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 			try{
 				jdbcExtrato.insereIOExtrato(extrato, dbIOCont, logger);				
 			}catch(Exception e){
-				logger.logError("Erro extrato abc" + e.getMessage());
+				logger.logError("Erro extrato UNICRED1" + e.getMessage());
 			}
         } catch (Exception readExtratoException) {
             logger.logError("Erro de leitura de Extrato UNICRED", readExtratoException);
