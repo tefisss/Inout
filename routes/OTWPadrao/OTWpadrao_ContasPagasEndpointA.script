@@ -28255,7 +28255,7 @@ public boolean readExtratoSicoobPDF(MemoryFile memFile, String nomePortador, JSO
 			inomeOrigem = 2;
 		}
 		
-		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("COOP.:") && memFile.getStringFieldRemoveEspCharsUpper(1).contains("-")){
+		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains(" CORRENTE COOP.:") && memFile.getStringFieldRemoveEspCharsUpper(1).contains("-")){
 			nomePortador = "SICOOB-PDF - "+memFile.getStringFieldRemoveEspCharsUpper(1);
 		}
 		
