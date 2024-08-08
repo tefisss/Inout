@@ -19543,7 +19543,7 @@ public boolean readExtratoUnicredPDF(MemoryFile memFile, JSONObject jDados, Data
 			
             nomeOrigem = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
             complemento02 = memFile.getStringFieldRemoveEspCharsUpper(inomeOrigem);
-			documento		= memFile.getStringFieldRemoveEspCharsUpper(idocumento).replaceAll("\"","");	   
+			documento		= memFile.getStringFieldRemoveEspCharsUpper(idocumento).replaceAll("\"","").replaceAll("[^\\p{Print}]", "");	   
 			
 			if(nomeOrigem.contains("R$")){
 				continue;
