@@ -1542,7 +1542,6 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		return variaveis.toString();
 		}
 	}
-	
 	////// Extrato - UNICRED PDF ///////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
