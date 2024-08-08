@@ -9,8 +9,7 @@
 {import: io_contabil.OICUtils};
 {import: io_contabil.Classes.Extrato};
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+
 import java.lang.reflect.Method;
 
 // TEMPLATE 15.03.2023
