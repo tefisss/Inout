@@ -6,7 +6,7 @@
        creationDate="15/02/2024"
        daysToKeepRecords="60"
        saveTransMessage="false"
-       inoutKey="6262-0ee75-5f49-1492d">
+       inoutKey="beee-35067-c79a-325ae">
 
     <endpointA system="SistemaA"
                type="SCRIPT"

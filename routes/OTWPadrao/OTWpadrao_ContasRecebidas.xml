@@ -3,10 +3,10 @@
 <route routeId="OTWPadrao.OTWpadrao_ContasRecebidas"
        description=""
        user="carlos"
-       creationDate="16/02/2024"
+       creationDate="18/10/2022"
        daysToKeepRecords="60"
        saveTransMessage="false"
-       inoutKey="aa43-81f64-7b1a-ec111">
+       inoutKey="4b66-aee2f-c430-c7b03">
 
     <endpointA system="SistemaA"
                type="SCRIPT"
