@@ -1543,7 +1543,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 		}
 	}
 
-	logger.logInfo(line);
+
 	////// Extrato - UNICRED PDF ///////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("Extrato_Unicred_PDF")){
 		if ((arquivoCompleto.contains("DATA|LANCAMENTOS|VALOR (R$)|SALDO (R$)") || arquivoCompleto.contains("DATA;LANCAMENTOS;VALOR (R$);SALDO (R$)")) &&
@@ -4809,7 +4809,7 @@ public String validacaoPDF(String anoData, String complemento01, String compleme
 	
 	////// FATURA CARTAO CREDITO ITAU PDF //////////////////////////////////////////////////////////////////
 	if(roteiroCRM.optString("Planilhas_Padroes").contains("FaturaCartaoCredito_Itau_PDF")){
-		logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
+		//logger.logInfo("LN FATURA CARTAO CREDITO ITAU RUN = "+line);
 		if(memFile.getStringFieldRemoveEspCharsUpper(0).contains("FECHADA")){
 			String complemento09 = memFile.getStringFieldRemoveEspCharsUpper(1);
 			logger.logInfo("CP09 = "+complemento09);

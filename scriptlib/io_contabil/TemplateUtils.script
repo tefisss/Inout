@@ -538,7 +538,7 @@ public class TemplateUtils {
 		return "";
 	}
 
-	public static boolean verificaConversorNovo(String arquivoCompleto) {
+	public static boolean verificaConversorNovo(String arquivoCompleto, InoutLogger logger) {
 		//2405-040179
 		if(arquivoCompleto.contains("CONTA:") && arquivoCompleto.contains("EXTRATO POR PERIODO") &&
 				arquivoCompleto.contains("DATA MOV.") && arquivoCompleto.contains("NR.") && arquivoCompleto.contains("DOC.") &&
@@ -1024,7 +1024,7 @@ public class TemplateUtils {
 
 	public String getDataOttCartao(String dataPretendente, String tipoPlanilha, int idataMovimento, String line, String textoCRM, MemoryFile memFile, InoutLogger logger)throws Exception{
 		String dataMovimento = "";
-		logger.logInfo("ENTROU DT CART TP UTIL");
+		//logger.logInfo("ENTROU DT CART TP UTIL");
 		try{
 
 			String auxMes 	  = getMonth(cutString(dataPretendente, " ", " "));
@@ -1046,7 +1046,7 @@ public class TemplateUtils {
 					dataMovimento = DateUtil.dateToString(calSerial.getTime(), "dd/MM/yyyy");
 				}
 			}
-			logger.logInfo("TP UTIL -> dt " + dataMovimento);
+			//logger.logInfo("TP UTIL -> dt " + dataMovimento);
 		}catch(Exception e){
 			dataMovimento   = "";
 		}
